@@ -16,6 +16,7 @@ type config struct {
 }
 
 type Logger = zerolog.Logger
+type ConsoleWriter = zerolog.ConsoleWriter
 
 // New creates a new logger writing to w.
 // Use WithStr(key, value) to add new fields to the logger, example:
