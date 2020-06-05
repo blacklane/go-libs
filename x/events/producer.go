@@ -87,6 +87,7 @@ func (p KafkaProducer) Close(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			err = fmt.Errorf("%d messages not sent", notSent)
+			break
 		default:
 			continue
 		}
