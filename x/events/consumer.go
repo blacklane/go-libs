@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -20,7 +21,6 @@ type KafkaConsumer struct {
 	wg           *sync.WaitGroup
 	activeConnMu *sync.Mutex
 	runMu        *sync.Mutex
-	activeConn   int
 	run          bool
 	done         chan struct{}
 
@@ -35,9 +35,8 @@ func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consum
 		activeConnMu: &sync.Mutex{},
 		runMu:        &sync.Mutex{},
 
-		activeConn: 0,
-		run:        true,
-		done:       make(chan struct{}),
+		run:  true,
+		done: make(chan struct{}),
 	}
 }
 
@@ -76,13 +75,9 @@ func (c KafkaConsumer) Run() {
 func (c KafkaConsumer) Shutdown(ctx context.Context) error {
 	c.stopRun()
 
-	if c.activeConn == 0 {
-		return nil
-	}
-
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("%d handlers not finished", c.activeConn)
+		return errors.New("not all handlers finished")
 	case <-c.done:
 		return nil
 	}
