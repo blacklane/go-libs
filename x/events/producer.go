@@ -8,28 +8,36 @@ import (
 )
 
 type Producer interface {
-	SendEvent(event Event) error
+	Send(event Event) error
 	Run()
-	Close(ctx context.Context) error
+	Shutdown(ctx context.Context) error
 }
 
-type EventHandler func(*Event, error)
+type ErrorHandler interface {
+	HandleError(*Event, error)
+}
+
+type ErrorHandlerFunc func(*Event, error)
+
+func (eh ErrorHandlerFunc) HandleError(e *Event, err error) {
+	eh(e, err)
+}
 
 type KafkaProducer struct {
-	runMu           *sync.Mutex
-	producer        *kafka.Producer
-	deliveryHandler EventHandler
-	topic           string
-	run             bool
+	runMu        *sync.Mutex
+	producer     *kafka.Producer
+	errorHandler ErrorHandler
+	topic        string
+	run          bool
 }
 
-func NewKafkaProducer(p *kafka.Producer, topic string, deliveryHandler EventHandler) Producer {
+func NewKafkaProducer(p *kafka.Producer, topic string, errorHandler ErrorHandler) Producer {
 	return &KafkaProducer{
-		runMu:           &sync.Mutex{},
-		producer:        p,
-		deliveryHandler: deliveryHandler,
-		topic:           topic,
-		run:             false,
+		runMu:        &sync.Mutex{},
+		producer:     p,
+		errorHandler: errorHandler,
+		topic:        topic,
+		run:          false,
 	}
 }
 
@@ -53,32 +61,32 @@ func (p KafkaProducer) Run() {
 		for e := range p.producer.Events() {
 			switch ev := e.(type) {
 			case *kafka.Message:
-				if p.deliveryHandler != nil {
+				if p.errorHandler != nil && ev.TopicPartition.Error != nil {
 					message, _ := parseMessage(ev)
-					p.deliveryHandler(message, ev.TopicPartition.Error)
+					p.errorHandler.HandleError(message, ev.TopicPartition.Error)
 				}
 			}
 		}
 	}()
 }
 
-func (p KafkaProducer) SendEvent(event Event) error {
+func (p KafkaProducer) Send(event Event) error {
 	if !p.running() {
 		return fmt.Errorf("producer should be running")
 	}
 	return p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &p.topic, Partition: kafka.PartitionAny},
-		Key:            event.Name,
+		Key:            event.Key,
 		Value:          event.Payload,
 	}, nil)
 }
 
-func (p KafkaProducer) Close(ctx context.Context) error {
+func (p KafkaProducer) Shutdown(ctx context.Context) error {
 	if !p.running() {
 		return fmt.Errorf("producer should be running")
 	}
+	defer p.producer.Close()
 	p.stopRun()
-	var err error
 	for {
 		notSent := p.producer.Flush(1000)
 		if notSent == 0 {
@@ -86,14 +94,11 @@ func (p KafkaProducer) Close(ctx context.Context) error {
 		}
 		select {
 		case <-ctx.Done():
-			err = fmt.Errorf("%d messages not sent", notSent)
-			break
+			return fmt.Errorf("%d messages not sent", notSent)
 		default:
 			continue
 		}
 	}
 
-	p.producer.Close()
-
-	return err
+	return nil
 }
