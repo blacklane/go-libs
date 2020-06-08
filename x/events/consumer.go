@@ -32,6 +32,7 @@ func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consum
 		kafkaConsumer: kafkaConsumer,
 		handlers:      handlers,
 
+		wg:           &sync.WaitGroup{},
 		activeConnMu: &sync.Mutex{},
 		runMu:        &sync.Mutex{},
 
@@ -53,6 +54,7 @@ func (c KafkaConsumer) Run() {
 			for _, h := range c.handlers {
 				c.wg.Add(1)
 				go func(h Handler) {
+					defer c.wg.Done()
 					e, err := parseMessage(msg)
 					if err != nil {
 						// TODO: handle the error!
@@ -61,7 +63,6 @@ func (c KafkaConsumer) Run() {
 
 					// errors are ignored, you handler should
 					err = h.Handle(context.Background(), *e)
-					c.wg.Done()
 				}(h)
 			}
 		}
@@ -96,5 +97,6 @@ func (c KafkaConsumer) stopRun() {
 }
 
 func parseMessage(m *kafka.Message) (*Event, error) {
-	return &Event{}, nil
+	// TODO: add headers
+	return &Event{Payload: m.Value}, nil
 }
