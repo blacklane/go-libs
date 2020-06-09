@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -28,7 +29,7 @@ type KafkaConsumer struct {
 }
 
 func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consumer {
-	return KafkaConsumer{
+	return &KafkaConsumer{
 		kafkaConsumer: kafkaConsumer,
 		handlers:      handlers,
 
@@ -41,12 +42,19 @@ func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consum
 	}
 }
 
-func (c KafkaConsumer) Run() {
+func (c *KafkaConsumer) Run() {
 	go func() {
 		for c.running() {
-			msg, err := c.kafkaConsumer.ReadMessage(-1)
+			msg, err := c.kafkaConsumer.ReadMessage(time.Second)
 			if err != nil {
-				log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+				switch err.(type) {
+				case kafka.Error:
+					if err.(kafka.Error).Code() != kafka.ErrTimedOut {
+						log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+					}
+				default:
+					log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+				}
 				continue
 			}
 
@@ -72,7 +80,7 @@ func (c KafkaConsumer) Run() {
 }
 
 // Shutdown receives a context with deadline or will wait forever
-func (c KafkaConsumer) Shutdown(ctx context.Context) error {
+func (c *KafkaConsumer) Shutdown(ctx context.Context) error {
 	c.stopRun()
 
 	select {
@@ -89,7 +97,7 @@ func (c KafkaConsumer) running() bool {
 	return c.run
 }
 
-func (c KafkaConsumer) stopRun() {
+func (c *KafkaConsumer) stopRun() {
 	c.runMu.Lock()
 	defer c.runMu.Unlock()
 	c.run = false
