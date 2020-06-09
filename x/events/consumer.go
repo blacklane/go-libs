@@ -44,7 +44,6 @@ func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consum
 func (c KafkaConsumer) Run() {
 	go func() {
 		for c.running() {
-			log.Print("waiting message")
 			msg, err := c.kafkaConsumer.ReadMessage(-1)
 			if err != nil {
 				log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
