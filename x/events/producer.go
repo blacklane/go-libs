@@ -3,8 +3,9 @@ package events
 import (
 	"context"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type Producer interface {
@@ -41,22 +42,29 @@ func NewKafkaProducer(p *kafka.Producer, topic string, errorHandler ErrorHandler
 	}
 }
 
-func (p KafkaProducer) running() bool {
+func (p *KafkaProducer) running() bool {
 	p.runMu.Lock()
 	defer p.runMu.Unlock()
 	return p.run
 }
 
-func (p KafkaProducer) stopRun() {
+func (p *KafkaProducer) stopRun() {
 	p.runMu.Lock()
 	defer p.runMu.Unlock()
 	p.run = false
 }
 
-func (p KafkaProducer) Run() {
+func (p *KafkaProducer) startRun() {
+	p.runMu.Lock()
+	defer p.runMu.Unlock()
+	p.run = true
+}
+
+func (p *KafkaProducer) Run() {
 	if p.running() {
 		return
 	}
+	p.startRun()
 	go func() {
 		for e := range p.producer.Events() {
 			switch ev := e.(type) {
@@ -70,7 +78,7 @@ func (p KafkaProducer) Run() {
 	}()
 }
 
-func (p KafkaProducer) Send(event Event) error {
+func (p *KafkaProducer) Send(event Event) error {
 	if !p.running() {
 		return fmt.Errorf("producer should be running")
 	}
@@ -81,7 +89,7 @@ func (p KafkaProducer) Send(event Event) error {
 	}, nil)
 }
 
-func (p KafkaProducer) Shutdown(ctx context.Context) error {
+func (p *KafkaProducer) Shutdown(ctx context.Context) error {
 	if !p.running() {
 		return fmt.Errorf("producer should be running")
 	}

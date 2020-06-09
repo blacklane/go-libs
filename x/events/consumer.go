@@ -101,5 +101,12 @@ func (c KafkaConsumer) stopRun() {
 }
 
 func parseMessage(m *kafka.Message) (*Event, error) {
-	return &Event{}, nil
+	var headers map[string]string
+	for _, header := range m.Headers {
+		if header.Value == nil {
+			continue
+		}
+		headers[header.Key] = string(header.Value)
+	}
+	return &Event{Headers: headers, Key: m.Key, Payload: m.Value}, nil
 }

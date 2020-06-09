@@ -3,7 +3,7 @@ package events
 import "context"
 
 type Event struct {
-	Headers map[string][]string
+	Headers map[string]string
 	Key     []byte
 	Payload []byte
 }
