@@ -13,7 +13,7 @@ Every folder is a library, currently we have:
  - [tracking](tracking): adds UUID and other things to the [context](https://golang.org/pkg/context/)
  - [x](x): Experimental, they are experiments or work in progress which are not ready to be recommended
  as a standard
-   - [events](x/events): An event producer and consumer abstraction and a kafka implementation.
+   - [events](https://github.com/blacklane/go-libs/tree/events/x/events): An event producer and consumer abstraction and a kafka implementation. Currently a work in progress on the branch [`events`](https://github.com/blacklane/go-libs/tree/events)
 
 The maintainers of each library is defines in the CODEOWNERS file. If the library does not provide one,
 consider the top-level [CODEOWNERS](CODEOWNERS) as the maintainers.
