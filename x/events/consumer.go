@@ -3,7 +3,6 @@ package events
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -50,10 +49,10 @@ func (c *KafkaConsumer) Run() {
 				switch err.(type) {
 				case kafka.Error:
 					if err.(kafka.Error).Code() != kafka.ErrTimedOut {
-						log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+						log.Printf("[ERROR] failed to read message: %v", err)
 					}
 				default:
-					log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+					log.Printf("[ERROR] failed to read message: %v", err)
 				}
 				continue
 			}
