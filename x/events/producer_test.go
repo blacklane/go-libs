@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -80,13 +81,16 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 	}
 	topic := "not_created_topic"
 	messages := map[string]bool{"Anderson": true, "likes": true, "reviewing!": true}
+	mu := sync.Mutex{}
 	handler := ErrorHandlerFunc(func(event *Event, err error) {
 		if event == nil {
 			t.Errorf("failed to parse the event")
 			return
 		}
 		message := string(event.Payload)
+		mu.Lock()
 		delete(messages, message)
+		mu.Unlock()
 	})
 	p := NewKafkaProducer(kafkaProducer, handler)
 	p.Run()
@@ -97,7 +101,9 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		}
 	}
 	p.Shutdown(context.Background())
+	mu.Lock()
 	if len(messages) != 0 {
 		t.Errorf("error handler missed %d messages", len(messages))
 	}
+	mu.Unlock()
 }
