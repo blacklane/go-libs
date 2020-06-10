@@ -63,14 +63,10 @@ func (c *KafkaConsumer) Run(timeout time.Duration) {
 				c.wg.Add(1)
 				go func(h Handler) {
 					defer c.wg.Done()
-					e, err := parseMessage(msg)
-					if err != nil {
-						// TODO: handle the error!
-						return
-					}
+					e := messageToEvent(msg)
 
-					// errors are ignored, you handler should
-					err = h.Handle(context.Background(), *e)
+					// Errors are ignored, a middleware should handle them
+					_ = h.Handle(context.Background(), *e)
 				}(h)
 			}
 		}
@@ -104,7 +100,15 @@ func (c *KafkaConsumer) stopRun() {
 	c.run = false
 }
 
-func parseMessage(m *kafka.Message) (*Event, error) {
-	// TODO: add headers
-	return &Event{Payload: m.Value}, nil
+func messageToEvent(m *kafka.Message) *Event {
+	return &Event{Payload: m.Value, Headers: parseHeaders(m.Headers)}
+}
+
+func parseHeaders(headers []kafka.Header) Header {
+	hs := Header{}
+	for _, kh := range headers {
+		hs[kh.Key] = string(kh.Value)
+	}
+
+	return hs
 }

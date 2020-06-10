@@ -2,8 +2,9 @@ package events
 
 import "context"
 
+type Header map[string]string
 type Event struct {
-	Headers map[string][]string
+	Headers Header
 	Payload []byte
 }
 
