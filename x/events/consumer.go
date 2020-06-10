@@ -3,9 +3,9 @@ package events
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -28,10 +28,11 @@ type KafkaConsumer struct {
 }
 
 func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consumer {
-	return KafkaConsumer{
+	return &KafkaConsumer{
 		kafkaConsumer: kafkaConsumer,
 		handlers:      handlers,
 
+		wg:           &sync.WaitGroup{},
 		activeConnMu: &sync.Mutex{},
 		runMu:        &sync.Mutex{},
 
@@ -40,19 +41,26 @@ func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consum
 	}
 }
 
-func (c KafkaConsumer) Run() {
+func (c *KafkaConsumer) Run() {
 	go func() {
 		for c.running() {
-			log.Print("waiting message")
-			msg, err := c.kafkaConsumer.ReadMessage(-1)
+			msg, err := c.kafkaConsumer.ReadMessage(time.Second)
 			if err != nil {
-				log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+				switch err.(type) {
+				case kafka.Error:
+					if err.(kafka.Error).Code() != kafka.ErrTimedOut {
+						log.Printf("[ERROR] failed to read message: %v", err)
+					}
+				default:
+					log.Printf("[ERROR] failed to read message: %v", err)
+				}
 				continue
 			}
 
 			for _, h := range c.handlers {
 				c.wg.Add(1)
 				go func(h Handler) {
+					defer c.wg.Done()
 					e, err := parseMessage(msg)
 					if err != nil {
 						// TODO: handle the error!
@@ -61,7 +69,6 @@ func (c KafkaConsumer) Run() {
 
 					// errors are ignored, you handler should
 					err = h.Handle(context.Background(), *e)
-					c.wg.Done()
 				}(h)
 			}
 		}
@@ -72,7 +79,7 @@ func (c KafkaConsumer) Run() {
 }
 
 // Shutdown receives a context with deadline or will wait forever
-func (c KafkaConsumer) Shutdown(ctx context.Context) error {
+func (c *KafkaConsumer) Shutdown(ctx context.Context) error {
 	c.stopRun()
 
 	select {
@@ -89,12 +96,13 @@ func (c KafkaConsumer) running() bool {
 	return c.run
 }
 
-func (c KafkaConsumer) stopRun() {
+func (c *KafkaConsumer) stopRun() {
 	c.runMu.Lock()
 	defer c.runMu.Unlock()
 	c.run = false
 }
 
 func parseMessage(m *kafka.Message) (*Event, error) {
-	return &Event{}, nil
+	// TODO: add headers
+	return &Event{Payload: m.Value}, nil
 }
