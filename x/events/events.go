@@ -2,8 +2,9 @@ package events
 
 import "context"
 
+type Header map[string]string
 type Event struct {
-	Headers map[string]string
+	Headers Header
 	Key     []byte
 	Payload []byte
 }
@@ -14,10 +15,10 @@ type Handler interface {
 	Handle(context.Context, Event) error
 }
 
-type HandlerFunc func(ctx context.Context, e Event)
+type HandlerFunc func(ctx context.Context, e Event) error
 
-func (h HandlerFunc) Handle(ctx context.Context, e Event) {
-	h(ctx, e)
+func (h HandlerFunc) Handle(ctx context.Context, e Event) error {
+	return h(ctx, e)
 }
 
 type HandlerBuilder struct {
@@ -25,11 +26,11 @@ type HandlerBuilder struct {
 	rawHandlers []Handler
 }
 
-func (hb HandlerBuilder) UseMiddleware(m ...Middleware) {
+func (hb *HandlerBuilder) UseMiddleware(m ...Middleware) {
 	hb.middleware = append(hb.middleware, m...)
 }
 
-func (hb HandlerBuilder) AddHandler(h Handler) {
+func (hb *HandlerBuilder) AddHandler(h Handler) {
 	hb.rawHandlers = append(hb.rawHandlers, h)
 }
 

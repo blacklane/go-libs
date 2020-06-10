@@ -2,15 +2,16 @@ package events
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type Consumer interface {
-	Run()
+	Run(timeout time.Duration)
 	Shutdown(ctx context.Context) error
 }
 
@@ -20,7 +21,6 @@ type KafkaConsumer struct {
 	wg           *sync.WaitGroup
 	activeConnMu *sync.Mutex
 	runMu        *sync.Mutex
-	activeConn   int
 	run          bool
 	done         chan struct{}
 
@@ -28,41 +28,45 @@ type KafkaConsumer struct {
 }
 
 func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consumer {
-	return KafkaConsumer{
+	return &KafkaConsumer{
 		kafkaConsumer: kafkaConsumer,
 		handlers:      handlers,
 
+		wg:           &sync.WaitGroup{},
 		activeConnMu: &sync.Mutex{},
 		runMu:        &sync.Mutex{},
 
-		activeConn: 0,
-		run:        true,
-		done:       make(chan struct{}),
+		run:  true,
+		done: make(chan struct{}),
 	}
 }
 
-func (c KafkaConsumer) Run() {
+func (c *KafkaConsumer) Run(timeout time.Duration) {
 	go func() {
 		for c.running() {
-			log.Print("waiting message")
-			msg, err := c.kafkaConsumer.ReadMessage(-1)
+			msg, err := c.kafkaConsumer.ReadMessage(timeout)
 			if err != nil {
-				log.Print(fmt.Sprintf("[ERROR] failed to read message: %v", err))
+				switch err.(type) {
+				case kafka.Error:
+					if err.(kafka.Error).Code() != kafka.ErrTimedOut {
+						// TODO: handle it properly!!
+						log.Printf("[ERROR] failed to read message: %v", err)
+					}
+				default:
+					// TODO: handle it properly!!
+					log.Printf("[ERROR] failed to read message: %v", err)
+				}
 				continue
 			}
 
 			for _, h := range c.handlers {
 				c.wg.Add(1)
 				go func(h Handler) {
-					e, err := parseMessage(msg)
-					if err != nil {
-						// TODO: handle the error!
-						return
-					}
+					defer c.wg.Done()
+					e := messageToEvent(msg)
 
-					// errors are ignored, you handler should
-					err = h.Handle(context.Background(), *e)
-					c.wg.Done()
+					// Errors are ignored, a middleware should handle them
+					_ = h.Handle(context.Background(), *e)
 				}(h)
 			}
 		}
@@ -73,16 +77,12 @@ func (c KafkaConsumer) Run() {
 }
 
 // Shutdown receives a context with deadline or will wait forever
-func (c KafkaConsumer) Shutdown(ctx context.Context) error {
+func (c *KafkaConsumer) Shutdown(ctx context.Context) error {
 	c.stopRun()
-
-	if c.activeConn == 0 {
-		return nil
-	}
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("%d handlers not finished", c.activeConn)
+		return errors.New("not all handlers finished")
 	case <-c.done:
 		return nil
 	}
@@ -94,19 +94,21 @@ func (c KafkaConsumer) running() bool {
 	return c.run
 }
 
-func (c KafkaConsumer) stopRun() {
+func (c *KafkaConsumer) stopRun() {
 	c.runMu.Lock()
 	defer c.runMu.Unlock()
 	c.run = false
 }
 
-func parseMessage(m *kafka.Message) (*Event, error) {
-	var headers map[string]string
-	for _, header := range m.Headers {
-		if header.Value == nil {
-			continue
-		}
-		headers[header.Key] = string(header.Value)
+func messageToEvent(m *kafka.Message) *Event {
+	return &Event{Payload: m.Value, Headers: parseHeaders(m.Headers)}
+}
+
+func parseHeaders(headers []kafka.Header) Header {
+	hs := Header{}
+	for _, kh := range headers {
+		hs[kh.Key] = string(kh.Value)
 	}
-	return &Event{Headers: headers, Key: m.Key, Payload: m.Value}, nil
+
+	return hs
 }

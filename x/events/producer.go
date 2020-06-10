@@ -68,7 +68,7 @@ func (p *KafkaProducer) Run() {
 			switch ev := e.(type) {
 			case *kafka.Message:
 				if p.errorHandler != nil && ev.TopicPartition.Error != nil {
-					message, _ := parseMessage(ev)
+					message := messageToEvent(ev)
 					p.errorHandler.HandleError(message, ev.TopicPartition.Error)
 				}
 			}
