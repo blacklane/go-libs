@@ -11,7 +11,7 @@ import (
 )
 
 type Consumer interface {
-	Run()
+	Run(timeout time.Duration)
 	Shutdown(ctx context.Context) error
 }
 
@@ -41,17 +41,19 @@ func NewKafkaConsumer(kafkaConsumer *kafka.Consumer, handlers ...Handler) Consum
 	}
 }
 
-func (c *KafkaConsumer) Run() {
+func (c *KafkaConsumer) Run(timeout time.Duration) {
 	go func() {
 		for c.running() {
-			msg, err := c.kafkaConsumer.ReadMessage(time.Second)
+			msg, err := c.kafkaConsumer.ReadMessage(timeout)
 			if err != nil {
 				switch err.(type) {
 				case kafka.Error:
 					if err.(kafka.Error).Code() != kafka.ErrTimedOut {
+						// TODO: handle it properly!!
 						log.Printf("[ERROR] failed to read message: %v", err)
 					}
 				default:
+					// TODO: handle it properly!!
 					log.Printf("[ERROR] failed to read message: %v", err)
 				}
 				continue
