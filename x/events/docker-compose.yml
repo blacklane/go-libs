@@ -12,7 +12,7 @@ services:
       KAFKA_VERSION: '0.11.0.1'
       KAFKA_BROKER_ID: 1
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_ADVERTISED_HOST_NAME: 'localhost'
+      KAFKA_ADVERTISED_HOST_NAME: 'kafka'
       KAFKA_ADVERTISED_PORT: '9092'
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
@@ -20,3 +20,10 @@ services:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
+  lib:
+    build: .
+    depends_on:
+      - zookeeper
+      - kafka
+    links:
+      - kafka

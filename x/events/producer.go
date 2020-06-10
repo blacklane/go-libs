@@ -9,7 +9,7 @@ import (
 )
 
 type Producer interface {
-	Send(event Event) error
+	Send(event Event, topic string) error
 	Run()
 	Shutdown(ctx context.Context) error
 }
@@ -28,16 +28,14 @@ type KafkaProducer struct {
 	runMu        *sync.Mutex
 	producer     *kafka.Producer
 	errorHandler ErrorHandler
-	topic        string
 	run          bool
 }
 
-func NewKafkaProducer(p *kafka.Producer, topic string, errorHandler ErrorHandler) Producer {
+func NewKafkaProducer(p *kafka.Producer, errorHandler ErrorHandler) Producer {
 	return &KafkaProducer{
 		runMu:        &sync.Mutex{},
 		producer:     p,
 		errorHandler: errorHandler,
-		topic:        topic,
 		run:          false,
 	}
 }
@@ -78,12 +76,12 @@ func (p *KafkaProducer) Run() {
 	}()
 }
 
-func (p *KafkaProducer) Send(event Event) error {
+func (p *KafkaProducer) Send(event Event, topic string) error {
 	if !p.running() {
 		return fmt.Errorf("producer should be running")
 	}
 	return p.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &p.topic, Partition: kafka.PartitionAny},
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Key:            event.Key,
 		Value:          event.Payload,
 	}, nil)
