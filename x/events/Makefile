@@ -1,18 +1,17 @@
-GOPRIVATE ?=
 GOLINT ?= golint
 GO ?= go
 
+.PHONY: test check deps
 deps:
-	GOPRIVATE=${GOPRIVATE} $(GO) mod download
+	$(GO) mod download
 
 install_golint:
 	$(GO) get -u golang.org/x/lint/golint
 
-.PHONY: test
 test: deps
+	# using -musl because librdkafka is a C library
 	$(GO) test -race -tags musl -cover ./...
 
-.PHONY: check
 check:
-	$(GO) vet -tags musl $$($(GO) list -tags musl ./...)
-	$(GOLINT) $$($(GO) list -tags musl ./...)
+	$(GO) vet -tags musl $$($(GO) list musl ./...)
+	$(GOLINT) $$($(GO) list musl ./...)
