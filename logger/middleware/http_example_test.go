@@ -52,7 +52,7 @@ func ExampleNewHttpHandlerLogger_simple() {
 	log := logger.New(os.Stdout, "")
 	ctx := log.WithContext(r.Context())
 
-	loggerMiddleware := RequestLogger()
+	loggerMiddleware := RequestLogger([]string{})
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +82,7 @@ func ExampleNewHttpHandlerLogger_complete() {
 	ctx = log.WithContext(ctx)
 
 	rr := r.WithContext(ctx)
-	loggerMiddleware := RequestLogger()
+	loggerMiddleware := RequestLogger([]string{})
 
 	h := loggerMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, req *http.Request) { _, _ = w.Write(nil) }))
@@ -91,4 +91,35 @@ func ExampleNewHttpHandlerLogger_complete() {
 
 	// Output:
 	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"42.42.42.42","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"42","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":1000,"timestamp":"2009-11-10T23:00:02Z","message":"GET /foo"}
+}
+
+func ExampleNewHttpHandlerLogger_skipRoutes() {
+	livePath := "/live"
+	// Set current time function so we can control the request duration
+	logger.SetNowFunc(func() time.Time {
+		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	})
+
+	w := httptest.NewRecorder()
+	rBar := httptest.NewRequest(http.MethodGet, "http://example.com/foo?bar=foo", nil)
+	rBar.Header.Set(internal.HeaderForwardedFor, "localhost")
+
+	rLive := httptest.NewRequest(http.MethodGet, "http://example.com"+livePath, nil)
+	rLive.Header.Set(internal.HeaderForwardedFor, "localhost")
+
+	log := logger.New(os.Stdout, "")
+	ctx := log.WithContext(rBar.Context())
+
+	loggerMiddleware := RequestLogger([]string{livePath})
+
+	h := loggerMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = fmt.Fprint(w, "Hello, world")
+		}))
+
+	h.ServeHTTP(w, rBar.WithContext(ctx))
+	h.ServeHTTP(w, rLive.WithContext(ctx))
+
+	// Output:
+	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /foo"}
 }

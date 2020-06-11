@@ -22,7 +22,7 @@ func Logger(log logger.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-func RequestLogger() func(http.Handler) http.Handler {
+func RequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := logger.Now()
@@ -51,6 +51,12 @@ func RequestLogger() func(http.Handler) http.Handler {
 			ww := responseWriter{w: w, body: &bytes.Buffer{}}
 
 			defer func() {
+				for _, skipRoute := range skipRoutes {
+					if strings.HasPrefix(urlPath, skipRoute) {
+						// do not log this route
+						return
+					}
+				}
 				l.Info().
 					Str(internal.FieldEvent, internal.EventRequestFinished).
 					Int(internal.FieldStatus, ww.statusCode).
