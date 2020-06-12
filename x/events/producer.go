@@ -36,24 +36,34 @@ type kafkaProducer struct {
 	flushTimeoutMs int
 }
 
-func NewKafkaProducer(p *kafka.Producer, errorHandler ErrorHandler) Producer {
+// Returns new producer. It fully manages underlying kafka.Producer's lifecycle
+func NewKafkaProducer(c *kafka.ConfigMap, errorHandler ErrorHandler) (Producer, error) {
+	p, err := kafka.NewProducer(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kafkaProducer: %w", err)
+	}
 	return &kafkaProducer{
 		runMutex:       &sync.Mutex{},
 		producer:       p,
 		errorHandler:   errorHandler,
 		isRunning:      false,
 		flushTimeoutMs: defaultTimeoutMs,
-	}
+	}, nil
 }
 
-func NewKafkaProducerWithTimeout(p *kafka.Producer, errorHandler ErrorHandler, flushTimeoutMs int) Producer {
+// Returns new producer with timeout. It fully manages underlying kafka.Producer's lifecycle
+func NewKafkaProducerWithTimeout(c *kafka.ConfigMap, errorHandler ErrorHandler, flushTimeoutMs int) (Producer, error) {
+	p, err := kafka.NewProducer(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kafkaProducer: %w", err)
+	}
 	return &kafkaProducer{
 		runMutex:       &sync.Mutex{},
 		producer:       p,
 		errorHandler:   errorHandler,
 		isRunning:      false,
 		flushTimeoutMs: flushTimeoutMs,
-	}
+	}, nil
 }
 
 func (p *kafkaProducer) running() bool {
@@ -74,6 +84,7 @@ func (p *kafkaProducer) startRunning() {
 	p.isRunning = true
 }
 
+// Listens for messages delivery and sends them to error handler if the delivery failed
 func (p *kafkaProducer) HandleMessages() {
 	if p.running() {
 		return
@@ -92,6 +103,8 @@ func (p *kafkaProducer) HandleMessages() {
 	}()
 }
 
+// Sends messages. Bear in mind that even if the error is not returned here
+// that doesn't mean that the message is delivered (see HandleMessages method)
 func (p *kafkaProducer) Send(event Event, topic string) error {
 	return p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
@@ -100,11 +113,11 @@ func (p *kafkaProducer) Send(event Event, topic string) error {
 	}, nil)
 }
 
+// Shuts the producer down and also closes the underlying kafka instance
 func (p *kafkaProducer) Shutdown(ctx context.Context) error {
-	// This method is not responsible for closing the producer
-	// as the producer may be reused by different instance
 	isRunning := p.running()
 	p.stopRunning()
+	defer p.producer.Close()
 
 	// Flush will only work if we listen to producer's events
 	if !isRunning {
