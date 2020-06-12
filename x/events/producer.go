@@ -9,12 +9,13 @@ import (
 )
 
 var ErrProducerNotHandlingMessages = errors.New("producer should be handling messages")
+var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
 const defaultTimeoutMs = 500
 
 type Producer interface {
 	Send(event Event, topic string) error
-	HandleMessages()
+	HandleMessages() error
 	Shutdown(ctx context.Context) error
 }
 
@@ -85,11 +86,12 @@ func (p *kafkaProducer) startRunning() {
 }
 
 // Listens for messages delivery and sends them to error handler if the delivery failed
-func (p *kafkaProducer) HandleMessages() {
+func (p *kafkaProducer) HandleMessages() error {
 	if p.running() {
-		return
+		return ErrProducerIsAlreadyRunning
 	}
 	p.startRunning()
+	
 	go func() {
 		for e := range p.producer.Events() {
 			switch ev := e.(type) {
@@ -101,6 +103,8 @@ func (p *kafkaProducer) HandleMessages() {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // Sends messages. Bear in mind that even if the error is not returned here
