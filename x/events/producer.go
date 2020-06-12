@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 var ErrProducerNotHandlingMessages = errors.New("producer should be handling messages")
@@ -91,7 +92,7 @@ func (p *kafkaProducer) HandleMessages() error {
 		return ErrProducerIsAlreadyRunning
 	}
 	p.startRunning()
-	
+
 	go func() {
 		for e := range p.producer.Events() {
 			switch ev := e.(type) {

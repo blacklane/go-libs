@@ -23,7 +23,7 @@ func createTopic(t *testing.T, topic string) {
 			Topic:             topic,
 			NumPartitions:     1,
 			ReplicationFactor: 1}},
-		kafka.SetAdminOperationTimeout(60 * time.Second))
+		kafka.SetAdminOperationTimeout(60*time.Second))
 	if err != nil {
 		t.Fatalf("failed to create topic: %v", err)
 	}
