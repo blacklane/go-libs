@@ -15,5 +15,5 @@ test: deps
 	$(GO) test -race -tags musl -cover ./...
 
 check:
-	$(GO) vet $$($(GO) list ./...)
+	$(GO) vet -tags musl $$($(GO) list ./...)
 	$(GOLINT) $$($(GO) list ./...)
