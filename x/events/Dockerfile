@@ -8,7 +8,6 @@ COPY . ./
 RUN apk update && \
     apk --no-cache upgrade && \
     apk --no-cache add git make && \
-    # getting the gcc
     apk add build-base && \
     make deps install_golint
 

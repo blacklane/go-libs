@@ -1,7 +1,8 @@
+.PHONY: test check deps install_golint
+
 GOLINT ?= golint
 GO ?= go
 
-.PHONY: test check deps
 deps:
 	$(GO) mod download
 

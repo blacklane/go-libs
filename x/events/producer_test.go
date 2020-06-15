@@ -52,7 +52,7 @@ func TestProducerProducesEventsToCorrectTopic(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	p.HandleMessages()
+	_ = p.HandleMessages()
 	defer p.Shutdown(context.Background())
 
 	for _, message := range messages {
@@ -81,7 +81,7 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	p.HandleMessages()
+	_ = p.HandleMessages()
 	for message := range messages {
 		e := Event{Payload: []byte(message)}
 		if err := p.Send(e, topic); err != nil {
@@ -89,7 +89,7 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		}
 	}
 
-	p.Shutdown(context.Background())
+	_ = p.Shutdown(context.Background())
 
 	mu.Lock()
 	defer mu.Unlock()

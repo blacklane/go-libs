@@ -12,6 +12,7 @@ import (
 var ErrProducerNotHandlingMessages = errors.New("producer should be handling messages")
 var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
+// TODO: make it configurable
 const defaultTimeoutMs = 500
 
 type Producer interface {
@@ -38,7 +39,8 @@ type kafkaProducer struct {
 	flushTimeoutMs int
 }
 
-// Returns new producer. It fully manages underlying kafka.Producer's lifecycle
+// NewKafkaProducer returns new a producer.
+// It fully manages underlying kafka.Producer's lifecycle.
 func NewKafkaProducer(c *kafka.ConfigMap, errorHandler ErrorHandler) (Producer, error) {
 	p, err := kafka.NewProducer(c)
 	if err != nil {
@@ -53,7 +55,8 @@ func NewKafkaProducer(c *kafka.ConfigMap, errorHandler ErrorHandler) (Producer, 
 	}, nil
 }
 
-// Returns new producer with timeout. It fully manages underlying kafka.Producer's lifecycle
+// NewKafkaProducerWithTimeout returns new producer with timeout.
+// It fully manages underlying kafka.Producer's lifecycle.
 func NewKafkaProducerWithTimeout(c *kafka.ConfigMap, errorHandler ErrorHandler, flushTimeoutMs int) (Producer, error) {
 	p, err := kafka.NewProducer(c)
 	if err != nil {
@@ -86,7 +89,8 @@ func (p *kafkaProducer) startRunning() {
 	p.isRunning = true
 }
 
-// Listens for messages delivery and sends them to error handler if the delivery failed
+// HandleMessages listens for messages delivery and sends them to error handler
+// if the delivery failed.
 func (p *kafkaProducer) HandleMessages() error {
 	if p.running() {
 		return ErrProducerIsAlreadyRunning
@@ -109,7 +113,7 @@ func (p *kafkaProducer) HandleMessages() error {
 }
 
 // Sends messages. Bear in mind that even if the error is not returned here
-// that doesn't mean that the message is delivered (see HandleMessages method)
+// that doesn't mean that the message is delivered (see HandleMessages method).
 func (p *kafkaProducer) Send(event Event, topic string) error {
 	return p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
@@ -118,7 +122,7 @@ func (p *kafkaProducer) Send(event Event, topic string) error {
 	}, nil)
 }
 
-// Shuts the producer down and also closes the underlying kafka instance
+// Shuts the producer down and also closes the underlying kafka instance.
 func (p *kafkaProducer) Shutdown(ctx context.Context) error {
 	isRunning := p.running()
 	p.stopRunning()
