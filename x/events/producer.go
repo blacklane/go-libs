@@ -12,9 +12,6 @@ import (
 var ErrProducerNotHandlingMessages = errors.New("producer should be handling messages")
 var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
-// TODO: make it configurable
-const defaultTimeoutMs = 500
-
 type Producer interface {
 	Send(event Event, topic string) error
 	HandleMessages() error
@@ -41,34 +38,38 @@ type kafkaProducer struct {
 
 // NewKafkaProducer returns new a producer.
 // It fully manages underlying kafka.Producer's lifecycle.
-func NewKafkaProducer(c *kafka.ConfigMap, errorHandler ErrorHandler) (Producer, error) {
+// Use the 'With...' functions for further configurations:
+//   producer, err := NewKafkaProducer(c, errorHandler, WithFlushTimeout(500))
+func NewKafkaProducer(
+	c *kafka.ConfigMap,
+	errorHandler ErrorHandler,
+	configs ...func(cfg *kafkaProducer)) (Producer, error) {
+
 	p, err := kafka.NewProducer(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kafkaProducer: %w", err)
 	}
-	return &kafkaProducer{
+
+	kp := &kafkaProducer{
 		runMutex:       &sync.Mutex{},
 		producer:       p,
 		errorHandler:   errorHandler,
 		isRunning:      false,
-		flushTimeoutMs: defaultTimeoutMs,
-	}, nil
+		flushTimeoutMs: 500,
+	}
+
+	for _, cfgFn := range configs {
+		cfgFn(kp)
+	}
+
+	return kp, nil
 }
 
-// NewKafkaProducerWithTimeout returns new producer with timeout.
-// It fully manages underlying kafka.Producer's lifecycle.
-func NewKafkaProducerWithTimeout(c *kafka.ConfigMap, errorHandler ErrorHandler, flushTimeoutMs int) (Producer, error) {
-	p, err := kafka.NewProducer(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create kafkaProducer: %w", err)
+// WithTimeout sets the flush timeout to the given timeout in milliseconds.
+func WithFlushTimeout(timeout int) func(p *kafkaProducer) {
+	return func(p *kafkaProducer) {
+		p.flushTimeoutMs = timeout
 	}
-	return &kafkaProducer{
-		runMutex:       &sync.Mutex{},
-		producer:       p,
-		errorHandler:   errorHandler,
-		isRunning:      false,
-		flushTimeoutMs: flushTimeoutMs,
-	}, nil
 }
 
 func (p *kafkaProducer) running() bool {

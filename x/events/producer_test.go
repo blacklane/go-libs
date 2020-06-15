@@ -97,3 +97,24 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		t.Errorf("error handler missed %d messages", len(messages))
 	}
 }
+
+func TestNewKafkaProducerWithFlushTimeout(t *testing.T) {
+	want := 1
+
+	p, err := NewKafkaProducer(
+		&kafka.ConfigMap{"bootstrap.servers": "kafka"},
+		nil,
+		WithFlushTimeout(want))
+	if err != nil {
+		t.Fatalf("could not create a new kafka producer: %v", err)
+	}
+
+	kp, ok := p.(*kafkaProducer)
+	if !ok {
+		t.Errorf("%T is not a %T", p, &kafkaProducer{})
+	}
+
+	if kp.flushTimeoutMs != want {
+		t.Errorf("got: %d, want: %d", kp.flushTimeoutMs, want)
+	}
+}
