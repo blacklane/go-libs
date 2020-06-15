@@ -5,6 +5,7 @@ import "context"
 type Header map[string]string
 type Event struct {
 	Headers Header
+	Key     []byte
 	Payload []byte
 }
 

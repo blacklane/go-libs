@@ -1,0 +1,29 @@
+version: "3"
+services:
+  kafka:
+    image: wurstmeister/kafka:2.11-0.11.0.3
+    restart: on-failure:3
+    links:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_VERSION: '0.11.0.1'
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_ADVERTISED_HOST_NAME: 'kafka'
+      KAFKA_ADVERTISED_PORT: '9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  lib:
+    build: .
+    depends_on:
+      - zookeeper
+      - kafka
+    links:
+      - kafka
