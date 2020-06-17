@@ -15,7 +15,7 @@ stages:
 jobs:
   include:
     - stage: test-push
-      script: go test -race -tags musl -cover x/events/...
+      script: go test -race -tags musl -cover ./...
 notifications:
   slack:
     secure: fShoPnyh6L7H2frtv3z3MD16UeLrjKGvQA10jsDvaXv2pgD7Yc6r1ygxcQoO6WjiIm/uht7B0gvLcDGgTHmEBoZK4tGmzvJ9kRfznUrjoTsZuSIdPHt7NOy/of1EBfvnbhQzTUSnDZ+SLCDYM0YE0oAs7GtH8n5SIg2S6xQmVl7A3YJCjt8+JGCqCopO0vnSrNolE0ffmgYzkjRlEYlHH+nHHqdLtVAQmcMBPmlgP4zk+EfnrQ1OlVxk71rTnABqZboMPthoiTjQO0sf/Lk9IxV2avvtImkU7cSRSPXFoRqBt2iaC1j2SdmeYDsaAWXgkFnzbsL/kqft+36u3kTbKCGpqDkOoxN4aXRw9KFI5VYzkyKBkpUPQUsvT+Z2oa5NBQml1PhWdk/r5bxt5Z2b1+urjuoHN2z2/kTp6KeG6nj1uEgtQDYOIshH8WyxlE2kXnxTtTJv9LiC2m5BYy+TYiM2tTp1O+Ce3aqtwJpdZXUTuOIJpqZWlE4m9nhL5yk3LBwEPvjvq+PWOmnSZmoT9pFUgIDjvcYs/m15A/fJoDOLv1xSlpHHHxFDuVOUNFCKvWTxZdXVdiZHD65om9+DHey18NqJoEpBYnYf1vKh2uTnwElWL4aRTNJf3ZaQWtyg8EjMCip6HQ7f0pukFkQ/R3MNhdJWaeX4cImKLzhrmos=
