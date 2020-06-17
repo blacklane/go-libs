@@ -14,7 +14,7 @@ stages:
 
 jobs:
   include:
-    - stage: test
+    - stage: test-push
       script: make test
 notifications:
   slack:
