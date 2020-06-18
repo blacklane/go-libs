@@ -9,8 +9,6 @@ stages:
   - name: test
   - name: testing_events
     if: branch == events AND type == push
-  - name: test-push
-    if: branch == TT-723-run-tests-through-travis
 
 jobs:
   include:
