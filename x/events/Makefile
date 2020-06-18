@@ -10,7 +10,8 @@ install_golint:
 	$(GO) get -u golang.org/x/lint/golint
 
 test: deps
-	# musl build tag is required on Alpine linux to use the prebuilt librdkafka.
+	# musl build tag is required on Alpine linux to use the prebuilt librdkafka. Travis works on
+	# ubuntu though so we are omitting it here.
 	# More on https://github.com/confluentinc/confluent-kafka-go/blob/master/README.md#librdkafka
 	$(GO) test -race -cover ./...
 
