@@ -23,7 +23,7 @@ check:
 	$(GOLINT) $$($(GO) list ./...)
 
 compose-tests:
-	docker-compose --env-file .env_compose up \
+	docker-compose -f .env_compose up \
 		--build \
 		--force-recreate \
 		--remove-orphans \
