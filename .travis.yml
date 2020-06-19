@@ -5,14 +5,9 @@ addons:
   apt:
     packages:
       - make
-stages:
-  - name: test
-  - name: testing_events
-    if: branch == events AND type == push
-
 jobs:
   include:
-    - stage: test-push
+    - stage: x/events-test
       script: cd x/events ; make deps test
 notifications:
   slack:
