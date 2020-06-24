@@ -1,5 +1,7 @@
 FROM golang:1.14.3-alpine as baseimg
 
+ARG BUILD_TAGS="-tags musl,integration"
+
 # First only download the dependencies, so the dependencies can be cahced before we copy the code
 COPY ./go.mod ./go.sum ./Makefile /app/
 WORKDIR /app/
