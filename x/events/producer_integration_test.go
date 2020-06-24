@@ -1,41 +1,15 @@
+// +build integration
+
 package events
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
-
-func createTopic(t *testing.T, topic string) {
-	t.Helper()
-
-	adminClient, err := kafka.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": "kafka"})
-	if err != nil {
-		t.Fatalf("failed to create Admin client: %s", err)
-	}
-	defer adminClient.Close()
-
-	results, err := adminClient.CreateTopics(context.Background(),
-		[]kafka.TopicSpecification{{
-			Topic:             topic,
-			NumPartitions:     1,
-			ReplicationFactor: 1}},
-		kafka.SetAdminOperationTimeout(60*time.Second))
-	if err != nil {
-		t.Fatalf("failed to create topic: %v", err)
-	}
-
-	for _, result := range results {
-		if result.Error.Code() != kafka.ErrNoError &&
-			result.Error.Code() != kafka.ErrTopicAlreadyExists {
-			t.Fatalf("topic creation failed for %s: %s",
-				result.Topic, result.Error.String())
-		}
-	}
-}
 
 func TestProducerProducesEventsToCorrectTopic(t *testing.T) {
 	topic := "demo_topic"
@@ -47,7 +21,11 @@ func TestProducerProducesEventsToCorrectTopic(t *testing.T) {
 		t.Errorf("failed to deliver the event %s: %v", message, err)
 	})
 
-	p, err := NewKafkaProducer(&kafka.ConfigMap{"bootstrap.servers": "kafka"}, handler)
+	p, err := NewKafkaProducer(
+		&kafka.ConfigMap{
+			"bootstrap.servers":  kafkaBootstrapServers,
+			"message.timeout.ms": "1000"},
+		handler)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -68,15 +46,28 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 	messages := map[string]bool{"Anderson": true, "likes": true, "reviewing!": true}
 	mu := sync.Mutex{}
 
-	handler := ErrorHandlerFunc(func(event Event, err error) {
-		message := string(event.Payload)
+	handler := ErrorHandlerFunc(func(e Event, err error) {
+		message := string(e.Payload)
+		var kerr kafka.Error
+		if ok := errors.As(err, &kerr); !ok {
+			t.Errorf("want %T, got %T", kafka.Error{}, err)
+		}
+		if kerr.Code() != kafka.ErrUnknownTopicOrPart {
+			t.Errorf(`want kafka error code "%s", got "%s"`,
+				kafka.ErrUnknownTopicOrPart,
+				kerr.Code())
+		}
 
 		mu.Lock()
 		defer mu.Unlock()
 		delete(messages, message)
 	})
 
-	p, err := NewKafkaProducer(&kafka.ConfigMap{"bootstrap.servers": "kafka"}, handler)
+	p, err := NewKafkaProducer(
+		&kafka.ConfigMap{
+			"bootstrap.servers":  kafkaBootstrapServers,
+			"message.timeout.ms": "1000"},
+		handler)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -89,7 +80,10 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		}
 	}
 
-	_ = p.Shutdown(context.Background())
+	err = p.Shutdown(context.Background())
+	if err != nil {
+		t.Fatalf("failed Shutdown: %v", err)
+	}
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -102,7 +96,9 @@ func TestNewKafkaProducerWithFlushTimeout(t *testing.T) {
 	want := 1
 
 	p, err := NewKafkaProducer(
-		&kafka.ConfigMap{"bootstrap.servers": "kafka"},
+		&kafka.ConfigMap{
+			"bootstrap.servers":  kafkaBootstrapServers,
+			"message.timeout.ms": "1000"},
 		nil,
 		WithFlushTimeout(want))
 	if err != nil {

@@ -23,6 +23,7 @@ services:
     build: .
     environment:
       KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_ADVERTISED_HOST_NAME}"
+      BUILD_TAGS: "-tags musl,integration"
     depends_on:
       - zookeeper
       - kafka

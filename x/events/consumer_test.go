@@ -8,7 +8,6 @@ import (
 )
 
 func TestParseHeaders(t *testing.T) {
-
 	foo := "foo"
 	bar := "bar"
 	n42 := "42"
