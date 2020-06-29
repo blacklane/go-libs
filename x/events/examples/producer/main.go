@@ -18,13 +18,13 @@ func main() {
 		&kafka.ConfigMap{
 			"bootstrap.servers":  "localhost:9092",
 			"message.timeout.ms": "1000"},
-		errHandler)
+		events.WithErrorHandler(errHandler))
 	if err != nil {
 		log.Panicf("%v", err)
 	}
 
 	// handle failed deliveries
-	_ = p.HandleMessages()
+	_ = p.HandleEvents()
 	defer p.Shutdown(context.Background())
 
 	e := events.Event{Payload: []byte("Hello, Gophers")}

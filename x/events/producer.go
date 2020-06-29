@@ -14,7 +14,7 @@ var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
 type Producer interface {
 	Send(event Event, topic string) error
-	HandleMessages() error
+	HandleEvents() error
 	Shutdown(ctx context.Context) error
 }
 
@@ -29,9 +29,13 @@ func (eh ErrorHandlerFunc) HandleError(e Event, err error) {
 }
 
 type kafkaProducer struct {
-	runMutex       *sync.Mutex
-	producer       *kafka.Producer
-	errorHandler   ErrorHandler
+	runMutex *sync.Mutex
+	producer *kafka.Producer
+
+	errorHandler      ErrorHandler
+	messageHandler    func(*kafka.Message)
+	kafkaEventHandler func(event kafka.Event)
+
 	isRunning      bool
 	flushTimeoutMs int
 }
@@ -40,10 +44,7 @@ type kafkaProducer struct {
 // It fully manages underlying kafka.Producer's lifecycle.
 // Use the 'With...' functions for further configurations:
 //   producer, err := NewKafkaProducer(c, errorHandler, WithFlushTimeout(500))
-func NewKafkaProducer(
-	c *kafka.ConfigMap,
-	errorHandler ErrorHandler,
-	configs ...func(cfg *kafkaProducer)) (Producer, error) {
+func NewKafkaProducer(c *kafka.ConfigMap, configs ...func(*kafkaProducer)) (Producer, error) {
 
 	p, err := kafka.NewProducer(c)
 	if err != nil {
@@ -53,7 +54,6 @@ func NewKafkaProducer(
 	kp := &kafkaProducer{
 		runMutex:       &sync.Mutex{},
 		producer:       p,
-		errorHandler:   errorHandler,
 		isRunning:      false,
 		flushTimeoutMs: 500,
 	}
@@ -72,45 +72,77 @@ func WithFlushTimeout(timeout int) func(p *kafkaProducer) {
 	}
 }
 
-func (p *kafkaProducer) running() bool {
-	p.runMutex.Lock()
-	defer p.runMutex.Unlock()
-	return p.isRunning
+// WithErrorHandler adds a handler to handle *kafka.Message when
+// Message.TopicPartition.Error != nil
+// See also WithKafkaEventHandler and WithKafkaMessageHandler
+func WithErrorHandler(errHandler ErrorHandler) func(p *kafkaProducer) {
+	return func(p *kafkaProducer) {
+		p.errorHandler = errHandler
+	}
 }
 
-func (p *kafkaProducer) stopRunning() {
-	p.runMutex.Lock()
-	defer p.runMutex.Unlock()
-	p.isRunning = false
+// WithErrorHandler adds a handler to handle *kafka.Message if
+// Message.TopicPartition.Error == nil
+// See also WithKafkaEventHandler and WithKafkaMessageHandler
+func WithKafkaMessageHandler(errHandler ErrorHandler) func(p *kafkaProducer) {
+	return func(p *kafkaProducer) {
+		p.errorHandler = errHandler
+	}
 }
 
-func (p *kafkaProducer) startRunning() {
-	p.runMutex.Lock()
-	defer p.runMutex.Unlock()
-	p.isRunning = true
+//
+func WithKafkaEventHandler(errHandler ErrorHandler) func(p *kafkaProducer) {
+	return func(p *kafkaProducer) {
+		p.errorHandler = errHandler
+	}
 }
 
-// HandleMessages listens for messages delivery and sends them to error handler
+// HandleEvents listens for messages delivery and sends them to error handler
 // if the delivery failed.
-func (p *kafkaProducer) HandleMessages() error {
+func (p *kafkaProducer) HandleEvents() error {
 	if p.running() {
 		return ErrProducerIsAlreadyRunning
 	}
 	p.startRunning()
 
 	go func() {
-		for e := range p.producer.Events() {
-			switch ev := e.(type) {
+		for kafkaEvent := range p.producer.Events() {
+			switch kafkaEvent := kafkaEvent.(type) {
 			case *kafka.Message:
-				if ev.TopicPartition.Error != nil {
-					message := messageToEvent(ev)
-					p.errorHandler.HandleError(*message, ev.TopicPartition.Error)
+				p.handleMessage(kafkaEvent, kafkaEvent)
+			default:
+				if p.kafkaEventHandler != nil {
+					p.kafkaEventHandler(kafkaEvent)
 				}
 			}
 		}
 	}()
 
 	return nil
+}
+
+// handleMessage calls the appropriated handler, if there is no handler for
+// *kafka.Message, the generic kafkaEventHandler is invoked
+func (p *kafkaProducer) handleMessage(e kafka.Event, msg *kafka.Message) {
+	if msg.TopicPartition.Error != nil {
+		event := messageToEvent(msg)
+		p.errorHandler.HandleError(
+			*event,
+			msg.TopicPartition.Error)
+		return
+	}
+
+	if p.messageHandler != nil {
+		p.messageHandler(msg)
+		return
+	}
+
+	if p.kafkaEventHandler != nil {
+		p.kafkaEventHandler(e)
+		return
+	}
+
+	return
 }
 
 // Sends messages. Bear in mind that even if the error is not returned here
@@ -148,4 +180,22 @@ func (p *kafkaProducer) Shutdown(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (p *kafkaProducer) running() bool {
+	p.runMutex.Lock()
+	defer p.runMutex.Unlock()
+	return p.isRunning
+}
+
+func (p *kafkaProducer) stopRunning() {
+	p.runMutex.Lock()
+	defer p.runMutex.Unlock()
+	p.isRunning = false
+}
+
+func (p *kafkaProducer) startRunning() {
+	p.runMutex.Lock()
+	defer p.runMutex.Unlock()
+	p.isRunning = true
 }
