@@ -10,21 +10,23 @@ import (
 )
 
 func main() {
-	errHandler := events.ErrorHandlerFunc(func(event events.Event, err error) {
+	errHandler := func(event events.Event, err error) {
 		log.Panicf("failed to deliver the event %s: %v", string(event.Payload), err)
-	})
+	}
 
-	p, err := events.NewKafkaProducer(
-		&kafka.ConfigMap{
-			"bootstrap.servers":  "localhost:9092",
-			"message.timeout.ms": "1000"},
-		errHandler)
+	kpc := events.NewKafkaProducerConfig(&kafka.ConfigMap{
+		"bootstrap.servers":  "localhost:9092",
+		"message.timeout.ms": 1000,
+	})
+	kpc.WithDeliveryErrHandler(errHandler)
+
+	p, err := events.NewKafkaProducer(kpc)
 	if err != nil {
-		log.Panicf("%v", err)
+		log.Panicf("could not crete kafka producer: %v", err)
 	}
 
 	// handle failed deliveries
-	_ = p.HandleMessages()
+	_ = p.HandleEvents()
 	defer p.Shutdown(context.Background())
 
 	e := events.Event{Payload: []byte("Hello, Gophers")}
@@ -33,4 +35,5 @@ func main() {
 	if err != nil {
 		log.Panicf("error sending the event %s: %v", e, err)
 	}
+	log.Printf("sent event.Payload: %v", string(e.Payload))
 }

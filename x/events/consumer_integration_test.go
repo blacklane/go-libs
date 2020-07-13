@@ -39,13 +39,16 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		"go.events.channel.enable": true,
 		"auto.offset.reset":        "earliest",
 	}
-	c, _ := NewKafkaConsumer(config, []string{topic}, HandlerFunc(func(ctx context.Context, e Event) error {
-		mu.Lock()
-		defer mu.Unlock()
-		delete(payloads, string(e.Payload))
+	c, _ := NewKafkaConsumer(
+		NewKafkaConsumerConfig(config),
+		[]string{topic},
+		HandlerFunc(func(ctx context.Context, e Event) error {
+			mu.Lock()
+			defer mu.Unlock()
+			delete(payloads, string(e.Payload))
 
-		return nil
-	}))
+			return nil
+		}))
 
 	for msg := range payloads {
 		produce(t, producer, msg, topic)
@@ -91,7 +94,10 @@ func TestKafkaConsumer_ShutdownTimesOut(t *testing.T) {
 		"go.events.channel.enable": true,
 		"auto.offset.reset":        "earliest",
 	}
-	c, _ := NewKafkaConsumer(config, []string{topic}, HandlerFunc(func(context.Context, Event) error { return nil }))
+	c, _ := NewKafkaConsumer(
+		NewKafkaConsumerConfig(config),
+		[]string{topic},
+		HandlerFunc(func(context.Context, Event) error { return nil }))
 
 	c.Run(-1)
 

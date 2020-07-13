@@ -42,7 +42,7 @@ You can find examples on [examples](examples) folder.
 	p, err := events.NewKafkaProducer(
 		&kafka.ConfigMap{
 			"bootstrap.servers":  "localhost:9092",
-			"message.timeout.ms": "1000"},
+			"message.timeout.ms": 1000},
 		errHandler)
 	if err != nil {
 		log.Panicf("%v", err)
@@ -58,6 +58,83 @@ You can find examples on [examples](examples) folder.
 		"events-example-topic")
 	if err != nil {
 		log.Panicf("error sending the event %s: %v", e, err)
+	}
+```
+
+## Usage with OAuth2.0 authentication
+
+On [examples/oauth/Makefile](examples/oauth/Makefile) you find a makefile with the
+default kafka console consumer and producer configured to use OAuth2.0 authentication.
+You just have set your OAuth Client ID and Secret.  
+
+### Consumer
+
+```go
+tokenSource := oauth.NewTokenSource(
+		"ClientID",
+		"ClientSecret",
+		"TokenURL",
+		5*time.Second,
+		http.Client{Timeout: 3 * time.Second})
+
+	kafkaConfig := &kafka.ConfigMap{
+		"group.id":           "KafkaGroupID",
+		"bootstrap.servers":  "KafkaServer",
+		"session.timeout.ms": 6000,
+		"auto.offset.reset":  "earliest",
+	}
+
+	kc := events.NewKafkaConsumerConfig(kafkaConfig)
+	kc.WithOAuth(tokenSource)
+	kc.WithErrFunc(func(err error) { panic(err) })
+
+	c, err := events.NewKafkaConsumer(
+		kc,
+		[]string{topic},
+		events.HandlerFunc(
+			func(ctx context.Context, e events.Event) error {
+				// handle events
+				return nil
+			}))
+	if err != nil {
+		panic(fmt.Sprintf("could not create kafka consumer: %v", err))
+	}
+
+	c.Run(time.Second)
+```
+
+### Producer
+
+```go
+	tokenSource := oauth.NewTokenSource(
+		"ClientID",
+		"ClientSecret",
+		"TokenURL",
+		5*time.Second,
+		http.Client{Timeout: 3 * time.Second})
+
+	kpc := events.NewKafkaProducerConfig(&kafka.ConfigMap{
+		"bootstrap.servers":  config.KafkaServer,
+		"message.timeout.ms": 6000,
+	})
+	kpc.WithDeliveryErrHandler(errHandler)
+	kpc.WithOAuth(tokenSource)
+	kpc.WithErrFunc(func(err error) { panic(err) })
+
+	p, err := events.NewKafkaProducer(kpc)
+	if err != nil {
+		log.Panicf("could not create kafka producer: %v", err)
+	}
+
+	_ = p.HandleEvents()
+	defer func() { log.Printf("Shutdown: %v", p.Shutdown(context.Background())) }()
+
+	payload := fmt.Sprintf("[%s] Hello, Gophers", time.Now())
+	e := events.Event{Payload: []byte(payload)}
+
+	err = p.Send(e, topic)
+	if err != nil {
+		log.Printf("[ERROR] sending the event %s: %v", e, err)
 	}
 ```
 

@@ -27,15 +27,21 @@ func main() {
 		"auto.offset.reset":  "earliest",
 	}
 
-	c, _ := events.NewKafkaConsumer(conf, []string{topic}, events.HandlerFunc(
-		func(ctx context.Context, e events.Event) error {
-			log.Printf("consumed event: %s", e.Payload)
-			return nil
-		}))
+	c, err := events.NewKafkaConsumer(
+		events.NewKafkaConsumerConfig(conf),
+		[]string{topic},
+		events.HandlerFunc(
+			func(ctx context.Context, e events.Event) error {
+				log.Printf("consumed event: %s", e.Payload)
+				return nil
+			}))
+	if err != nil {
+		panic(err)
+	}
 
-	log.Print("starting consumer, press CTRL+C to exit")
+	log.Printf("starting to consume events from %s, press CTRL+C to exit", topic)
 	c.Run(time.Second)
 
 	<-signalChan
-	log.Printf("Shutdown: %v", c.Shutdown(context.Background()))
+	log.Printf("Shutdown error: %v", c.Shutdown(context.Background()))
 }
