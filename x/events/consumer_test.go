@@ -1,6 +1,7 @@
 package events
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -49,4 +50,48 @@ func TestMessageToEvent(t *testing.T) {
 		t.Errorf("got: %v, wnat %v", got, want)
 	}
 
+}
+
+func TestKafkaConsumer_WithOAuth(t *testing.T) {
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{})
+	tokenSource := tokenSourceMock{}
+	kcc.WithOAuth(tokenSource)
+
+	c, err := NewKafkaConsumer(kcc, []string{"topic"})
+	if err != nil {
+		t.Fatalf("could not create kafka consumer: %v", err)
+	}
+
+	kc, ok := c.(*kafkaConsumer)
+	if !ok {
+		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+	}
+
+	if !cmp.Equal(kc.tokenSource, tokenSource) {
+		t.Errorf("want: %v, got: %v", tokenSource, kc.tokenSource)
+	}
+}
+
+func TestKafkaConsumer_WithErrFunc(t *testing.T) {
+	var got error
+	want := errors.New("error TestKafkaConfig_WithErrFunc")
+	errFn := func(err error) { got = err }
+
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
+	kcc.WithErrFunc(errFn)
+
+	c, err := NewKafkaConsumer(kcc, []string{"topic"})
+	if err != nil {
+		t.Fatalf("cannot create kafka consumer: %v", err)
+	}
+
+	kc, ok := c.(*kafkaConsumer)
+	if !ok {
+		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+	}
+
+	kc.errFn(want)
+	if got != want {
+		t.Errorf("want: %v, got %v", want, got)
+	}
 }
