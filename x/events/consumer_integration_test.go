@@ -57,7 +57,7 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	c.Run(time.Second)
 
 	// We need wait a bit for the messages to get published and consumed
-	time.Sleep(30 * time.Second)
+	time.Sleep(time.Minute)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
