@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -29,23 +30,45 @@ type kafkaCP struct {
 	shutdown bool
 }
 
-func (kc *kafkaCP) startRunning() bool {
-	kc.runMu.RLock()
-	kc.run = true
-	defer kc.runMu.RUnlock()
-	return kc.run
+func (kcp *kafkaCP) refreshToken(handle kafka.Handle) {
+
+	token, err := kcp.tokenSource.Token()
+	if err != nil {
+		errWrapped := fmt.Errorf("could not get oauth token: %w", err)
+
+		kcp.errFn(errWrapped)
+		err = handle.SetOAuthBearerTokenFailure(err.Error())
+		if err != nil {
+			kcp.errFn(fmt.Errorf("could not SetOAuthBearerTokenFailure: %w", err))
+		}
+	}
+
+	err = handle.SetOAuthBearerToken(kafka.OAuthBearerToken{
+		TokenValue: token.AccessToken,
+		Expiration: token.Expiry,
+	})
+	if err != nil {
+		kcp.errFn(fmt.Errorf("could not SetOAuthBearerToken: %w", err))
+	}
 }
 
-func (kc *kafkaCP) running() bool {
-	kc.runMu.RLock()
-	defer kc.runMu.RUnlock()
-	return kc.run
+func (kcp *kafkaCP) startRunning() bool {
+	kcp.runMu.RLock()
+	kcp.run = true
+	defer kcp.runMu.RUnlock()
+	return kcp.run
 }
 
-func (kc *kafkaCP) stopRun() {
-	kc.runMu.Lock()
-	defer kc.runMu.Unlock()
-	kc.run = false
+func (kcp *kafkaCP) running() bool {
+	kcp.runMu.RLock()
+	defer kcp.runMu.RUnlock()
+	return kcp.run
+}
+
+func (kcp *kafkaCP) stopRun() {
+	kcp.runMu.Lock()
+	defer kcp.runMu.Unlock()
+	kcp.run = false
 }
 
 // WithOAuth prepares to handle OAuth2.

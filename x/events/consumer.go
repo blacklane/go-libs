@@ -29,7 +29,7 @@ type KafkaConsumerConfig struct {
 type kafkaConsumer struct {
 	*kafkaCP
 
-	kafkaConsumer *kafka.Consumer
+	consumer *kafka.Consumer
 
 	wg           *sync.WaitGroup
 	activeConnMu sync.Mutex
@@ -69,8 +69,8 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 			run:   true,
 		},
 
-		kafkaConsumer: consumer,
-		handlers:      handlers,
+		consumer: consumer,
+		handlers: handlers,
 
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
@@ -87,7 +87,7 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 	c.startRunning()
 	go func() {
 		for c.running() {
-			kev := c.kafkaConsumer.Poll(int(timeout.Milliseconds()))
+			kev := c.consumer.Poll(int(timeout.Milliseconds()))
 			switch kev := kev.(type) {
 			case *kafka.Message:
 				c.deliverMessage(kev)
@@ -119,26 +119,7 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 }
 
 func (c *kafkaConsumer) refreshToken() {
-	token, err := c.tokenSource.Token()
-	if err != nil {
-		errWrapped := fmt.Errorf("could not get oauth token: %w", err)
-
-		err = c.kafkaConsumer.SetOAuthBearerTokenFailure(errWrapped.Error())
-		if err != nil {
-			c.errFn(fmt.Errorf("could not SetOAuthBearerTokenFailure: %w", err))
-			return
-		}
-		return
-	}
-
-	err = c.kafkaConsumer.SetOAuthBearerToken(kafka.OAuthBearerToken{
-		TokenValue: token.AccessToken,
-		Expiration: token.Expiry,
-	})
-	if err != nil {
-		c.errFn(fmt.Errorf("could not SetOAuthBearerToken: %w", err))
-		return
-	}
+	c.kafkaCP.refreshToken(c.consumer)
 }
 
 // Shutdown receives a context with deadline or will wait until all handlers to
@@ -159,7 +140,7 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 		err = nil
 	}
 
-	errClose := c.kafkaConsumer.Close()
+	errClose := c.consumer.Close()
 	if errClose != nil {
 		errClose = fmt.Errorf("close kafka consumer failed: %w", errClose)
 	}

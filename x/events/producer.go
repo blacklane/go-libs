@@ -29,7 +29,7 @@ type Producer interface {
 type KafkaProducerConfig struct {
 	*kafkaConfig
 
-	errorHandler func(Event, error)
+	deliveryErrHandler func(Event, error)
 
 	flushTimeoutMs int
 }
@@ -57,7 +57,7 @@ func NewKafkaProducerConfig(config *kafka.ConfigMap) *KafkaProducerConfig {
 // WithDeliveryErrHandler registers a delivery error handler to be called
 // whenever a delivery fails.
 func (pc *KafkaProducerConfig) WithDeliveryErrHandler(errHandler func(Event, error)) {
-	pc.errorHandler = errHandler
+	pc.deliveryErrHandler = errHandler
 }
 
 // WithFlushTimeout sets the producer Flush timeout.
@@ -76,7 +76,7 @@ func NewKafkaProducer(c *KafkaProducerConfig) (Producer, error) {
 		},
 		config: c.config,
 
-		errorHandler:   c.errorHandler,
+		errorHandler:   c.deliveryErrHandler,
 		runMutex:       &sync.Mutex{},
 		flushTimeoutMs: c.flushTimeoutMs,
 	}
@@ -131,24 +131,7 @@ func (p *kafkaProducer) HandleEvents() error {
 }
 
 func (p *kafkaProducer) refreshToken() {
-	token, err := p.tokenSource.Token()
-	if err != nil {
-		errWrapped := fmt.Errorf("could not get oauth token: %w", err)
-
-		p.errFn(errWrapped)
-		err = p.producer.SetOAuthBearerTokenFailure(err.Error())
-		if err != nil {
-			p.errFn(fmt.Errorf("could not SetOAuthBearerTokenFailure: %w", err))
-		}
-	}
-
-	err = p.producer.SetOAuthBearerToken(kafka.OAuthBearerToken{
-		TokenValue: token.AccessToken,
-		Expiration: token.Expiry,
-	})
-	if err != nil {
-		p.errFn(fmt.Errorf("could not SetOAuthBearerToken: %w", err))
-	}
+	p.kafkaCP.refreshToken(p.producer)
 }
 
 // Sends messages to the given topic. Delivery errors are sent to the producer's

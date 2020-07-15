@@ -20,7 +20,7 @@ func TestKafkaProducer_WithOAuth(t *testing.T) {
 
 	kp, ok := p.(*kafkaProducer)
 	if !ok {
-		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+		t.Fatalf("cannot cast Consumer to *kafkaProducer")
 	}
 
 	if !cmp.Equal(kp.tokenSource, tokenSource) {
@@ -43,7 +43,7 @@ func TestKafkaProducer_WithErrFunc(t *testing.T) {
 
 	kp, ok := p.(*kafkaProducer)
 	if !ok {
-		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+		t.Fatalf("cannot cast Consumer to *kafkaProducer")
 	}
 
 	kp.errFn(want)
