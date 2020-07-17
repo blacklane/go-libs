@@ -27,7 +27,7 @@ type KafkaConsumerConfig struct {
 }
 
 type kafkaConsumer struct {
-	*kafkaCP
+	*kafkaCommon
 
 	consumer *kafka.Consumer
 
@@ -36,6 +36,10 @@ type kafkaConsumer struct {
 	done         chan struct{}
 
 	handlers []Handler
+
+	runMu    sync.RWMutex
+	run      bool
+	shutdown bool
 }
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
@@ -61,12 +65,9 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 	}
 
 	return &kafkaConsumer{
-		kafkaCP: &kafkaCP{
+		kafkaCommon: &kafkaCommon{
 			errFn:       config.errFn,
 			tokenSource: config.tokenSource,
-
-			runMu: sync.RWMutex{},
-			run:   true,
 		},
 
 		consumer: consumer,
@@ -105,23 +106,6 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 	}()
 }
 
-func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
-	for _, h := range c.handlers {
-		c.wg.Add(1)
-		go func(h Handler) {
-			defer c.wg.Done()
-			e := messageToEvent(msg)
-
-			// Errors are ignored, a middleware or the handler should handle them
-			_ = h.Handle(context.Background(), *e)
-		}(h)
-	}
-}
-
-func (c *kafkaConsumer) refreshToken() {
-	c.kafkaCP.refreshToken(c.consumer)
-}
-
 // Shutdown receives a context with deadline or will wait until all handlers to
 // finish. Shutdown can only be called once, if called more than once it returns
 // ErrConsumerAlreadyShutdown
@@ -152,6 +136,23 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
+	for _, h := range c.handlers {
+		c.wg.Add(1)
+		go func(h Handler) {
+			defer c.wg.Done()
+			e := messageToEvent(msg)
+
+			// Errors are ignored, a middleware or the handler should handle them
+			_ = h.Handle(context.Background(), *e)
+		}(h)
+	}
+}
+
+func (c *kafkaConsumer) refreshToken() {
+	c.kafkaCommon.refreshToken(c.consumer)
+}
+
 func messageToEvent(m *kafka.Message) *Event {
 	return &Event{Payload: m.Value, Headers: parseHeaders(m.Headers)}
 }
@@ -163,4 +164,23 @@ func parseHeaders(headers []kafka.Header) Header {
 	}
 
 	return hs
+}
+
+func (c *kafkaConsumer) startRunning() bool {
+	c.runMu.RLock()
+	c.run = true
+	defer c.runMu.RUnlock()
+	return c.run
+}
+
+func (c *kafkaConsumer) running() bool {
+	c.runMu.RLock()
+	defer c.runMu.RUnlock()
+	return c.run
+}
+
+func (c *kafkaConsumer) stopRun() {
+	c.runMu.Lock()
+	defer c.runMu.Unlock()
+	c.run = false
 }

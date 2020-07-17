@@ -9,7 +9,7 @@ KAFKA_TOPIC ?=test-go-libs-events
 
 consumer-docker:
 	docker run --rm -it \
-		-e CLASSPATH="/opt/kafka/libs/kafka-oauth-client-*:/opt/kafka/libs/kafka-oauth-common-*" \
+		-e CLASSPATH='/opt/kafka/libs/kafka-oauth-client-*:/opt/kafka/libs/kafka-oauth-common-*' \
 		-e OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID} \
 		-e OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET} \
 		-e OAUTH_TOKEN_ENDPOINT_URI=${OAUTH_TOKEN_ENDPOINT_URI} \
@@ -27,9 +27,12 @@ consumer-docker:
 			--consumer-property 'sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;' \
 			--consumer-property 'sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler'
 
+# When producing events they must follow the format MESSAGE_KEY:EVENT_MESSGE.
+# depending on how the topic is configred the presence of a message key might
+# be required.
 producer-docker:
 	docker run --rm -it \
-		-e CLASSPATH="/opt/kafka/libs/kafka-oauth-client-*:/opt/kafka/libs/kafka-oauth-common-*" \
+		-e CLASSPATH='/opt/kafka/libs/kafka-oauth-client-*:/opt/kafka/libs/kafka-oauth-common-*' \
 		-e OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID} \
 		-e OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET} \
 		-e OAUTH_TOKEN_ENDPOINT_URI=${OAUTH_TOKEN_ENDPOINT_URI} \
@@ -40,6 +43,8 @@ producer-docker:
 		/opt/kafka/bin/kafka-console-producer.sh \
 			--broker-list ${KAFKA_BOOTSTRAP_SERVERS} \
 			--topic ${KAFKA_TOPIC} \
+			--property "parse.key=true" \
+			--property "key.separator=:" \
 			--producer-property 'security.protocol=SASL_SSL' \
 			--producer-property 'sasl.mechanism=OAUTHBEARER' \
 			--producer-property 'sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;' \

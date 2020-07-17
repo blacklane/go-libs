@@ -25,7 +25,7 @@ func TestProducerProducesEventsToCorrectTopic(t *testing.T) {
 		"bootstrap.servers":  kafkaBootstrapServers,
 		"message.timeout.ms": 2000,
 	})
-	kpc.WithDeliveryErrHandler(errHandler)
+	kpc.WithEventDeliveryErrHandler(errHandler)
 
 	p, err := NewKafkaProducer(kpc)
 	if err != nil {
@@ -68,7 +68,7 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		"bootstrap.servers":  kafkaBootstrapServers,
 		"message.timeout.ms": 2000,
 	})
-	kpc.WithDeliveryErrHandler(errHandler)
+	kpc.WithEventDeliveryErrHandler(errHandler)
 
 	p, err := NewKafkaProducer(kpc)
 	if err != nil {

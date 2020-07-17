@@ -37,7 +37,7 @@ func main() {
 	loadEnvVars()
 	topic := config.Topic
 
-	tokenSource := oauth.NewTokenSource(
+	tokenSource := events.NewTokenSource(
 		config.ClientID,
 		config.ClientSecret,
 		config.TokenURL,

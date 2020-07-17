@@ -53,7 +53,7 @@ func TestMessageToEvent(t *testing.T) {
 }
 
 func TestKafkaConsumer_WithOAuth(t *testing.T) {
-	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{})
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithOAuth"})
 	tokenSource := tokenSourceMock{}
 	kcc.WithOAuth(tokenSource)
 

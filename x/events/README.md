@@ -71,9 +71,9 @@ You just have set your OAuth Client ID and Secret.
 
 ```go
 tokenSource := oauth.NewTokenSource(
-		"ClientID",
-		"ClientSecret",
-		"TokenURL",
+		"FIX_ME_ClientID",
+		"FIX_ME_ClientSecret",
+		"FIX_ME_TokenURL",
 		5*time.Second,
 		http.Client{Timeout: 3 * time.Second})
 
@@ -86,14 +86,15 @@ tokenSource := oauth.NewTokenSource(
 
 	kc := events.NewKafkaConsumerConfig(kafkaConfig)
 	kc.WithOAuth(tokenSource)
-	kc.WithErrFunc(func(err error) { panic(err) })
+	kc.WithErrFunc(func(err error) { errLogger.Print(err) })
 
+	log.Printf("creating kafka consumer for topic %s...", topic)
 	c, err := events.NewKafkaConsumer(
 		kc,
 		[]string{topic},
 		events.HandlerFunc(
 			func(ctx context.Context, e events.Event) error {
-				// handle events
+				log.Printf("consumed event: %s", e.Payload)
 				return nil
 			}))
 	if err != nil {
@@ -107,9 +108,9 @@ tokenSource := oauth.NewTokenSource(
 
 ```go
 	tokenSource := oauth.NewTokenSource(
-		"ClientID",
-		"ClientSecret",
-		"TokenURL",
+		"FIX_ME_ClientID",
+		"FIX_ME_ClientSecret",
+		"FIX_ME_TokenURL",
 		5*time.Second,
 		http.Client{Timeout: 3 * time.Second})
 
@@ -117,9 +118,9 @@ tokenSource := oauth.NewTokenSource(
 		"bootstrap.servers":  config.KafkaServer,
 		"message.timeout.ms": 6000,
 	})
-	kpc.WithDeliveryErrHandler(errHandler)
+	kpc.WithEventDeliveryErrHandler(errHandler)
 	kpc.WithOAuth(tokenSource)
-	kpc.WithErrFunc(func(err error) { panic(err) })
+	kpc.WithErrFunc(func(err error) { errLogger.Print(err) })
 
 	p, err := events.NewKafkaProducer(kpc)
 	if err != nil {

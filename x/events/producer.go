@@ -35,16 +35,18 @@ type KafkaProducerConfig struct {
 }
 
 type kafkaProducer struct {
-	*kafkaCP
+	*kafkaCommon
 
 	config   *kafka.ConfigMap
-	runMutex *sync.Mutex
 	producer *kafka.Producer
 
-	errorHandler    func(Event, error)
-	kafkaErrHandler func(kafka.Error)
+	deliveryErrHandler func(Event, error)
 
 	flushTimeoutMs int
+
+	runMu    sync.RWMutex
+	run      bool
+	shutdown bool
 }
 
 // NewKafkaProducerConfig returns a initialised *KafkaProducerConfig
@@ -54,9 +56,9 @@ func NewKafkaProducerConfig(config *kafka.ConfigMap) *KafkaProducerConfig {
 	}
 }
 
-// WithDeliveryErrHandler registers a delivery error handler to be called
+// WithEventDeliveryErrHandler registers a delivery error handler to be called
 // whenever a delivery fails.
-func (pc *KafkaProducerConfig) WithDeliveryErrHandler(errHandler func(Event, error)) {
+func (pc *KafkaProducerConfig) WithEventDeliveryErrHandler(errHandler func(Event, error)) {
 	pc.deliveryErrHandler = errHandler
 }
 
@@ -70,15 +72,14 @@ func (pc *KafkaProducerConfig) WithFlushTimeout(timeout int) {
 // interacting with Kafka, register a Error function on *KafkaConsumerConfig.
 func NewKafkaProducer(c *KafkaProducerConfig) (Producer, error) {
 	kp := &kafkaProducer{
-		kafkaCP: &kafkaCP{
+		kafkaCommon: &kafkaCommon{
 			errFn:       c.errFn,
 			tokenSource: c.tokenSource,
 		},
 		config: c.config,
 
-		errorHandler:   c.deliveryErrHandler,
-		runMutex:       &sync.Mutex{},
-		flushTimeoutMs: c.flushTimeoutMs,
+		deliveryErrHandler: c.deliveryErrHandler,
+		flushTimeoutMs:     c.flushTimeoutMs,
 	}
 
 	p, err := kafka.NewProducer(c.config)
@@ -103,9 +104,9 @@ func (p *kafkaProducer) HandleEvents() error {
 			switch kafkaEvent := kafkaEvent.(type) {
 			case *kafka.Message:
 				if kafkaEvent.TopicPartition.Error != nil {
-					if p.errorHandler != nil {
+					if p.deliveryErrHandler != nil {
 						event := messageToEvent(kafkaEvent)
-						p.errorHandler(
+						p.deliveryErrHandler(
 							*event,
 							fmt.Errorf(
 								"%w, topic '%s', partition: '%d', offset: '%s'",
@@ -118,9 +119,7 @@ func (p *kafkaProducer) HandleEvents() error {
 			case kafka.OAuthBearerTokenRefresh:
 				p.refreshToken()
 			case kafka.Error:
-				if p.kafkaErrHandler != nil {
-					p.kafkaErrHandler(kafkaEvent)
-				} else if p.errFn != nil {
+				if p.errFn != nil {
 					p.errFn(kafkaEvent)
 				}
 			}
@@ -131,11 +130,11 @@ func (p *kafkaProducer) HandleEvents() error {
 }
 
 func (p *kafkaProducer) refreshToken() {
-	p.kafkaCP.refreshToken(p.producer)
+	p.kafkaCommon.refreshToken(p.producer)
 }
 
 // Sends messages to the given topic. Delivery errors are sent to the producer's
-// event channel. To handle delivery errors check *KafkaProducerConfig.WithDeliveryErrHandler.
+// event channel. To handle delivery errors check *KafkaProducerConfig.WithEventDeliveryErrHandler.
 func (p *kafkaProducer) Send(event Event, topic string) error {
 	return p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
@@ -169,4 +168,23 @@ func (p *kafkaProducer) Shutdown(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (p *kafkaProducer) startRunning() bool {
+	p.runMu.RLock()
+	p.run = true
+	defer p.runMu.RUnlock()
+	return p.run
+}
+
+func (p *kafkaProducer) running() bool {
+	p.runMu.RLock()
+	defer p.runMu.RUnlock()
+	return p.run
+}
+
+func (p *kafkaProducer) stopRun() {
+	p.runMu.Lock()
+	defer p.runMu.Unlock()
+	p.run = false
 }

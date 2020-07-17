@@ -37,7 +37,7 @@ func main() {
 			string(event.Payload), err)
 	}
 
-	tokenSource := oauth.NewTokenSource(
+	tokenSource := events.NewTokenSource(
 		config.ClientID,
 		config.ClientSecret,
 		config.TokenURL,
@@ -48,7 +48,7 @@ func main() {
 		"bootstrap.servers":  config.KafkaServer,
 		"message.timeout.ms": 6000,
 	})
-	kpc.WithDeliveryErrHandler(errHandler)
+	kpc.WithEventDeliveryErrHandler(errHandler)
 	kpc.WithOAuth(tokenSource)
 	kpc.WithErrFunc(func(err error) { errLogger.Print(err) })
 

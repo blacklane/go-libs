@@ -18,7 +18,7 @@ func main() {
 		"bootstrap.servers":  "localhost:9092",
 		"message.timeout.ms": 1000,
 	})
-	kpc.WithDeliveryErrHandler(errHandler)
+	kpc.WithEventDeliveryErrHandler(errHandler)
 
 	p, err := events.NewKafkaProducer(kpc)
 	if err != nil {
