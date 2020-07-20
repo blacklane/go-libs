@@ -16,21 +16,23 @@ func TestProducerProducesEventsToCorrectTopic(t *testing.T) {
 	createTopic(t, topic)
 
 	messages := []string{"Anderson", "likes", "reviewing!"}
-	handler := ErrorHandlerFunc(func(event Event, err error) {
+	errHandler := func(event Event, err error) {
 		message := string(event.Payload)
 		t.Errorf("failed to deliver the event %s: %v", message, err)
-	})
+	}
 
-	p, err := NewKafkaProducer(
-		&kafka.ConfigMap{
-			"bootstrap.servers":  kafkaBootstrapServers,
-			"message.timeout.ms": "1000"},
-		handler)
+	kpc := NewKafkaProducerConfig(&kafka.ConfigMap{
+		"bootstrap.servers":  kafkaBootstrapServers,
+		"message.timeout.ms": 2000,
+	})
+	kpc.WithEventDeliveryErrHandler(errHandler)
+
+	p, err := NewKafkaProducer(kpc)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	_ = p.HandleMessages()
+	_ = p.HandleEvents()
 	defer p.Shutdown(context.Background())
 
 	for _, message := range messages {
@@ -46,33 +48,34 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 	messages := map[string]bool{"Anderson": true, "likes": true, "reviewing!": true}
 	mu := sync.Mutex{}
 
-	handler := ErrorHandlerFunc(func(e Event, err error) {
+	errHandler := func(e Event, err error) {
 		message := string(e.Payload)
-		var kerr kafka.Error
-		if ok := errors.As(err, &kerr); !ok {
+		var errDelivery kafka.Error
+		if ok := errors.As(err, &errDelivery); !ok {
 			t.Errorf("want %T, got %T", kafka.Error{}, err)
 		}
-		if kerr.Code() != kafka.ErrUnknownTopicOrPart {
-			t.Errorf(`want kafka error code "%s", got "%s"`,
-				kafka.ErrUnknownTopicOrPart,
-				kerr.Code())
+		if errDelivery.Code() != kafka.ErrUnknownTopicOrPart {
+			t.Errorf("want %s, got: %s",
+				kafka.ErrUnknownTopicOrPart.String(), errDelivery.Code())
 		}
 
 		mu.Lock()
 		defer mu.Unlock()
 		delete(messages, message)
-	})
+	}
 
-	p, err := NewKafkaProducer(
-		&kafka.ConfigMap{
-			"bootstrap.servers":  kafkaBootstrapServers,
-			"message.timeout.ms": "1000"},
-		handler)
+	kpc := NewKafkaProducerConfig(&kafka.ConfigMap{
+		"bootstrap.servers":  kafkaBootstrapServers,
+		"message.timeout.ms": 2000,
+	})
+	kpc.WithEventDeliveryErrHandler(errHandler)
+
+	p, err := NewKafkaProducer(kpc)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	_ = p.HandleMessages()
+	_ = p.HandleEvents()
 	for message := range messages {
 		e := Event{Payload: []byte(message)}
 		if err := p.Send(e, topic); err != nil {
@@ -95,12 +98,12 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 func TestNewKafkaProducerWithFlushTimeout(t *testing.T) {
 	want := 1
 
-	p, err := NewKafkaProducer(
-		&kafka.ConfigMap{
-			"bootstrap.servers":  kafkaBootstrapServers,
-			"message.timeout.ms": "1000"},
-		nil,
-		WithFlushTimeout(want))
+	kpc := NewKafkaProducerConfig(&kafka.ConfigMap{
+		"bootstrap.servers":  kafkaBootstrapServers,
+		"message.timeout.ms": 2000,
+	})
+	kpc.WithFlushTimeout(want)
+	p, err := NewKafkaProducer(kpc)
 	if err != nil {
 		t.Fatalf("could not create a new kafka producer: %v", err)
 	}

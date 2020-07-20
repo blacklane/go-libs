@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -19,31 +18,44 @@ type Consumer interface {
 	Shutdown(ctx context.Context) error
 }
 
+// KafkaConsumerConfig holds all possible configurations for the kafka consumer.
+// Use NewKafkaProducerConfig to initialise it.
+// To see the possible configurations, check the its WithXXX methods and
+// *kafkaConfig.WithXXX` methods as well
+type KafkaConsumerConfig struct {
+	*kafkaConfig
+}
+
 type kafkaConsumer struct {
-	kafkaConsumer *kafka.Consumer
+	*kafkaCommon
+
+	consumer *kafka.Consumer
 
 	wg           *sync.WaitGroup
 	activeConnMu sync.Mutex
-	runMu        sync.RWMutex
-	run          bool
-	shutdown     bool
 	done         chan struct{}
 
 	handlers []Handler
+
+	runMu    sync.RWMutex
+	run      bool
+	shutdown bool
+}
+
+// NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
+func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
+	return &KafkaConsumerConfig{
+		kafkaConfig: &kafkaConfig{config: config},
+	}
 }
 
 // NewKafkaConsumer returns a Consumer which will send every message to all
 // handlers and ignore any error returned by them. A middleware should handle
 // the errors.
-// If the kafka consumer receives a kafka.Error it'll log it using the log
-// package.
-// TODO: improve error handling. Ideas:
-//  - Receive an io.Writer
-//  - go-libs/logger.Logger
-//  - create an errors channel to send all errors launching goroutines to send
-//  the errors so Run won't block if the channel is not drained
-func NewKafkaConsumer(config *kafka.ConfigMap, topics []string, handlers ...Handler) (Consumer, error) {
-	consumer, err := kafka.NewConsumer(config)
+// To handle errors, either `kafka.Error` messages or any other error while
+// interacting with Kafka, register a Error function on *KafkaConsumerConfig.
+func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...Handler) (Consumer, error) {
+	consumer, err := kafka.NewConsumer(config.config)
 	if err != nil {
 		return nil, fmt.Errorf("could not create kafka consumer: %v", err)
 	}
@@ -53,14 +65,17 @@ func NewKafkaConsumer(config *kafka.ConfigMap, topics []string, handlers ...Hand
 	}
 
 	return &kafkaConsumer{
-		kafkaConsumer: consumer,
-		handlers:      handlers,
+		kafkaCommon: &kafkaCommon{
+			errFn:       config.errFn,
+			tokenSource: config.tokenSource,
+		},
+
+		consumer: consumer,
+		handlers: handlers,
 
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
-		runMu:        sync.RWMutex{},
 
-		run:  true,
 		done: make(chan struct{}),
 	}, nil
 }
@@ -70,36 +85,19 @@ func NewKafkaConsumer(config *kafka.ConfigMap, topics []string, handlers ...Hand
 // the kafka consumer would only read new messages, even if the consumer had
 // been created to read from the beginning of the topic.
 func (c *kafkaConsumer) Run(timeout time.Duration) {
+	c.startRunning()
 	go func() {
 		for c.running() {
-			msg, err := c.kafkaConsumer.ReadMessage(timeout)
-			if err != nil {
-				switch err.(type) {
-				case kafka.Error:
-					if err.(kafka.Error).Code() != kafka.ErrTimedOut {
-						// TODO: handle it properly!!
-						log.Printf("[ERROR] failed to read message: %v", err)
-					}
-				default:
-					// TODO: handle it properly!!
-					if msg != nil {
-						log.Printf("[ERROR] failed to read message: %v, err: %v", msg, err)
-					} else {
-						log.Printf("[ERROR] failed to read message: %v", err)
-					}
+			kev := c.consumer.Poll(int(timeout.Milliseconds()))
+			switch kev := kev.(type) {
+			case *kafka.Message:
+				c.deliverMessage(kev)
+			case kafka.OAuthBearerTokenRefresh:
+				c.refreshToken()
+			case kafka.Error:
+				if kev.Code() != kafka.ErrTimedOut {
+					c.errFn(fmt.Errorf("failed to read message: %w", kev))
 				}
-				continue
-			}
-
-			for _, h := range c.handlers {
-				c.wg.Add(1)
-				go func(h Handler) {
-					defer c.wg.Done()
-					e := messageToEvent(msg)
-
-					// Errors are ignored, a middleware should handle them
-					_ = h.Handle(context.Background(), *e)
-				}(h)
 			}
 		}
 
@@ -126,7 +124,7 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 		err = nil
 	}
 
-	errClose := c.kafkaConsumer.Close()
+	errClose := c.consumer.Close()
 	if errClose != nil {
 		errClose = fmt.Errorf("close kafka consumer failed: %w", errClose)
 	}
@@ -138,16 +136,21 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (c *kafkaConsumer) running() bool {
-	c.runMu.RLock()
-	defer c.runMu.RUnlock()
-	return c.run
+func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
+	for _, h := range c.handlers {
+		c.wg.Add(1)
+		go func(h Handler) {
+			defer c.wg.Done()
+			e := messageToEvent(msg)
+
+			// Errors are ignored, a middleware or the handler should handle them
+			_ = h.Handle(context.Background(), *e)
+		}(h)
+	}
 }
 
-func (c *kafkaConsumer) stopRun() {
-	c.runMu.Lock()
-	defer c.runMu.Unlock()
-	c.run = false
+func (c *kafkaConsumer) refreshToken() {
+	c.kafkaCommon.refreshToken(c.consumer)
 }
 
 func messageToEvent(m *kafka.Message) *Event {
@@ -161,4 +164,23 @@ func parseHeaders(headers []kafka.Header) Header {
 	}
 
 	return hs
+}
+
+func (c *kafkaConsumer) startRunning() bool {
+	c.runMu.RLock()
+	c.run = true
+	defer c.runMu.RUnlock()
+	return c.run
+}
+
+func (c *kafkaConsumer) running() bool {
+	c.runMu.RLock()
+	defer c.runMu.RUnlock()
+	return c.run
+}
+
+func (c *kafkaConsumer) stopRun() {
+	c.runMu.Lock()
+	defer c.runMu.Unlock()
+	c.run = false
 }

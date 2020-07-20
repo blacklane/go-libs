@@ -125,7 +125,7 @@ func newProducer(t *testing.T) *kafka.Producer {
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers":  kafkaBootstrapServers,
-		"message.timeout.ms": "1000"})
+		"message.timeout.ms": 1000})
 	if err != nil {
 		t.Fatalf("failed to create kafkaProducer: %v", err)
 	}
