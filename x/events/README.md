@@ -6,6 +6,8 @@ You can find examples on [examples](examples) folder.
 
 ## Usage
 
+`go get github.com/blacklane/go-libs/x/events@events`
+
 ### Consumer
 
 ```go
