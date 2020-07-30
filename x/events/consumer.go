@@ -45,7 +45,11 @@ type kafkaConsumer struct {
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
 func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 	return &KafkaConsumerConfig{
-		kafkaConfig: &kafkaConfig{config: config},
+		kafkaConfig: &kafkaConfig{
+			config:      config,
+			tokenSource: emptyTokenSource{},
+			errFn:       func(error) {},
+		},
 	}
 }
 

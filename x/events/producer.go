@@ -52,7 +52,12 @@ type kafkaProducer struct {
 // NewKafkaProducerConfig returns a initialised *KafkaProducerConfig
 func NewKafkaProducerConfig(config *kafka.ConfigMap) *KafkaProducerConfig {
 	return &KafkaProducerConfig{
-		kafkaConfig: &kafkaConfig{config: config},
+		kafkaConfig: &kafkaConfig{
+			config:      config,
+			tokenSource: emptyTokenSource{},
+			errFn:       func(error) {},
+		},
+		deliveryErrHandler: func(Event, error) {},
 	}
 }
 
@@ -119,9 +124,7 @@ func (p *kafkaProducer) HandleEvents() error {
 			case kafka.OAuthBearerTokenRefresh:
 				p.refreshToken()
 			case kafka.Error:
-				if p.errFn != nil {
-					p.errFn(kafkaEvent)
-				}
+				p.errFn(kafkaEvent)
 			}
 		}
 	}()

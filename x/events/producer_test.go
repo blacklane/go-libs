@@ -51,3 +51,17 @@ func TestKafkaProducer_WithErrFunc(t *testing.T) {
 		t.Errorf("want: %v, got %v", want, got)
 	}
 }
+
+func TestNewKafkaProducerConfigAllInitialised(t *testing.T) {
+	kc := NewKafkaProducerConfig(nil)
+
+	if kc.deliveryErrHandler == nil {
+		t.Errorf("deliveryErrHandler is nil")
+	}
+	if kc.tokenSource == nil {
+		t.Errorf("tokenSource is nil")
+	}
+	if kc.errFn == nil {
+		t.Errorf("errFn is nil")
+	}
+}
