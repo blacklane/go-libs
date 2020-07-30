@@ -95,3 +95,14 @@ func TestKafkaConsumer_WithErrFunc(t *testing.T) {
 		t.Errorf("want: %v, got %v", want, got)
 	}
 }
+
+func TestNewKafkaConsumerConfigAllInitialised(t *testing.T) {
+	kc := NewKafkaConsumerConfig(nil)
+
+	if kc.tokenSource == nil {
+		t.Errorf("tokenSource is nil")
+	}
+	if kc.errFn == nil {
+		t.Errorf("errFn is nil")
+	}
+}

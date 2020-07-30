@@ -7,6 +7,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type emptyTokenSource struct{}
+
+func (ts emptyTokenSource) Token() (*oauth2.Token, error) {
+	return &oauth2.Token{}, nil
+}
+
 // kafkaCommon are common fields for KafkaConsumerConfig and KafkaProducerConfig.
 type kafkaConfig struct {
 	config      *kafka.ConfigMap
@@ -42,7 +48,6 @@ func (kc *kafkaConfig) WithErrFunc(errFn func(error)) {
 }
 
 func (kcp *kafkaCommon) refreshToken(handle kafka.Handle) {
-
 	token, err := kcp.tokenSource.Token()
 	if err != nil {
 		errWrapped := fmt.Errorf("could not get oauth token: %w", err)
