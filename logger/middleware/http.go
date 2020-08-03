@@ -13,7 +13,8 @@ import (
 	"github.com/blacklane/go-libs/logger/internal"
 )
 
-func Logger(log logger.Logger) func(http.Handler) http.Handler {
+// HTTPAddLogger adds the logger into the request context.
+func HTTPAddLogger(log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := log.WithContext(r.Context())
@@ -22,7 +23,15 @@ func Logger(log logger.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-func RequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
+// Logger adds the logger into the request context.
+// Deprecated, use HTTPAddLogger instead.
+func Logger(log logger.Logger) func(http.Handler) http.Handler {
+	return HTTPAddLogger(log)
+}
+
+// HTTPRequestLogger produces a log line with the request status and fields
+// following the standard defined on http://handbook.int.blacklane.io/monitoring/kiev.html#requestresponse-logging
+func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := logger.Now()
@@ -67,6 +76,12 @@ func RequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(&ww, r)
 		})
 	}
+}
+
+// RequestLogger use HTTPRequestLogger instead.
+// Deprecated
+func RequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
+	return HTTPRequestLogger(skipRoutes)
 }
 
 func ipAddress(r *http.Request) string {
