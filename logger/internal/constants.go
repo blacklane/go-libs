@@ -1,9 +1,11 @@
 package internal
 
 const (
-	// For a definition of each constant check the logging standards on http://handbook.int.blacklane.io/monitoring/kiev.html
+	// Field log constants
+	FieldTrackingID = "tracking_id"
+	FieldDuration   = "duration_ms"
 
-	// Fields constants
+	// Fields, Event and Headers constants following http://handbook.int.blacklane.io/monitoring/kiev.html
 
 	FieldApplication  = "application"
 	FieldTimestamp    = "timestamp"
@@ -24,17 +26,12 @@ const (
 	FieldStatus          = "status"
 	FieldRequestDuration = "request_duration"
 
-	FieldErrorClass   = "error_class"
-	FieldErrorMessage = "error_message"
-	FieldBody         = "body"
-
 	// Event constants
 
 	// EventRequestFinished should be used as 'event' when logging a finished request/job
 	EventRequestFinished = "request_finished"
 
 	// Headers constants
-
 	HeaderForwardedFor = "X-Forwarded-For"
 	HeaderRequestID    = "X-Request-Id"
 	HeaderRequestDepth = "X-Request-Depth"
