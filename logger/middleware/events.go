@@ -31,13 +31,15 @@ func EventsAddLogger(log logger.Logger) events.Middleware {
 // level key 'event' and uses its value as the event name.
 // It is possible to pass a custom function to extract the event name,
 // check EventsLoggerWithNameFn.
-func EventsHandlerStatusLogger() events.Middleware {
-	return EventsHandlerStatusLoggerWithNameFn(eventName)
+func EventsHandlerStatusLogger(eventNames ...string) events.Middleware {
+	return EventsHandlerStatusLoggerWithNameFn(eventName, eventNames...)
 }
 
 // EventsLoggerWithNameFn is the same as EventsHandlerStatusLogger, but using a custom
 // function to extract the event name.
-func EventsHandlerStatusLoggerWithNameFn(eventNameFn func(e events.Event) string) events.Middleware {
+func EventsHandlerStatusLoggerWithNameFn(
+	eventNameFn func(e events.Event) string,
+	eventNames ...string) events.Middleware {
 	return func(next events.Handler) events.Handler {
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) (err error) {
 			startTime := logger.Now()
@@ -46,6 +48,10 @@ func EventsHandlerStatusLoggerWithNameFn(eventNameFn func(e events.Event) string
 				eventNameFn = eventName
 			}
 			evName := eventNameFn(e)
+
+			if !logEvent(evName, eventNames...) {
+				return next.Handle(ctx, e)
+			}
 
 			l := logger.FromContext(ctx)
 			trackingID := tracking.IDFromContext(ctx)
@@ -75,6 +81,16 @@ func EventsHandlerStatusLoggerWithNameFn(eventNameFn func(e events.Event) string
 			return next.Handle(ctx, e)
 		})
 	}
+}
+
+func logEvent(event string, eventNamesToLog ...string) bool {
+	for _, e := range eventNamesToLog {
+		if event == e {
+			return true
+		}
+	}
+
+	return false
 }
 
 func eventName(e events.Event) string {
