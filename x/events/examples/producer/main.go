@@ -22,7 +22,7 @@ func main() {
 
 	p, err := events.NewKafkaProducer(kpc)
 	if err != nil {
-		log.Panicf("could not crete kafka producer: %v", err)
+		log.Panicf("could not create kafka producer: %v", err)
 	}
 
 	// handle failed deliveries
