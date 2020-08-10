@@ -13,7 +13,7 @@ import (
 	"github.com/blacklane/go-libs/logger/internal"
 )
 
-func ExampleLogger() {
+func ExampleHTTPAddLogger() {
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {
 		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
@@ -25,7 +25,7 @@ func ExampleLogger() {
 
 	log := logger.New(os.Stdout, "")
 
-	loggerMiddleware := Logger(log)
+	loggerMiddleware := HTTPAddLogger(log)
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +39,7 @@ func ExampleLogger() {
 	// {"level":"info","application":"","timestamp":"2009-11-10T23:00:00Z","message":"Hello, Gophers"}
 }
 
-func ExampleNewHttpHandlerLogger_simple() {
+func ExampleHTTPRequestLogger_simple() {
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {
 		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
@@ -52,7 +52,7 @@ func ExampleNewHttpHandlerLogger_simple() {
 	log := logger.New(os.Stdout, "")
 	ctx := log.WithContext(r.Context())
 
-	loggerMiddleware := RequestLogger([]string{})
+	loggerMiddleware := HTTPRequestLogger([]string{})
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func ExampleNewHttpHandlerLogger_simple() {
 	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /foo"}
 }
 
-func ExampleNewHttpHandlerLogger_complete() {
+func ExampleHTTPRequestLogger_complete() {
 	sec := -1
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {
@@ -82,7 +82,7 @@ func ExampleNewHttpHandlerLogger_complete() {
 	ctx = log.WithContext(ctx)
 
 	rr := r.WithContext(ctx)
-	loggerMiddleware := RequestLogger([]string{})
+	loggerMiddleware := HTTPRequestLogger([]string{})
 
 	h := loggerMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, req *http.Request) { _, _ = w.Write(nil) }))
@@ -93,7 +93,7 @@ func ExampleNewHttpHandlerLogger_complete() {
 	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"42.42.42.42","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"42","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":1000,"timestamp":"2009-11-10T23:00:02Z","message":"GET /foo"}
 }
 
-func ExampleNewHttpHandlerLogger_skipRoutes() {
+func ExampleHTTPRequestLogger_skipRoutes() {
 	livePath := "/live"
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {
@@ -110,7 +110,7 @@ func ExampleNewHttpHandlerLogger_skipRoutes() {
 	log := logger.New(os.Stdout, "")
 	ctx := log.WithContext(rBar.Context())
 
-	loggerMiddleware := RequestLogger([]string{livePath})
+	loggerMiddleware := HTTPRequestLogger([]string{livePath})
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
