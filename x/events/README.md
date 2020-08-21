@@ -41,17 +41,19 @@ You can find examples on [examples](examples) folder.
 		log.Panicf("failed to deliver the event %s: %v", string(event.Payload), err)
 	})
 
-	p, err := events.NewKafkaProducer(
-		&kafka.ConfigMap{
-			"bootstrap.servers":  "localhost:9092",
-			"message.timeout.ms": 1000},
-		errHandler)
+	kpc := events.NewKafkaProducerConfig(&kafka.ConfigMap{
+		"bootstrap.servers":  "localhost:9092",
+		"message.timeout.ms": 1000,
+	})
+	kpc.WithEventDeliveryErrHandler(errHandler)
+
+	p, err := events.NewKafkaProducer(kpc)
 	if err != nil {
-		log.Panicf("%v", err)
+		log.Panicf("could not create kafka producer: %v", err)
 	}
 
 	// handle failed deliveries
-	_ = p.HandleMessages()
+	_ = p.HandleEvents()
 	defer p.Shutdown(context.Background())
 
 	e := events.Event{Payload: []byte("Hello, Gophers")}
