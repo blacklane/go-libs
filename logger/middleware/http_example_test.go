@@ -61,7 +61,7 @@ func ExampleNewHttpHandlerLogger_simple() {
 	h.ServeHTTP(w, r.WithContext(ctx))
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /foo"}
+	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tracking_id":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /foo"}
 }
 
 func ExampleNewHttpHandlerLogger_complete() {
@@ -90,7 +90,7 @@ func ExampleNewHttpHandlerLogger_complete() {
 	h.ServeHTTP(w, rr)
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"42.42.42.42","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"42","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":1000,"timestamp":"2009-11-10T23:00:02Z","message":"GET /foo"}
+	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"42.42.42.42","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"42","route":"","tracking_id":"42","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":1000,"timestamp":"2009-11-10T23:00:02Z","message":"GET /foo"}
 }
 
 func ExampleNewHttpHandlerLogger_skipRoutes() {
@@ -121,5 +121,5 @@ func ExampleNewHttpHandlerLogger_skipRoutes() {
 	h.ServeHTTP(w, rLive.WithContext(ctx))
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /foo"}
+	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tracking_id":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /foo"}
 }

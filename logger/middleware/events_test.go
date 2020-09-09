@@ -62,7 +62,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","event":"event_name_here","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
 }
 
 func ExampleEventsHandlerStatusLogger_failure() {
@@ -91,7 +91,7 @@ func ExampleEventsHandlerStatusLogger_failure() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","request_id":"tracking_id-ExampleEventsLogger_Failure","tracking_id":"tracking_id-ExampleEventsLogger_Failure","event":"event_name_here","duration_ms":1000,"error":"bad","timestamp":"2009-11-10T23:00:01Z","message":"event_name_here failed"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Failure","tracking_id":"tracking_id-ExampleEventsLogger_Failure","duration_ms":1000,"error":"bad","timestamp":"2009-11-10T23:00:01Z","message":"event_name_here failed"}
 }
 
 func ExampleEventsHandlerStatusLoggerWithNameFn() {
@@ -132,5 +132,5 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"name":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","event":"event_name_here","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
 }
