@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/blacklane/go-libs/tracking"
-	"github.com/rs/zerolog"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -17,6 +16,7 @@ import (
 func HTTPAddLogger(log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log = log.With().Logger() // Creates a sub logger so all requests won't share the same logger instance
 			ctx := log.WithContext(r.Context())
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -38,11 +38,12 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			urlPath := strings.Split(r.URL.Path, "?")[0] // TODO: obfuscate query string values and show the keys
 			ctx := r.Context()
 
-			l := logger.FromContext(ctx)
+			log := *logger.FromContext(ctx)
 			logFields := map[string]interface{}{
 				internal.FieldEntryPoint: isEntryPoint(r),
 				// TODO double check if they are a must and make them optional if not
 				internal.FieldRequestDepth: tracking.RequestDepthFromCtx(ctx),
+				internal.FieldTrackingID:   tracking.IDFromContext(ctx),
 				internal.FieldRequestID:    tracking.IDFromContext(ctx),
 				internal.FieldTreePath:     tracking.TreePathFromCtx(ctx),
 				internal.FieldRoute:        tracking.RequestRouteFromCtx(ctx),
@@ -53,9 +54,10 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 				internal.FieldVerb:         r.Method,
 				internal.FieldPath:         r.URL.Path,
 			}
-			l.UpdateContext(func(c zerolog.Context) zerolog.Context {
-				return c.Fields(logFields)
-			})
+
+			log = log.With().Fields(logFields).Logger()
+			ctx = log.WithContext(ctx)
+			r = r.WithContext(ctx)
 
 			ww := responseWriter{w: w, body: &bytes.Buffer{}}
 
@@ -66,7 +68,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 						return
 					}
 				}
-				l.Info().
+				log.Info().
 					Str(internal.FieldEvent, internal.EventRequestFinished).
 					Int(internal.FieldStatus, ww.statusCode).
 					Dur(internal.FieldRequestDuration, logger.Now().Sub(startTime)).
