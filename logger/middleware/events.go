@@ -6,7 +6,6 @@ import (
 
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
-	"github.com/rs/zerolog"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -16,6 +15,8 @@ import (
 func EventsAddLogger(log logger.Logger) events.Middleware {
 	return func(next events.Handler) events.Handler {
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			log := log.With().Logger()
+			ctx = log.WithContext(ctx)
 			return next.Handle(log.WithContext(ctx), e)
 		})
 	}
@@ -26,18 +27,22 @@ func EventsAddLogger(log logger.Logger) events.Middleware {
 // If it failed the error is added to the log line as well.
 // It also updates the logger in the context adding the tracking id present in
 // the context.
+// If one or more eventNames are provided, only events matching these names are
+// logged. If none os provided, all events are logged.
 //
 // To extract the event name it considers the event.Payload is a JSON with a top
 // level key 'event' and uses its value as the event name.
 // It is possible to pass a custom function to extract the event name,
 // check EventsLoggerWithNameFn.
-func EventsHandlerStatusLogger() events.Middleware {
-	return EventsHandlerStatusLoggerWithNameFn(eventName)
+func EventsHandlerStatusLogger(eventNames ...string) events.Middleware {
+	return EventsHandlerStatusLoggerWithNameFn(eventName, eventNames...)
 }
 
 // EventsLoggerWithNameFn is the same as EventsHandlerStatusLogger, but using a custom
 // function to extract the event name.
-func EventsHandlerStatusLoggerWithNameFn(eventNameFn func(e events.Event) string) events.Middleware {
+func EventsHandlerStatusLoggerWithNameFn(
+	eventNameFn func(e events.Event) string,
+	eventNames ...string) events.Middleware {
 	return func(next events.Handler) events.Handler {
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) (err error) {
 			startTime := logger.Now()
@@ -47,23 +52,27 @@ func EventsHandlerStatusLoggerWithNameFn(eventNameFn func(e events.Event) string
 			}
 			evName := eventNameFn(e)
 
-			l := logger.FromContext(ctx)
+			if !logEvent(evName, eventNames...) {
+				return next.Handle(ctx, e)
+			}
+
+			log := *logger.FromContext(ctx)
 			trackingID := tracking.IDFromContext(ctx)
 			logFields := map[string]interface{}{
 				internal.FieldTrackingID: trackingID,
 				internal.FieldRequestID:  trackingID,
 				internal.FieldEvent:      evName,
 			}
-			l.UpdateContext(func(c zerolog.Context) zerolog.Context {
-				return c.Fields(logFields)
-			})
+
+			log = log.With().Fields(logFields).Logger()
+			ctx = log.WithContext(ctx)
 
 			defer func() {
 				status := "succeeded"
 
 				duration := logger.Now().Sub(startTime)
 
-				zlEvent := l.Info().
+				zlEvent := log.Info().
 					Dur(internal.FieldDuration, duration)
 
 				if err != nil {
@@ -75,6 +84,21 @@ func EventsHandlerStatusLoggerWithNameFn(eventNameFn func(e events.Event) string
 			return next.Handle(ctx, e)
 		})
 	}
+}
+
+func logEvent(event string, eventNamesToLog ...string) bool {
+	// We assume all events should be logged unless otherwise specified.
+	if len(eventNamesToLog) == 0 {
+		return true
+	}
+
+	for _, e := range eventNamesToLog {
+		if event == e {
+			return true
+		}
+	}
+
+	return false
 }
 
 func eventName(e events.Event) string {
