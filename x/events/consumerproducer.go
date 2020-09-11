@@ -57,6 +57,7 @@ func (kcp *kafkaCommon) refreshToken(handle kafka.Handle) {
 		if err != nil {
 			kcp.errFn(fmt.Errorf("could not SetOAuthBearerTokenFailure: %w", errWrapped))
 		}
+		return
 	}
 
 	err = handle.SetOAuthBearerToken(kafka.OAuthBearerToken{
@@ -65,6 +66,7 @@ func (kcp *kafkaCommon) refreshToken(handle kafka.Handle) {
 	})
 	if err != nil {
 		kcp.errFn(fmt.Errorf("could not SetOAuthBearerToken: %w", err))
+		return
 	}
 }
 
