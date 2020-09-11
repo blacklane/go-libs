@@ -57,6 +57,7 @@ func (kcp *kafkaCommon) refreshToken(handle kafka.Handle) {
 		if err != nil {
 			kcp.errFn(fmt.Errorf("could not SetOAuthBearerTokenFailure: %w", errWrapped))
 		}
+		// TODO: add test to ensure it returns on error
 		return
 	}
 
