@@ -38,8 +38,8 @@ func (hb HandlerBuilder) Build() []Handler {
 	var handlers []Handler
 	for _, rh := range hb.rawHandlers {
 		h := rh
-		for _, m := range hb.middleware {
-			h = m(h)
+		for i := len(hb.middleware) - 1; i >= 0; i-- {
+			h = hb.middleware[i](h)
 		}
 		handlers = append(handlers, h)
 	}
