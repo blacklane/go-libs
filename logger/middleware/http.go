@@ -99,7 +99,7 @@ func ipAddress(r *http.Request) string {
 }
 
 func isEntryPoint(r *http.Request) bool {
-	return len(r.Header.Get(internal.HeaderRequestID)) == 0
+	return len(r.Header.Get(internal.HeaderRequestID)) == 0 && len(r.Header.Get(internal.HeaderTrackingID)) == 0
 }
 
 type responseWriter struct {

@@ -15,7 +15,10 @@ import (
 // if it does it sets it on the context, if it does not it generates a new one to set on the context
 func EventsAddTrackingID(next events.Handler) events.Handler {
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			trackingID := e.Headers[constants.HeaderRequestID]
+			trackingID := e.Headers[constants.HeaderTrackingID]
+			if trackingID == "" {
+				trackingID = e.Headers[constants.HeaderRequestID]
+			}
 			if trackingID == "" {
 				uuid, err := uuid.NewUUID()
 				if err != nil {

@@ -35,5 +35,6 @@ const (
 	HeaderForwardedFor = "X-Forwarded-For"
 	HeaderRequestID    = "X-Request-Id"
 	HeaderRequestDepth = "X-Request-Depth"
+	HeaderTrackingID   = "X-Tracking-Id"
 	HeaderTreePath     = "X-Tree-Path"
 )

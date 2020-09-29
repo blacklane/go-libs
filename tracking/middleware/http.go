@@ -22,7 +22,10 @@ func RequestID(next http.Handler) http.Handler {
 }
 
 func ExtractRequestID(r *http.Request) string {
-	requestID := r.Header.Get(constants.HeaderRequestID)
+	requestID := r.Header.Get(constants.HeaderTrackingID)
+	if requestID == "" {
+		requestID = r.Header.Get(constants.HeaderRequestID)
+	}
 	if requestID == "" {
 		requestID = uuid.New().String()
 	}
