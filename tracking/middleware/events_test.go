@@ -26,7 +26,7 @@ func TestEventsAddTrackingIDCreatesIDWhenEventHeaderEmpty(t *testing.T) {
 
 	err := testHandler.Handle(context.Background(), e)
 	if err != nil {
-		t.Errorf("could not succesfully handle: %v", err)
+		t.Errorf("could not successfully handle: %v", err)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestEventsAddTrackingIDDoesNotChangeTrackingIDIfAlreadyPresent(t *testing.T
 
 		err := testHandler.Handle(context.Background(), e)
 		if err != nil {
-			t.Errorf("field name: %s, could not succesfully handle: %v", fieldName, err)
+			t.Errorf("field name: %s, could not successfully handle: %v", fieldName, err)
 		}
 	}
 }
