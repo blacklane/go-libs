@@ -30,46 +30,25 @@ func TestEventsAddTrackingIDCreatesIDWhenEventHeaderEmpty(t *testing.T) {
 	}
 }
 
-func TestEventsAddTrackingIDDoesNotChangeRequestIDIfAlreadyPresent(t *testing.T) {
-	testId := "goodid"
-
-	e := events.Event{
-		Headers: events.Header(map[string]string{constants.HeaderRequestID: testId}),
-	}
-
-	testHandler :=  EventsAddTrackingID(events.Handler(
-		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			got := tracking.IDFromContext(ctx)
-			if !cmp.Equal(got, testId) {
-				t.Errorf("want: %v, got: %v", testId, got)
-			}
-			return nil
-		})))
-
-	err := testHandler.Handle(context.Background(), e)
-	if err != nil {
-		t.Errorf("could not succesfully handle: %v", err)
-	}
-}
-
 func TestEventsAddTrackingIDDoesNotChangeTrackingIDIfAlreadyPresent(t *testing.T) {
 	testId := "goodid"
+	for _, fieldName := range []string{constants.HeaderRequestID, constants.HeaderTrackingID} {
+		e := events.Event{
+			Headers: events.Header(map[string]string{fieldName: testId}),
+		}
 
-	e := events.Event{
-		Headers: events.Header(map[string]string{constants.HeaderTrackingID: testId}),
-	}
+		testHandler :=  EventsAddTrackingID(events.Handler(
+			events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+				got := tracking.IDFromContext(ctx)
+				if !cmp.Equal(got, testId) {
+					t.Errorf("field name: %s, want: %v, got: %v", fieldName, testId, got)
+				}
+				return nil
+			})))
 
-	testHandler :=  EventsAddTrackingID(events.Handler(
-		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			got := tracking.IDFromContext(ctx)
-			if !cmp.Equal(got, testId) {
-				t.Errorf("want: %v, got: %v", testId, got)
-			}
-			return nil
-		})))
-
-	err := testHandler.Handle(context.Background(), e)
-	if err != nil {
-		t.Errorf("could not succesfully handle: %v", err)
+		err := testHandler.Handle(context.Background(), e)
+		if err != nil {
+			t.Errorf("field name: %s, could not succesfully handle: %v", fieldName, err)
+		}
 	}
 }

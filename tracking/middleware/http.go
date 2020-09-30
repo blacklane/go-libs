@@ -23,13 +23,14 @@ func RequestID(next http.Handler) http.Handler {
 
 func ExtractRequestID(r *http.Request) string {
 	requestID := r.Header.Get(constants.HeaderTrackingID)
-	if requestID == "" {
-		requestID = r.Header.Get(constants.HeaderRequestID)
+	if requestID != "" {
+		return requestID
 	}
-	if requestID == "" {
-		requestID = uuid.New().String()
+	requestID = r.Header.Get(constants.HeaderRequestID)
+	if requestID != "" {
+		return requestID
 	}
-	return requestID
+	return uuid.New().String()
 }
 
 // ExtractRequestDepth returns the request depth extracted from the header added of 1 or

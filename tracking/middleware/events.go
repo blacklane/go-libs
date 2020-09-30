@@ -18,14 +18,14 @@ func EventsAddTrackingID(next events.Handler) events.Handler {
 			trackingID := e.Headers[constants.HeaderTrackingID]
 			if trackingID == "" {
 				trackingID = e.Headers[constants.HeaderRequestID]
-			}
-			if trackingID == "" {
-				uuid, err := uuid.NewUUID()
-				if err != nil {
-					logger.FromContext(ctx).Err(err).Msg("could not generate uuid not setting trackingID in context")
-					return next.Handle(ctx, e)
+				if trackingID == "" {
+					uuid, err := uuid.NewUUID()
+					if err != nil {
+						logger.FromContext(ctx).Err(err).Msg("could not generate uuid, not setting trackingID in context")
+						return next.Handle(ctx, e)
+					}
+					trackingID = uuid.String()
 				}
-				trackingID = uuid.String()
 			}
 			ctx = tracking.SetContextID(ctx, trackingID)
 			return next.Handle(ctx, e)
