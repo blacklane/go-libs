@@ -32,23 +32,23 @@ func TestEventsAddTrackingIDCreatesIDWhenEventHeaderEmpty(t *testing.T) {
 
 func TestEventsAddTrackingIDDoesNotChangeTrackingIDIfAlreadyPresent(t *testing.T) {
 	testId := "goodid"
-	for _, fieldName := range []string{constants.HeaderRequestID, constants.HeaderTrackingID} {
+	for _, headerName := range []string{constants.HeaderRequestID, constants.HeaderTrackingID} {
 		e := events.Event{
-			Headers: events.Header(map[string]string{fieldName: testId}),
+			Headers: events.Header(map[string]string{headerName: testId}),
 		}
 
 		testHandler :=  EventsAddTrackingID(events.Handler(
 			events.HandlerFunc(func(ctx context.Context, e events.Event) error {
 				got := tracking.IDFromContext(ctx)
 				if !cmp.Equal(got, testId) {
-					t.Errorf("field name: %s, want: %v, got: %v", fieldName, testId, got)
+					t.Errorf("field name: %s, want: %v, got: %v", headerName, testId, got)
 				}
 				return nil
 			})))
 
 		err := testHandler.Handle(context.Background(), e)
 		if err != nil {
-			t.Errorf("field name: %s, could not successfully handle: %v", fieldName, err)
+			t.Errorf("field name: %s, could not successfully handle: %v", headerName, err)
 		}
 	}
 }

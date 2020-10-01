@@ -10,18 +10,18 @@ import (
 	"github.com/blacklane/go-libs/tracking/internal/constants"
 )
 
-func RequestID(next http.Handler) http.Handler {
+func TrackingID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := ExtractRequestID(r)
+		trackingID := ExtractTrackingID(r)
 
-		ctx := tracking.SetContextID(r.Context(), requestID)
+		ctx := tracking.SetContextID(r.Context(), trackingID)
 		rr := r.WithContext(ctx)
 
 		next.ServeHTTP(w, rr)
 	})
 }
 
-func ExtractRequestID(r *http.Request) string {
+func ExtractTrackingID(r *http.Request) string {
 	requestID := r.Header.Get(constants.HeaderTrackingID)
 	if requestID != "" {
 		return requestID
