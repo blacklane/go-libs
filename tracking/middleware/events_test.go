@@ -26,28 +26,29 @@ func TestEventsAddTrackingIDCreatesIDWhenEventHeaderEmpty(t *testing.T) {
 
 	err := testHandler.Handle(context.Background(), e)
 	if err != nil {
-		t.Errorf("could not succesfully handle: %v", err)
+		t.Errorf("could not successfully handle: %v", err)
 	}
 }
 
 func TestEventsAddTrackingIDDoesNotChangeTrackingIDIfAlreadyPresent(t *testing.T) {
 	testId := "goodid"
+	for _, headerName := range []string{constants.HeaderRequestID, constants.HeaderTrackingID} {
+		e := events.Event{
+			Headers: events.Header(map[string]string{headerName: testId}),
+		}
 
-	e := events.Event{
-		Headers: events.Header(map[string]string{constants.HeaderRequestID: testId}),
-	}
+		testHandler :=  EventsAddTrackingID(events.Handler(
+			events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+				got := tracking.IDFromContext(ctx)
+				if !cmp.Equal(got, testId) {
+					t.Errorf("field name: %s, want: %v, got: %v", headerName, testId, got)
+				}
+				return nil
+			})))
 
-	testHandler :=  EventsAddTrackingID(events.Handler(
-		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			got := tracking.IDFromContext(ctx)
-			if !cmp.Equal(got, testId) {
-				t.Errorf("want: %v, got: %v", testId, got)
-			}
-			return nil
-		})))
-
-	err := testHandler.Handle(context.Background(), e)
-	if err != nil {
-		t.Errorf("could not succesfully handle: %v", err)
+		err := testHandler.Handle(context.Background(), e)
+		if err != nil {
+			t.Errorf("field name: %s, could not successfully handle: %v", headerName, err)
+		}
 	}
 }

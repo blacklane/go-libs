@@ -39,12 +39,13 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			ctx := r.Context()
 
 			log := *logger.FromContext(ctx)
+			trackingID := tracking.IDFromContext(ctx)
 			logFields := map[string]interface{}{
 				internal.FieldEntryPoint: isEntryPoint(r),
 				// TODO double check if they are a must and make them optional if not
 				internal.FieldRequestDepth: tracking.RequestDepthFromCtx(ctx),
-				internal.FieldTrackingID:   tracking.IDFromContext(ctx),
-				internal.FieldRequestID:    tracking.IDFromContext(ctx),
+				internal.FieldTrackingID:   trackingID,
+				internal.FieldRequestID:    trackingID,
 				internal.FieldTreePath:     tracking.TreePathFromCtx(ctx),
 				internal.FieldRoute:        tracking.RequestRouteFromCtx(ctx),
 				internal.FieldParams:       r.URL.RawQuery,
@@ -99,7 +100,7 @@ func ipAddress(r *http.Request) string {
 }
 
 func isEntryPoint(r *http.Request) bool {
-	return len(r.Header.Get(internal.HeaderRequestID)) == 0
+	return r.Header.Get(internal.HeaderRequestID) == "" && r.Header.Get(internal.HeaderTrackingID) == ""
 }
 
 type responseWriter struct {
