@@ -22,11 +22,11 @@ func TrackingID(next http.Handler) http.Handler {
 }
 
 func ExtractTrackingID(r *http.Request) string {
-	requestID := r.Header.Get(constants.HeaderTrackingID)
-	if requestID != "" {
-		return requestID
+	trackingID := r.Header.Get(constants.HeaderTrackingID)
+	if trackingID != "" {
+		return trackingID
 	}
-	requestID = r.Header.Get(constants.HeaderRequestID)
+	requestID := r.Header.Get(constants.HeaderRequestID)
 	if requestID != "" {
 		return requestID
 	}
