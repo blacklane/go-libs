@@ -21,6 +21,12 @@ func TrackingID(next http.Handler) http.Handler {
 	})
 }
 
+// RequestID is deprecated, use TrackingID instead.
+// Deprecated.
+func RequestID(next http.Handler) http.Handler {
+	return TrackingID(next)
+}
+
 func ExtractTrackingID(r *http.Request) string {
 	trackingID := r.Header.Get(constants.HeaderTrackingID)
 	if trackingID != "" {
