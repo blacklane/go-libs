@@ -121,7 +121,7 @@ func ExampleEventsHandlerStatusLogger_failure() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Failure","tracking_id":"tracking_id-ExampleEventsLogger_Failure","duration_ms":1000,"error":"bad","timestamp":"2009-11-10T23:00:01Z","message":"event_name_here failed"}
+	// {"level":"error","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Failure","tracking_id":"tracking_id-ExampleEventsLogger_Failure","error":"bad","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here failed"}
 }
 
 func ExampleEventsHandlerStatusLoggerWithNameFn() {

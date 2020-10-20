@@ -68,18 +68,19 @@ func EventsHandlerStatusLoggerWithNameFn(
 			ctx = log.WithContext(ctx)
 
 			defer func() {
+				zlEvent := log.Info()
 				status := "succeeded"
 
 				duration := logger.Now().Sub(startTime)
 
-				zlEvent := log.Info().
-					Dur(internal.FieldDuration, duration)
-
 				if err != nil {
+					zlEvent = log.Error()
 					status = "failed"
 					zlEvent.Err(err)
 				}
-				zlEvent.Msgf("%s %s", evName, status)
+				zlEvent.
+					Dur(internal.FieldDuration, duration).
+					Msgf("%s %s", evName, status)
 			}()
 			return next.Handle(ctx, e)
 		})
