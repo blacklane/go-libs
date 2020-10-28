@@ -69,7 +69,7 @@ You can find examples on [examples](examples) folder.
 
 On [examples/oauth/Makefile](examples/oauth/Makefile) you find a makefile with the
 default kafka console consumer and producer configured to use OAuth2.0 authentication.
-You just have set your OAuth Client ID and Secret.  
+You only have to set your OAuth Client ID and Secret.  
 
 ### Consumer
 
