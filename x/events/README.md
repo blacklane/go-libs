@@ -6,7 +6,8 @@ You can find examples on [examples](examples) folder.
 
 ## Usage
 
-`go get github.com/blacklane/go-libs/x/events@events`
+Make sure you have Github token set in your machine `echo $GITHUB_TOKEN`. Otherwise follow this instruction: [create a token.](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)
+`GOPRIVATE=github.com/blacklane/* go get -u github.com/blacklane/go-libs/x/events`
 
 ### Consumer
 
