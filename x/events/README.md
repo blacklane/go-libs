@@ -6,7 +6,7 @@ You can find examples on [examples](examples) folder.
 
 ## Usage
 
-1. Make sure you have Github token set in your machine `echo $GITHUB_TOKEN`. Otherwise follow this instruction: [create a token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)<br>
+1. Make sure you have Github token set in your machine `echo $GITHUB_TOKEN`. Otherwise follow this instruction: [create a token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)
 2. Create the file *$HOME/.netrc* with content: `machine github.com login YOUR.EMAIL@blacklane.com password TOKEN`
 3. Run `GOPRIVATE=github.com/blacklane/* go get -u github.com/blacklane/go-libs/x/events`
 
