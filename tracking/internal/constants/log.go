@@ -14,6 +14,7 @@ const (
 	FieldHost         = "host"
 	FieldVerb         = "verb"
 	FieldPath         = "path"
+	FieldTrackingId   = "tracking_id"
 
 	FieldEvent = "event"
 
