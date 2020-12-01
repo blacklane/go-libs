@@ -40,9 +40,12 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		"auto.offset.reset":        "earliest",
 	}
 	c, _ := NewKafkaConsumer(
-		NewKafkaConsumerConfig(config),
+		NewKafkaConsumerConfig(config).WithErrFunc(func(err error) {
+			fmt.Printf("Kafka Consumer Error happend %v", err.Error())
+		}),
 		[]string{topic},
 		HandlerFunc(func(ctx context.Context, e Event) error {
+			fmt.Printf("handling message %s", e.Key)
 			mu.Lock()
 			defer mu.Unlock()
 			delete(payloads, string(e.Key))
@@ -54,14 +57,14 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		produce(t, producer, key, msg, topic)
 	}
 	
-	producer.Flush(3000)
+	producer.Flush(3 * time.Second.Milliseconds())
 
-	c.Run(time.Second)
+	c.Run(3 * time.Second)
 
 	// We need wait a bit for the messages to get published and consumed
-	time.Sleep(5*time.Second)
+	time.Sleep(5 * time.Second)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20 * time.Second)
 	defer cancel()
 	if err := c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)
