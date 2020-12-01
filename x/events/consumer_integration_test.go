@@ -59,7 +59,7 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		produce(t, producer, key, msg, topic)
 	}
 	
-	producer.Flush(3 * time.Second.Milliseconds())
+	producer.Flush(3 * int(time.Second.Milliseconds()))
 
 	c.Run(3 * time.Second)
 
