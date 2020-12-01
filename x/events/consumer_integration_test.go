@@ -62,11 +62,11 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	}
 	
 	
-	c.Run(10 * time.Second)
+	c.Run(100 * time.Second)
 	producer.Flush(10*int(time.Second.Milliseconds()))
 	producer.Close()
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 40 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 220 * time.Second)
 	defer cancel()
 	if err = c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)
