@@ -41,9 +41,9 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	}
 	consumerConfig := NewKafkaConsumerConfig(config)
 	consumerConfig.WithErrFunc(func(err error) {
-		fmt.Printf("Kafka Consumer Error happend %v\n", err.Error())
+		fmt.Printf("Kafka Consumer Error happend %v\n", err)
 	})
-	c, _ := NewKafkaConsumer(
+	c, err := NewKafkaConsumer(
 		consumerConfig,
 		[]string{topic},
 		HandlerFunc(func(ctx context.Context, e Event) error {
@@ -54,21 +54,26 @@ func TestKafkaConsumer_Run(t *testing.T) {
 
 			return nil
 		}))
+	if err != nil {
+		fmt.Printf("Cannot make consumer: %v\n", err)
+	}
 
 	for key, msg := range payloads {
 		produce(t, producer, key, msg, topic)
+		fmt.Println("Pending to be sent in producer: ", producer.Len())
 	}
 	
-	producer.Flush(30 * int(time.Second.Milliseconds()))
-
+	left :=producer.Flush(30 * int(time.Second.Milliseconds()))
+	fmt.Println("Left in producer: ", left)
+	producer.Close()
 	c.Run(60 * time.Second)
 	
 	// We need wait a bit for the messages to get published and consumed
-	// time.Sleep(time.Minute)
+	time.Sleep(10*time.Second)
 	
 	ctx, cancel := context.WithTimeout(context.Background(), 130 * time.Second)
 	defer cancel()
-	if err := c.Shutdown(ctx); err != nil {
+	if err = c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)
 	}
 

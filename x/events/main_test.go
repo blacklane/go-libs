@@ -146,6 +146,6 @@ func produce(t *testing.T, p *kafka.Producer, key, msg, topic string) {
 		Value: e.Payload,
 	}, nil)
 	if err != nil {
-		t.Errorf("error procucing kafka message %v: %v", e, err)
+		t.Errorf("error producing kafka message %v: %v", e, err)
 	}
 }
