@@ -60,16 +60,16 @@ func TestKafkaConsumer_Run(t *testing.T) {
 
 	for key, msg := range payloads {
 		produce(t, producer, key, msg, topic)
-		fmt.Println("Pending to be sent in producer: ", producer.Len())
+		fmt.Printf("[%s] Pending to be sent in producer: %d\n", time.Now(), producer.Len())
 	}
 	
-	left :=producer.Flush(30 * int(time.Second.Milliseconds()))
-	fmt.Println("Left in producer: ", left)
-	producer.Close()
+	left :=producer.Flush(180 * int(time.Second.Milliseconds()))
+	fmt.Printf("[%s] Left in producer: %d\n", time.Now(), left)
 	c.Run(60 * time.Second)
 	
 	// We need wait a bit for the messages to get published and consumed
 	time.Sleep(10*time.Second)
+	producer.Close()
 	
 	ctx, cancel := context.WithTimeout(context.Background(), 130 * time.Second)
 	defer cancel()
