@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 	"time"
-
+	
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
@@ -20,9 +20,9 @@ func TestKafkaConsumer_Run(t *testing.T) {
 
 	mu := sync.Mutex{}
 
-	payloads := map[string]bool{
-		fmt.Sprint(time.Now().Unix()) + "-Hello":   true,
-		fmt.Sprint(time.Now().Unix()) + "-Gophers": true}
+	payloads := map[string]string{
+		fmt.Sprint(time.Now().Unix()) + "-Hello":   "Hello-payload",
+		fmt.Sprint(time.Now().Unix()) + "-Gophers": "Gophers-payload"}
 	topic := "TestKafkaConsumer_Run"
 
 	createTopic(t, topic)
@@ -45,19 +45,21 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		HandlerFunc(func(ctx context.Context, e Event) error {
 			mu.Lock()
 			defer mu.Unlock()
-			delete(payloads, string(e.Payload))
+			delete(payloads, string(e.Key))
 
 			return nil
 		}))
 
-	for msg := range payloads {
-		produce(t, producer, msg, topic)
+	for key, msg := range payloads {
+		produce(t, producer, key, msg, topic)
 	}
+	
+	producer.Flush(3000)
 
 	c.Run(time.Second)
 
 	// We need wait a bit for the messages to get published and consumed
-	time.Sleep(time.Minute)
+	time.Sleep(5*time.Second)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -66,8 +68,8 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	}
 
 	if len(payloads) != 0 {
-		for p := range payloads {
-			t.Errorf(`event "%s" was not consumed`, p)
+		for key := range payloads {
+			t.Errorf(`event "%s" was not consumed`, key)
 		}
 	}
 }

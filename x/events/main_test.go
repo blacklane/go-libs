@@ -133,10 +133,10 @@ func newProducer(t *testing.T) *kafka.Producer {
 	return p
 }
 
-func produce(t *testing.T, p *kafka.Producer, msg string, topic string) {
+func produce(t *testing.T, p *kafka.Producer, key, msg, topic string) {
 	t.Helper()
 
-	e := Event{Payload: []byte(msg)}
+	e := Event{Key: []byte(key),Payload: []byte(msg)}
 
 	err := p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
