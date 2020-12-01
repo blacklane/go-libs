@@ -39,10 +39,12 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		"go.events.channel.enable": true,
 		"auto.offset.reset":        "earliest",
 	}
+	consumerConfig := NewKafkaConsumerConfig(config)
+	consumerConfig.WithErrFunc(func(err error) {
+		fmt.Printf("Kafka Consumer Error happend %v", err.Error())
+	})
 	c, _ := NewKafkaConsumer(
-		NewKafkaConsumerConfig(config).WithErrFunc(func(err error) {
-			fmt.Printf("Kafka Consumer Error happend %v", err.Error())
-		}),
+		consumerConfig,
 		[]string{topic},
 		HandlerFunc(func(ctx context.Context, e Event) error {
 			fmt.Printf("handling message %s", e.Key)
