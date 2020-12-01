@@ -92,7 +92,9 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 	c.startRunning()
 	go func() {
 		for c.running() {
+			fmt.Printf("Kafka Consumer before poll %v\n", timeout)
 			kev := c.consumer.Poll(int(timeout.Milliseconds()))
+			fmt.Printf("Kafka Consumer poll retval %v\n", kev)
 			switch kev := kev.(type) {
 			case *kafka.Message:
 				c.deliverMessage(kev)
