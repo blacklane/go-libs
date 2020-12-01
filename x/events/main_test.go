@@ -15,6 +15,7 @@ import (
 var createdTopics []string
 var kafkaBootstrapServers string
 var kafkaAdminClient *kafka.AdminClient
+var timeSecond time.Duration = time.Second // used as a slower multiplier for CI-TRAVIS
 
 func TestMain(m *testing.M) {
 	// FYI: go test does not parse any flag when TestMain is defined
@@ -44,6 +45,10 @@ func setUp() {
 	}
 
 	kafkaAdminClient = kad
+	
+	if os.Getenv("TRAVIS") == "true" {
+		timeSecond = timeSecond * 10 // 10 times slower than normal stack due to virtualization
+	}
 }
 
 func cleanUp() {
