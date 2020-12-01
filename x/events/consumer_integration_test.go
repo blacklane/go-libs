@@ -64,9 +64,9 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	c.Run(60 * time.Second)
 	
 	// We need wait a bit for the messages to get published and consumed
-	time.Sleep(time.Minute)
+	// time.Sleep(time.Minute)
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 20 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 130 * time.Second)
 	defer cancel()
 	if err := c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)
