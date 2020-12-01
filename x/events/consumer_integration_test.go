@@ -47,7 +47,6 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		consumerConfig,
 		[]string{topic},
 		HandlerFunc(func(ctx context.Context, e Event) error {
-			fmt.Printf("handling message %s\n", e.Key)
 			mu.Lock()
 			defer mu.Unlock()
 			delete(payloads, string(e.Key))
@@ -60,18 +59,14 @@ func TestKafkaConsumer_Run(t *testing.T) {
 
 	for key, msg := range payloads {
 		produce(t, producer, key, msg, topic)
-		fmt.Printf("[%s] Pending to be sent in producer: %d\n", time.Now(), producer.Len())
 	}
 	
-	left :=producer.Flush(180 * int(time.Second.Milliseconds()))
-	fmt.Printf("[%s] Left in producer: %d\n", time.Now(), left)
-	c.Run(60 * time.Second)
 	
-	// We need wait a bit for the messages to get published and consumed
-	time.Sleep(10*time.Second)
+	c.Run(10 * time.Second)
+	producer.Flush(10*int(time.Second.Milliseconds()))
 	producer.Close()
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 130 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40 * time.Second)
 	defer cancel()
 	if err = c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)

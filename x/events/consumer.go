@@ -67,7 +67,6 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 	if err := consumer.SubscribeTopics(topics, nil); err != nil {
 		return nil, fmt.Errorf("could not subscribe to topics: %w", err)
 	}
-	fmt.Printf("[%s] Consumer[%v] Subscribed to topic: %v\n", time.Now(), consumer.String(), topics)
 
 	return &kafkaConsumer{
 		kafkaCommon: &kafkaCommon{
@@ -93,9 +92,7 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 	c.startRunning()
 	go func() {
 		for c.running() {
-			fmt.Printf("[%s] Kafka Consumer[%v] before poll  %v\n", time.Now(),c.consumer.String(), timeout)
 			kev := c.consumer.Poll(int(timeout.Milliseconds()))
-			fmt.Printf("[%s] Kafka Consumer poll retval %v\n", time.Now(), kev)
 			switch kev := kev.(type) {
 			case *kafka.Message:
 				c.deliverMessage(kev)
