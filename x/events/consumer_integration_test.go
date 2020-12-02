@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 	"time"
-	
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
@@ -41,7 +41,7 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	}
 	consumerConfig := NewKafkaConsumerConfig(config)
 	consumerConfig.WithErrFunc(func(err error) {
-		fmt.Printf("Kafka Consumer Error happend %v\n", err)
+		t.Logf("Kafka Consumer Error happend %v", err)
 	})
 	c, err := NewKafkaConsumer(
 		consumerConfig,
@@ -54,19 +54,22 @@ func TestKafkaConsumer_Run(t *testing.T) {
 			return nil
 		}))
 	if err != nil {
-		fmt.Printf("Cannot make consumer: %v\n", err)
+		t.Fatalf("Cannot make consumer: %v", err)
 	}
 
 	for key, msg := range payloads {
 		produce(t, producer, key, msg, topic)
 	}
-	
-	
-	c.Run(20 * timeSecond)
-	producer.Flush(10 * int(timeSecond.Milliseconds()))
+
+	c.Run(20 * timeoutMultiplier)
+
+	notFlushedCount := producer.Flush(10 * int(timeoutMultiplier.Milliseconds()))
+	if notFlushedCount > 0 {
+		t.Logf("After producer.Flush left %d messages", notFlushedCount)
+	}
 	producer.Close()
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 45 * timeSecond)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*timeoutMultiplier)
 	defer cancel()
 	if err = c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)
