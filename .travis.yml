@@ -2,7 +2,9 @@ language: go
 go: 1.14.3
 dist: bionic
 env:
-  - DOCKER_COMPOSE_VERSION=1.25.5
+  global:
+    - DOCKER_COMPOSE_VERSION=1.25.5
+    - TIMEOUT_MULTIPLIER=10s # travis requires some extra time for timeouts
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose

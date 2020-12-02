@@ -20,9 +20,9 @@ func TestKafkaConsumer_Run(t *testing.T) {
 
 	mu := sync.Mutex{}
 
-	payloads := map[string]bool{
-		fmt.Sprint(time.Now().Unix()) + "-Hello":   true,
-		fmt.Sprint(time.Now().Unix()) + "-Gophers": true}
+	payloads := map[string]string{
+		fmt.Sprint(time.Now().Unix()) + "-Hello":   "Hello-payload",
+		fmt.Sprint(time.Now().Unix()) + "-Gophers": "Gophers-payload"}
 	topic := "TestKafkaConsumer_Run"
 
 	createTopic(t, topic)
@@ -39,35 +39,45 @@ func TestKafkaConsumer_Run(t *testing.T) {
 		"go.events.channel.enable": true,
 		"auto.offset.reset":        "earliest",
 	}
-	c, _ := NewKafkaConsumer(
-		NewKafkaConsumerConfig(config),
+	consumerConfig := NewKafkaConsumerConfig(config)
+	consumerConfig.WithErrFunc(func(err error) {
+		t.Logf("Kafka Consumer Error happend %v", err)
+	})
+	c, err := NewKafkaConsumer(
+		consumerConfig,
 		[]string{topic},
 		HandlerFunc(func(ctx context.Context, e Event) error {
 			mu.Lock()
 			defer mu.Unlock()
-			delete(payloads, string(e.Payload))
+			delete(payloads, string(e.Key))
 
 			return nil
 		}))
-
-	for msg := range payloads {
-		produce(t, producer, msg, topic)
+	if err != nil {
+		t.Fatalf("Cannot make consumer: %v", err)
 	}
 
-	c.Run(time.Second)
+	for key, msg := range payloads {
+		produce(t, producer, key, msg, topic)
+	}
 
-	// We need wait a bit for the messages to get published and consumed
-	time.Sleep(time.Minute)
+	c.Run(20 * timeoutMultiplier)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	notFlushedCount := producer.Flush(10 * int(timeoutMultiplier.Milliseconds()))
+	if notFlushedCount > 0 {
+		t.Logf("After producer.Flush left %d messages", notFlushedCount)
+	}
+	producer.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*timeoutMultiplier)
 	defer cancel()
-	if err := c.Shutdown(ctx); err != nil {
+	if err = c.Shutdown(ctx); err != nil {
 		t.Errorf("consumer shutdown failed: %v", err)
 	}
 
 	if len(payloads) != 0 {
-		for p := range payloads {
-			t.Errorf(`event "%s" was not consumed`, p)
+		for key := range payloads {
+			t.Errorf(`event "%s" was not consumed`, key)
 		}
 	}
 }

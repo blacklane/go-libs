@@ -30,6 +30,7 @@ func TestParseHeaders(t *testing.T) {
 
 func TestMessageToEvent(t *testing.T) {
 	want := Event{
+		Key: []byte("foo"),
 		Headers: Header(map[string]string{
 			"42": "Answer to the Ultimate Question of Life, the Universe, and Everything"}),
 		Payload: []byte("bar"),

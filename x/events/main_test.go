@@ -15,6 +15,7 @@ import (
 var createdTopics []string
 var kafkaBootstrapServers string
 var kafkaAdminClient *kafka.AdminClient
+var timeoutMultiplier = time.Second // a multiplier for timeouts allowing to adjust then to faster or slower environments
 
 func TestMain(m *testing.M) {
 	// FYI: go test does not parse any flag when TestMain is defined
@@ -44,6 +45,14 @@ func setUp() {
 	}
 
 	kafkaAdminClient = kad
+
+	if customTimeout, ok := os.LookupEnv("TIMEOUT_MULTIPLIER"); ok {
+		timeoutMultiplier, err = time.ParseDuration(customTimeout)
+		if err != nil {
+			log.Printf("TIMEOUT_MULTIPLIER not set correctly, using fallback - 1 second")
+			timeoutMultiplier = time.Second
+		}
+	}
 }
 
 func cleanUp() {
@@ -133,10 +142,10 @@ func newProducer(t *testing.T) *kafka.Producer {
 	return p
 }
 
-func produce(t *testing.T, p *kafka.Producer, msg string, topic string) {
+func produce(t *testing.T, p *kafka.Producer, key, msg, topic string) {
 	t.Helper()
 
-	e := Event{Payload: []byte(msg)}
+	e := Event{Payload: []byte(msg), Key: []byte(key)}
 
 	err := p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
@@ -146,6 +155,6 @@ func produce(t *testing.T, p *kafka.Producer, msg string, topic string) {
 		Value: e.Payload,
 	}, nil)
 	if err != nil {
-		t.Errorf("error procucing kafka message %v: %v", e, err)
+		t.Errorf("error producing kafka message %v: %v", e, err)
 	}
 }
