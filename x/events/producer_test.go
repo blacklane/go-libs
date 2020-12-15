@@ -6,6 +6,7 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestKafkaProducer_WithOAuth(t *testing.T) {
@@ -64,4 +65,15 @@ func TestNewKafkaProducerConfigAllInitialised(t *testing.T) {
 	if kc.errFn == nil {
 		t.Errorf("errFn is nil")
 	}
+}
+
+func TestParseProducerHeaders(t *testing.T) {
+	key, value := "key", "value"
+	eventHeaders := Header{
+		key: value,
+	}
+
+	kafkaHeaders := parseProducerHeaders(eventHeaders)
+
+	assert.Equal(t, eventHeaders, parseHeaders(kafkaHeaders))
 }

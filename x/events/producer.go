@@ -143,6 +143,7 @@ func (p *kafkaProducer) Send(event Event, topic string) error {
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Key:            event.Key,
 		Value:          event.Payload,
+		Headers:        parseProducerHeaders(event.Headers),
 	}, nil)
 }
 
@@ -190,4 +191,12 @@ func (p *kafkaProducer) stopRun() {
 	p.runMu.Lock()
 	defer p.runMu.Unlock()
 	p.run = false
+}
+
+func parseProducerHeaders(eventHeaders Header) []kafka.Header {
+	var messageHeaders []kafka.Header
+	for key, value := range eventHeaders {
+		messageHeaders = append(messageHeaders, kafka.Header{Key: key, Value: []byte(value)})
+	}
+	return messageHeaders
 }
