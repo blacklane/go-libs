@@ -2,7 +2,6 @@ package events
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -67,7 +66,7 @@ func TestNewKafkaProducerConfigAllInitialised(t *testing.T) {
 	}
 }
 
-func TestParseProducerHeaders(t *testing.T) {
+func TestParseToKafkaHeaders(t *testing.T) {
 	key, value := "key", "value"
 	eventHeaders := Header{
 		key: value,
@@ -75,8 +74,7 @@ func TestParseProducerHeaders(t *testing.T) {
 
 	kafkaHeaders := toKafkaHeaders(eventHeaders)
 
-	isEqual := reflect.DeepEqual(eventHeaders, parseHeaders(kafkaHeaders))
-	if !isEqual {
+	if !cmp.Equal(eventHeaders, parseHeaders(kafkaHeaders)) {
 		t.Errorf("parsed headers don't match expected")
 	}
 }
