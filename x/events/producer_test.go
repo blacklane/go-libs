@@ -2,11 +2,11 @@ package events
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestKafkaProducer_WithOAuth(t *testing.T) {
@@ -73,7 +73,10 @@ func TestParseProducerHeaders(t *testing.T) {
 		key: value,
 	}
 
-	kafkaHeaders := parseProducerHeaders(eventHeaders)
+	kafkaHeaders := toKafkaHeaders(eventHeaders)
 
-	assert.Equal(t, eventHeaders, parseHeaders(kafkaHeaders))
+	isEqual := reflect.DeepEqual(eventHeaders, parseHeaders(kafkaHeaders))
+	if !isEqual {
+		t.Errorf("parsed headers don't match expected")
+	}
 }
