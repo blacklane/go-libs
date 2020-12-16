@@ -65,3 +65,19 @@ func TestNewKafkaProducerConfigAllInitialised(t *testing.T) {
 		t.Errorf("errFn is nil")
 	}
 }
+
+func TestParseToKafkaHeaders(t *testing.T) {
+	wantKey, wantValue := "HeaderName", "HeaderValue"
+	eventHeaders := Header{
+		wantKey: wantValue,
+	}
+
+	got := toKafkaHeaders(eventHeaders)[0]
+
+	if !cmp.Equal(wantKey, got.Key) {
+		t.Errorf("got key: %s, want: %s", got.Key, wantKey)
+	}
+	if !cmp.Equal(wantValue, string(got.Value)) {
+		t.Errorf("got value: %s, want: %s", got.Value, wantValue)
+	}
+}
