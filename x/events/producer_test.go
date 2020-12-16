@@ -67,14 +67,17 @@ func TestNewKafkaProducerConfigAllInitialised(t *testing.T) {
 }
 
 func TestParseToKafkaHeaders(t *testing.T) {
-	key, value := "key", "value"
+	wantKey, wantValue := "HeaderName", "HeaderValue"
 	eventHeaders := Header{
-		key: value,
+		wantKey: wantValue,
 	}
 
-	kafkaHeaders := toKafkaHeaders(eventHeaders)
+	got := toKafkaHeaders(eventHeaders)[0]
 
-	if !cmp.Equal(eventHeaders, parseHeaders(kafkaHeaders)) {
-		t.Errorf("parsed headers don't match expected")
+	if !cmp.Equal(wantKey, got.Key) {
+		t.Errorf("got key: %s, want: %s", got.Key, wantKey)
+	}
+	if !cmp.Equal(wantValue, string(got.Value)) {
+		t.Errorf("got value: %s, want: %s", got.Value, wantValue)
 	}
 }
