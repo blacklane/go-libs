@@ -39,3 +39,12 @@ as much as possible.
 > "This change modifies X to _____." 
 > That means it does not start with a capital letter, 
 > is not a complete sentence, and actually summarizes the result of the change. 
+
+## How to fetch private Modules using Go
+There are some strategies to fetch the private Go modules like the ones available here.
+1. Set a ssh key for your Github
+2. Run `git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"`<br>
+or
+1. Make sure you have Github token set in your machine `echo $GITHUB_TOKEN`. Otherwise follow this instruction: [create a token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)
+2. Create the file *$HOME/.netrc* with content: `machine github.com login YOUR.EMAIL@blacklane.com password TOKEN`
+3. Run `GOPRIVATE=github.com/blacklane/* go get -u github.com/blacklane/go-libs/x/events`

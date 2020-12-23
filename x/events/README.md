@@ -6,9 +6,8 @@ You can find examples on [examples](examples) folder.
 
 ## Usage
 
-1. Make sure you have Github token set in your machine `echo $GITHUB_TOKEN`. Otherwise follow this instruction: [create a token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)
-2. Create the file *$HOME/.netrc* with content: `machine github.com login YOUR.EMAIL@blacklane.com password TOKEN`
-3. Run `GOPRIVATE=github.com/blacklane/* go get -u github.com/blacklane/go-libs/x/events`
+`go get github.com/blacklane/go-libs/x/events@events`
+> If you are having problems to fetch the module follow this steps: [Fetch private Go modules](../../README.md#how-to-fetch-private-modules-using-go)
 
 ### Consumer
 
