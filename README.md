@@ -41,7 +41,7 @@ as much as possible.
 > is not a complete sentence, and actually summarizes the result of the change. 
 
 ## How to fetch private Modules using Go
-There are some strategies to fetch the private Go modules like the ones available here.
+There are some strategies to fetch the private Go modules like the ones available in this repo.
 1. Set a ssh key for your Github
 2. Run `git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"`<br>
 or
