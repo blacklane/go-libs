@@ -218,10 +218,10 @@ func addTrackingID(ctx context.Context, event *Event) {
 	}
 
 	if event.Headers == nil || len(event.Headers) == 0 {
-		event.Headers = Header{
-			HeaderTrackingID: trackingID,
-		}
-	} else if event.Headers[HeaderTrackingID] == "" {
+		event.Headers = Header{}
+	}
+
+	if event.Headers[HeaderTrackingID] == "" {
 		event.Headers[HeaderTrackingID] = trackingID
 	}
 }
