@@ -113,6 +113,30 @@ func TestAddTrackingID_EmptyHeaders(t *testing.T) {
 	}
 }
 
+func TestAddTrackingID_ExistingHeadersButNoTrackingID(t *testing.T) {
+	wantID := "some-id"
+	HeaderCustomID := "X-Custom-Id"
+	customID := "custom-id"
+	ctx := tracking.SetContextID(context.Background(), wantID)
+	event := Event{
+		Headers: Header{
+			HeaderCustomID: customID,
+		},
+	}
+
+	addTrackingID(ctx, &event)
+
+	gotID := event.Headers[HeaderTrackingID]
+	if !cmp.Equal(wantID, gotID) {
+		t.Errorf("got key: %s, want: %s", gotID, wantID)
+	}
+
+	gotCustomID := event.Headers[HeaderCustomID]
+	if !cmp.Equal(customID, gotCustomID) {
+		t.Errorf("expected custom ID not to change. got key: %s, want: %s", gotCustomID, customID)
+	}
+}
+
 func TestAddTrackingID_TrackingIDAlreadyExists(t *testing.T) {
 	wantID := "some-id"
 	otherID := "other-id"
@@ -127,7 +151,7 @@ func TestAddTrackingID_TrackingIDAlreadyExists(t *testing.T) {
 
 	gotID := event.Headers[HeaderTrackingID]
 	if cmp.Equal(otherID, gotID) {
-		t.Errorf("expected tracking ID not to change")
+		t.Errorf("expected tracking ID not to change. got key: %s, want: %s", gotID, otherID)
 	}
 	if !cmp.Equal(wantID, gotID) {
 		t.Errorf("got key: %s, want: %s", gotID, wantID)
