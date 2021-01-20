@@ -142,8 +142,8 @@ func (p *kafkaProducer) refreshToken() {
 // if the tracking ID isn't empty. If the event already has the tracking ID header set,
 // it does nothing.
 func (p *kafkaProducer) SendWithTrackingID(ctx context.Context, event Event, topic string) error {
-	addTrackingID(ctx, &event)
-	return p.Send(event, topic)
+	trackedEvent := addTrackingID(ctx, event)
+	return p.Send(trackedEvent, topic)
 }
 
 // Sends messages to the given topic. Delivery errors are sent to the producer's
@@ -211,17 +211,18 @@ func toKafkaHeaders(eventHeaders Header) []kafka.Header {
 	return kafkaHeaders
 }
 
-func addTrackingID(ctx context.Context, event *Event) {
+func addTrackingID(ctx context.Context, event Event) Event {
 	trackingID := tracking.IDFromContext(ctx)
-	if trackingID == "" {
-		return
+
+	if trackingID != "" {
+		if event.Headers == nil || len(event.Headers) == 0 {
+			event.Headers = Header{}
+		}
+
+		if event.Headers[HeaderTrackingID] == "" {
+			event.Headers[HeaderTrackingID] = trackingID
+		}
 	}
 
-	if event.Headers == nil || len(event.Headers) == 0 {
-		event.Headers = Header{}
-	}
-
-	if event.Headers[HeaderTrackingID] == "" {
-		event.Headers[HeaderTrackingID] = trackingID
-	}
+	return event
 }

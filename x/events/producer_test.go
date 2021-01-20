@@ -89,7 +89,7 @@ func TestAddTrackingID_EmptyContext(t *testing.T) {
 	ctx := context.Background()
 	event := Event{}
 
-	addTrackingID(ctx, &event)
+	event = addTrackingID(ctx, event)
 
 	if event.Headers != nil {
 		t.Errorf("expected nil headers")
@@ -101,7 +101,7 @@ func TestAddTrackingID_EmptyHeaders(t *testing.T) {
 	ctx := tracking.SetContextID(context.Background(), wantID)
 	event := Event{}
 
-	addTrackingID(ctx, &event)
+	event = addTrackingID(ctx, event)
 
 	if event.Headers == nil {
 		t.Errorf("expected headers to be set")
@@ -124,7 +124,7 @@ func TestAddTrackingID_ExistingHeadersButNoTrackingID(t *testing.T) {
 		},
 	}
 
-	addTrackingID(ctx, &event)
+	event = addTrackingID(ctx, event)
 
 	gotID := event.Headers[HeaderTrackingID]
 	if !cmp.Equal(wantID, gotID) {
@@ -147,7 +147,7 @@ func TestAddTrackingID_TrackingIDAlreadyExists(t *testing.T) {
 		},
 	}
 
-	addTrackingID(ctx, &event)
+	event = addTrackingID(ctx, event)
 
 	gotID := event.Headers[HeaderTrackingID]
 	if cmp.Equal(otherID, gotID) {
