@@ -1,11 +1,14 @@
 package events
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/blacklane/go-libs/tracking"
 )
 
 func TestKafkaProducer_WithOAuth(t *testing.T) {
@@ -79,5 +82,54 @@ func TestParseToKafkaHeaders(t *testing.T) {
 	}
 	if !cmp.Equal(wantValue, string(got.Value)) {
 		t.Errorf("got value: %s, want: %s", got.Value, wantValue)
+	}
+}
+
+func TestAddTrackingID_EmptyContext(t *testing.T) {
+	ctx := context.Background()
+	event := Event{}
+
+	addTrackingID(ctx, &event)
+
+	if event.Headers != nil {
+		t.Errorf("expected nil headers")
+	}
+}
+
+func TestAddTrackingID_EmptyHeaders(t *testing.T) {
+	wantID := "some-id"
+	ctx := tracking.SetContextID(context.Background(), wantID)
+	event := Event{}
+
+	addTrackingID(ctx, &event)
+
+	if event.Headers == nil {
+		t.Errorf("expected headers to be set")
+	}
+
+	gotID := event.Headers[HeaderTrackingID]
+	if !cmp.Equal(wantID, gotID) {
+		t.Errorf("got key: %s, want: %s", gotID, wantID)
+	}
+}
+
+func TestAddTrackingID_TrackingIDAlreadyExists(t *testing.T) {
+	wantID := "some-id"
+	otherID := "other-id"
+	ctx := tracking.SetContextID(context.Background(), otherID)
+	event := Event{
+		Headers: Header{
+			HeaderTrackingID: wantID,
+		},
+	}
+
+	addTrackingID(ctx, &event)
+
+	gotID := event.Headers[HeaderTrackingID]
+	if cmp.Equal(otherID, gotID) {
+		t.Errorf("expected tracking ID not to change")
+	}
+	if !cmp.Equal(wantID, gotID) {
+		t.Errorf("got key: %s, want: %s", gotID, wantID)
 	}
 }
