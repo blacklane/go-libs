@@ -11,8 +11,6 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 )
 
-const HeaderTrackingID = "X-Tracking-Id"
-
 var ErrProducerNotHandlingEvents = errors.New("producer should be handling events")
 var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
