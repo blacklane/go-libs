@@ -138,9 +138,9 @@ func (p *kafkaProducer) refreshToken() {
 	p.kafkaCommon.refreshToken(p.producer)
 }
 
-// Retrieves the tracking ID header from the context, and attaches it to the event
-// before sending (if it exists). If the event already has the tracking ID header set,
-// it does nothing. The function finally re-uses the Send function to produce the event.
+// SendWithTrackingID retrieves the tracking ID from the context, and adds it to the event's headers
+// if the tracking ID isn't empty. If the event already has the tracking ID header set,
+// it does nothing.
 func (p *kafkaProducer) SendWithTrackingID(ctx context.Context, event Event, topic string) error {
 	addTrackingID(ctx, &event)
 	return p.Send(event, topic)
