@@ -81,3 +81,72 @@ func TestParseToKafkaHeaders(t *testing.T) {
 		t.Errorf("got value: %s, want: %s", got.Value, wantValue)
 	}
 }
+
+func TestAddTrackingID_EmptyTrackingID(t *testing.T) {
+	event := Event{}
+
+	eventAfter := addTrackingID("", event)
+
+	if !cmp.Equal(event, eventAfter) {
+		t.Errorf("expected event not to change")
+	}
+}
+
+func TestAddTrackingID_EmptyHeaders(t *testing.T) {
+	wantID := "some-id"
+	event := Event{}
+
+	eventAfter := addTrackingID(wantID, event)
+
+	if eventAfter.Headers == nil {
+		t.Errorf("expected headers to be set")
+	}
+
+	gotID := eventAfter.Headers[HeaderTrackingID]
+	if !cmp.Equal(wantID, gotID) {
+		t.Errorf("got key: %s, want: %s", gotID, wantID)
+	}
+}
+
+func TestAddTrackingID_ExistingHeadersButNoTrackingID(t *testing.T) {
+	wantID := "some-id"
+	HeaderCustomID := "X-Custom-Id"
+	customID := "custom-id"
+	event := Event{
+		Headers: Header{
+			HeaderCustomID: customID,
+		},
+	}
+
+	eventAfter := addTrackingID(wantID, event)
+
+	gotID := eventAfter.Headers[HeaderTrackingID]
+	if !cmp.Equal(wantID, gotID) {
+		t.Errorf("got key: %s, want: %s", gotID, wantID)
+	}
+
+	gotCustomID := eventAfter.Headers[HeaderCustomID]
+	if !cmp.Equal(customID, gotCustomID) {
+		t.Errorf("expected custom ID not to change. got key: %s, want: %s", gotCustomID, customID)
+	}
+}
+
+func TestAddTrackingID_TrackingIDAlreadyExists(t *testing.T) {
+	wantID := "some-id"
+	otherID := "other-id"
+	event := Event{
+		Headers: Header{
+			HeaderTrackingID: wantID,
+		},
+	}
+
+	eventAfter := addTrackingID(otherID, event)
+
+	gotID := eventAfter.Headers[HeaderTrackingID]
+	if cmp.Equal(otherID, gotID) {
+		t.Errorf("expected tracking ID not to change. got key: %s, want: %s", gotID, otherID)
+	}
+	if !cmp.Equal(wantID, gotID) {
+		t.Errorf("got key: %s, want: %s", gotID, wantID)
+	}
+}
