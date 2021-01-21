@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-
-	"github.com/blacklane/go-libs/tracking"
 )
 
 var ErrProducerNotHandlingEvents = errors.New("producer should be handling events")
@@ -138,11 +136,10 @@ func (p *kafkaProducer) refreshToken() {
 	p.kafkaCommon.refreshToken(p.producer)
 }
 
-// SendWithTrackingID retrieves the tracking ID from the context, and adds it to the event's headers
-// if the tracking ID isn't empty. If the event already has the tracking ID header set,
-// it does nothing.
-func (p *kafkaProducer) SendWithTrackingID(ctx context.Context, event Event, topic string) error {
-	trackedEvent := addTrackingID(ctx, event)
+// SendWithTrackingID adds the tracking ID to the event's headers. If the event already
+// has the tracking ID header set, it does nothing.
+func (p *kafkaProducer) SendWithTrackingID(trackingID string, event Event, topic string) error {
+	trackedEvent := addTrackingID(trackingID, event)
 	return p.Send(trackedEvent, topic)
 }
 
@@ -211,9 +208,7 @@ func toKafkaHeaders(eventHeaders Header) []kafka.Header {
 	return kafkaHeaders
 }
 
-func addTrackingID(ctx context.Context, event Event) Event {
-	trackingID := tracking.IDFromContext(ctx)
-
+func addTrackingID(trackingID string, event Event) Event {
 	if trackingID != "" {
 		if event.Headers == nil || len(event.Headers) == 0 {
 			event.Headers = Header{}
