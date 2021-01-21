@@ -15,7 +15,8 @@ var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 type Producer interface {
 	// Send an event to the given topic
 	Send(event Event, topic string) error
-	// SendWithTrackingID adds the tracking ID to event's header and send to the given topic
+	// SendWithTrackingID adds the tracking ID to the event's headers and sends it to the given topic
+	SendWithTrackingID(trackingID string, event Event, topic string) error
 	// HandleEvents starts to listen to the producer events channel
 	HandleEvents() error
 	// Shutdown gracefully shuts down the producer, it respect the context
