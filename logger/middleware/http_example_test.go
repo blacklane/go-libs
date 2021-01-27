@@ -1,12 +1,9 @@
 package middleware
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"time"
 
 	"github.com/blacklane/go-libs/tracking"
@@ -14,9 +11,6 @@ import (
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
 )
-
-// prettyWriter takes a JSON string as []byte an ident it before writing to os.Stdout..
-var prettyWriter = prettyJSONWriter{}
 
 func ExampleHTTPAddLogger() {
 	// Set current time function so we can control the request duration
@@ -225,25 +219,4 @@ func ExampleHTTPAddAll() {
 	//   "user_agent": "",
 	//   "verb": "GET"
 	// }
-}
-
-type prettyJSONWriter struct{}
-
-func (pw prettyJSONWriter) Write(p []byte) (int, error) {
-	buf := &bytes.Buffer{}
-
-	data := &map[string]interface{}{}
-	if err := json.Unmarshal(p, data); err != nil {
-		return 0, fmt.Errorf("prettyJSONWriter: could not json.Unmarshal data: %w", err)
-	}
-
-	pp, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return 0, fmt.Errorf("prettyJSONWriter: could not json.MarshalIndent data: %w", err)
-	}
-
-	buf.Write(pp)
-
-	n, err := buf.WriteTo(os.Stdout)
-	return int(n), err
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/blacklane/go-libs/tracking"
@@ -19,7 +18,7 @@ func ExampleEventsAddLogger() {
 		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	})
 
-	log := logger.New(os.Stdout, "ExampleEventsAddLogger")
+	log := logger.New(prettyWriter, "ExampleEventsAddLogger")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
 		l := logger.FromContext(ctx)
@@ -33,7 +32,12 @@ func ExampleEventsAddLogger() {
 	_ = hh.Handle(context.Background(), events.Event{})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsAddLogger","timestamp":"2009-11-10T23:00:00.000Z","message":"Hello, Gophers from events"}
+	// {
+	//   "application": "ExampleEventsAddLogger",
+	//   "level": "info",
+	//   "message": "Hello, Gophers from events",
+	//   "timestamp": "2009-11-10T23:00:00Z"
+	// }
 }
 
 func ExampleEventsHandlerStatusLogger_success() {
@@ -50,7 +54,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
 
-	log := logger.New(os.Stdout, "ExampleEventsLogger")
+	log := logger.New(prettyWriter, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger())
@@ -62,7 +66,16 @@ func ExampleEventsHandlerStatusLogger_success() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
+	// {
+	//   "application": "ExampleEventsLogger",
+	//   "duration_ms": 1000,
+	//   "event": "event_name_here",
+	//   "level": "info",
+	//   "message": "event_name_here succeeded",
+	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
+	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
+	// }
 }
 
 func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
@@ -79,7 +92,7 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
 
-	log := logger.New(os.Stdout, "ExampleEventsLogger")
+	log := logger.New(prettyWriter, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger("log_event"))
@@ -92,7 +105,16 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"do_not_log_event"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"log_event succeeded"}
+	// {
+	//   "application": "ExampleEventsLogger",
+	//   "duration_ms": 1000,
+	//   "event": "log_event",
+	//   "level": "info",
+	//   "message": "log_event succeeded",
+	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
+	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
+	// }
 }
 
 func ExampleEventsHandlerStatusLogger_failure() {
@@ -109,7 +131,7 @@ func ExampleEventsHandlerStatusLogger_failure() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Failure")
 
-	log := logger.New(os.Stdout, "ExampleEventsLogger")
+	log := logger.New(prettyWriter, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger())
@@ -121,7 +143,17 @@ func ExampleEventsHandlerStatusLogger_failure() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"error","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Failure","tracking_id":"tracking_id-ExampleEventsLogger_Failure","error":"bad","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here failed"}
+	// {
+	//   "application": "ExampleEventsLogger",
+	//   "duration_ms": 1000,
+	//   "error": "bad",
+	//   "event": "event_name_here",
+	//   "level": "error",
+	//   "message": "event_name_here failed",
+	//   "request_id": "tracking_id-ExampleEventsLogger_Failure",
+	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "tracking_id": "tracking_id-ExampleEventsLogger_Failure"
+	// }
 }
 
 func ExampleEventsHandlerStatusLoggerWithNameFn() {
@@ -136,9 +168,9 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 		return now
 	})
 
-	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
+	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsHandlerStatusLoggerWithNameFn")
 
-	log := logger.New(os.Stdout, "ExampleEventsLogger")
+	log := logger.New(prettyWriter, "ExampleEventsHandlerStatusLoggerWithNameFn")
 
 	hb := events.HandlerBuilder{}
 	nameFn := func(e events.Event) string {
@@ -162,7 +194,16 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"name":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
+	// {
+	//   "application": "ExampleEventsHandlerStatusLoggerWithNameFn",
+	//   "duration_ms": 1000,
+	//   "event": "event_name_here",
+	//   "level": "info",
+	//   "message": "event_name_here succeeded",
+	//   "request_id": "tracking_id-ExampleEventsHandlerStatusLoggerWithNameFn",
+	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "tracking_id": "tracking_id-ExampleEventsHandlerStatusLoggerWithNameFn"
+	// }
 }
 
 func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
