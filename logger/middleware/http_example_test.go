@@ -190,9 +190,11 @@ func ExampleHTTPAddAll() {
 
 	respWriterLive := httptest.NewRecorder()
 	requestLive := httptest.NewRequest(http.MethodGet, "http://example.com"+livePath, nil)
+	requestLive.Header.Set(internal.HeaderTrackingID, trackingID) // This header is set to have predictable value in the log output
 	requestLive.Header.Set(internal.HeaderForwardedFor, "localhost")
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.FromContext(r.Context()).Info().Msg("always logged")
 		_, _ = fmt.Fprint(w, "ExampleHTTPAddAll")
 	})
 
@@ -203,6 +205,34 @@ func ExampleHTTPAddAll() {
 	h.ServeHTTP(respWriterBar, requestBar)
 
 	// Output:
+	// {
+	//   "application": "ExampleHTTPAddAll",
+	//   "host": "example.com",
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "always logged",
+	//   "params": "",
+	//   "path": "/live",
+	//   "request_id": "tracking_id_ExampleHTTPAddAll",
+	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "tracking_id": "tracking_id_ExampleHTTPAddAll",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+	// {
+	//   "application": "ExampleHTTPAddAll",
+	//   "host": "example.com",
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "always logged",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "tracking_id_ExampleHTTPAddAll",
+	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "tracking_id": "tracking_id_ExampleHTTPAddAll",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
 	// {
 	//   "application": "ExampleHTTPAddAll",
 	//   "duration_ms": 0,

@@ -5,11 +5,31 @@ import (
 	"encoding/json"
 
 	"github.com/blacklane/go-libs/tracking"
+	trackingMidleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/blacklane/go-libs/x/events"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
 )
+
+// EventsAddAll adds the necessary middleware for:
+//   - have tracking id in the context (read from the headers or a new one),
+//   - have a logger.Logger with tracking id and all required fields in the context,
+//   - log at the end of handler if it succeeded or failed and how log it took.
+// For more details, check the middleware used:
+// - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
+// - middleware.EventsAddLogger
+// - middleware.EventsHandlerStatusLogger
+func EventsAddAll(handler events.Handler, log logger.Logger, eventNames ...string) events.Handler {
+	hb := events.HandlerBuilder{}
+	hb.AddHandler(handler)
+	hb.UseMiddleware(
+		trackingMidleware.EventsAddTrackingID,
+		EventsAddLogger(log),
+		EventsHandlerStatusLogger(eventNames...))
+
+	return hb.Build()[0]
+}
 
 // EventsAddLogger adds the logger into the context.
 func EventsAddLogger(log logger.Logger) events.Middleware {
