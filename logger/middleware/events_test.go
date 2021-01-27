@@ -53,7 +53,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 	log := logger.New(os.Stdout, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
-	hb.UseMiddleware(EventsHandlerStatusLogger(), EventsAddLogger(log))
+	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger())
 	hb.AddHandler(
 		events.HandlerFunc(func(context.Context, events.Event) error { return nil }))
 
@@ -82,7 +82,7 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 	log := logger.New(os.Stdout, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
-	hb.UseMiddleware(EventsHandlerStatusLogger("log_event"), EventsAddLogger(log))
+	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger("log_event"))
 	hb.AddHandler(
 		events.HandlerFunc(func(context.Context, events.Event) error { return nil }))
 
@@ -112,7 +112,7 @@ func ExampleEventsHandlerStatusLogger_failure() {
 	log := logger.New(os.Stdout, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
-	hb.UseMiddleware(EventsHandlerStatusLogger(), EventsAddLogger(log))
+	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger())
 	hb.AddHandler(
 		events.HandlerFunc(func(context.Context, events.Event) error { return errors.New("bad") }))
 
@@ -153,7 +153,7 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 
 		return payload.Name
 	}
-	hb.UseMiddleware(EventsHandlerStatusLoggerWithNameFn(nameFn), EventsAddLogger(log))
+	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLoggerWithNameFn(nameFn))
 	hb.AddHandler(
 		events.HandlerFunc(func(context.Context, events.Event) error { return nil }))
 
