@@ -26,6 +26,7 @@ func (pw prettyJSONWriter) Write(p []byte) (int, error) {
 	}
 
 	buf.Write(pp)
+	buf.WriteByte('\n')
 
 	n, err := buf.WriteTo(os.Stdout)
 	return int(n), err

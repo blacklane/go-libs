@@ -14,7 +14,13 @@ import (
 	"github.com/blacklane/go-libs/logger/internal"
 )
 
-// HTTPAddAll
+// HTTPAddAll adds the necessary middleware for:
+//   - have tracking id in the context (read from the headers or a new one),
+//   - have a logger.Logger with tracking id and all required fields in the context,
+//   - log, at the end of handler, if it succeeded or failed and how log it took.
+// - github.com/blacklane/go-libs/tracking/middleware.TrackingID
+// - middleware.HTTPAddLogger
+// - middleware.HTTPRequestLogger
 func HTTPAddAll(log logger.Logger, skipRoutes []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
