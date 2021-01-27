@@ -2,15 +2,29 @@ package middleware
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
 
 	"github.com/blacklane/go-libs/tracking"
+	trackingMiddleware "github.com/blacklane/go-libs/tracking/middleware"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
 )
+
+// HTTPAddAll
+func HTTPAddAll(log logger.Logger, skipRoutes []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := HTTPRequestLogger(skipRoutes)(next)
+			h = HTTPAddLogger(log)(h)
+			h = trackingMiddleware.TrackingID(h)
+			h.ServeHTTP(w, r)
+		})
+	}
+}
 
 // HTTPAddLogger adds the logger into the request context.
 func HTTPAddLogger(log logger.Logger) func(http.Handler) http.Handler {
@@ -40,20 +54,16 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 
 			log := *logger.FromContext(ctx)
 			trackingID := tracking.IDFromContext(ctx)
+
 			logFields := map[string]interface{}{
-				internal.FieldEntryPoint: isEntryPoint(r),
-				// TODO double check if they are a must and make them optional if not
-				internal.FieldRequestDepth: tracking.RequestDepthFromCtx(ctx),
-				internal.FieldTrackingID:   trackingID,
-				internal.FieldRequestID:    trackingID,
-				internal.FieldTreePath:     tracking.TreePathFromCtx(ctx),
-				internal.FieldRoute:        tracking.RequestRouteFromCtx(ctx),
-				internal.FieldParams:       r.URL.RawQuery,
-				internal.FieldIP:           ipAddress(r),
-				internal.FieldUserAgent:    r.UserAgent(),
-				internal.FieldHost:         r.Host,
-				internal.FieldVerb:         r.Method,
-				internal.FieldPath:         r.URL.Path,
+				internal.FieldTrackingID: trackingID,
+				internal.FieldRequestID:  trackingID,
+				internal.FieldParams:     r.URL.RawQuery,
+				internal.FieldIP:         ipAddress(r),
+				internal.FieldUserAgent:  r.UserAgent(),
+				internal.FieldHost:       r.Host,
+				internal.FieldVerb:       r.Method,
+				internal.FieldPath:       r.URL.Path,
 			}
 
 			log = log.With().Fields(logFields).Logger()
@@ -69,9 +79,13 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 						return
 					}
 				}
-				log.Info().
-					Str(internal.FieldEvent, internal.EventRequestFinished).
-					Int(internal.FieldStatus, ww.statusCode).
+
+				zerologEvent := log.Info()
+				if ww.StatusCode() >= 400 && ww.StatusCode() < 500 {
+					zerologEvent = log.Warn().Err(fmt.Errorf("request finished with http status "))
+				}
+				zerologEvent.
+					Int(internal.FieldHTTPStatus, ww.statusCode).
 					Dur(internal.FieldRequestDuration, logger.Now().Sub(startTime)).
 					Msgf("%s %s", r.Method, urlPath)
 			}()

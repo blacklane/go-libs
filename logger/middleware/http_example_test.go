@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +15,9 @@ import (
 	"github.com/blacklane/go-libs/logger/internal"
 )
 
+// prettyWriter takes a JSON string as []byte an ident it before writing to os.Stdout..
+var prettyWriter = prettyJSONWriter{}
+
 func ExampleHTTPAddLogger() {
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {
@@ -23,7 +28,7 @@ func ExampleHTTPAddLogger() {
 	r := httptest.NewRequest(http.MethodGet, "http://example.com/foo?bar=foo", nil)
 	r.Header.Set(internal.HeaderForwardedFor, "localhost")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyWriter, "ExampleHTTPAddLogger")
 
 	loggerMiddleware := HTTPAddLogger(log)
 
@@ -36,7 +41,12 @@ func ExampleHTTPAddLogger() {
 	h.ServeHTTP(w, r)
 
 	// Output:
-	// {"level":"info","application":"","timestamp":"2009-11-10T23:00:00.000Z","message":"Hello, Gophers"}
+	// {
+	//   "application": "ExampleHTTPAddLogger",
+	//   "level": "info",
+	//   "message": "Hello, Gophers",
+	//   "timestamp": "2009-11-10T23:00:00Z"
+	// }
 }
 
 func ExampleHTTPRequestLogger_simple() {
@@ -49,7 +59,7 @@ func ExampleHTTPRequestLogger_simple() {
 	r := httptest.NewRequest(http.MethodGet, "http://example.com/foo?bar=foo", nil)
 	r.Header.Set(internal.HeaderForwardedFor, "localhost")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyWriter, "ExampleHTTPRequestLogger_simple")
 	ctx := log.WithContext(r.Context())
 
 	loggerMiddleware := HTTPRequestLogger([]string{})
@@ -61,7 +71,23 @@ func ExampleHTTPRequestLogger_simple() {
 	h.ServeHTTP(w, r.WithContext(ctx))
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tracking_id":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00.000Z","message":"GET /foo"}
+	// {
+	//   "application": "ExampleHTTPRequestLogger_simple",
+	//   "duration_ms": 0,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "",
+	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "tracking_id": "",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+
 }
 
 func ExampleHTTPRequestLogger_complete() {
@@ -78,7 +104,7 @@ func ExampleHTTPRequestLogger_complete() {
 
 	ctx := tracking.SetContextID(r.Context(), "42")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyWriter, "ExampleHTTPRequestLogger_complete")
 	ctx = log.WithContext(ctx)
 
 	rr := r.WithContext(ctx)
@@ -90,7 +116,22 @@ func ExampleHTTPRequestLogger_complete() {
 	h.ServeHTTP(w, rr)
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"42.42.42.42","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"42","route":"","tracking_id":"42","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":1000,"timestamp":"2009-11-10T23:00:02.000Z","message":"GET /foo"}
+	// {
+	//   "application": "ExampleHTTPRequestLogger_complete",
+	//   "duration_ms": 1000,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "42.42.42.42",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "42",
+	//   "timestamp": "2009-11-10T23:00:02Z",
+	//   "tracking_id": "42",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
 }
 
 func ExampleHTTPRequestLogger_skipRoutes() {
@@ -107,7 +148,7 @@ func ExampleHTTPRequestLogger_skipRoutes() {
 	rLive := httptest.NewRequest(http.MethodGet, "http://example.com"+livePath, nil)
 	rLive.Header.Set(internal.HeaderForwardedFor, "localhost")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyWriter, "ExampleHTTPRequestLogger_skipRoutes")
 	ctx := log.WithContext(rBar.Context())
 
 	loggerMiddleware := HTTPRequestLogger([]string{livePath})
@@ -121,5 +162,88 @@ func ExampleHTTPRequestLogger_skipRoutes() {
 	h.ServeHTTP(w, rLive.WithContext(ctx))
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tracking_id":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00.000Z","message":"GET /foo"}
+	// {
+	//   "application": "ExampleHTTPRequestLogger_skipRoutes",
+	//   "duration_ms": 0,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "",
+	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "tracking_id": "",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+}
+
+func ExampleHTTPAddAll() {
+	trackingID := "tracking_id_ExampleHTTPAddAll"
+	livePath := "/live"
+	// Set current time function so we can control the request duration
+	logger.SetNowFunc(func() time.Time {
+		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	})
+	log := logger.New(prettyWriter, "ExampleHTTPAddAll")
+
+	respWriterBar := httptest.NewRecorder()
+	requestBar := httptest.NewRequest(http.MethodGet, "http://example.com/foo?bar=foo", nil)
+	requestBar.Header.Set(internal.HeaderTrackingID, trackingID) // This header is set to have predictable value in the log output
+	requestBar.Header.Set(internal.HeaderForwardedFor, "localhost")
+
+	respWriterLive := httptest.NewRecorder()
+	requestLive := httptest.NewRequest(http.MethodGet, "http://example.com"+livePath, nil)
+	requestLive.Header.Set(internal.HeaderForwardedFor, "localhost")
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, "ExampleHTTPAddAll")
+	})
+
+	allInOneMiddleware := HTTPAddAll(log, []string{livePath})
+	h := allInOneMiddleware(handler)
+
+	h.ServeHTTP(respWriterLive, requestLive)
+	h.ServeHTTP(respWriterBar, requestBar)
+
+	// Output:
+	// {
+	//   "application": "ExampleHTTPAddAll",
+	//   "duration_ms": 0,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "tracking_id_ExampleHTTPAddAll",
+	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "tracking_id": "tracking_id_ExampleHTTPAddAll",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+}
+
+type prettyJSONWriter struct{}
+
+func (pw prettyJSONWriter) Write(p []byte) (int, error) {
+	buf := &bytes.Buffer{}
+
+	data := &map[string]interface{}{}
+	if err := json.Unmarshal(p, data); err != nil {
+		return 0, fmt.Errorf("prettyJSONWriter: could not json.Unmarshal data: %w", err)
+	}
+
+	pp, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return 0, fmt.Errorf("prettyJSONWriter: could not json.MarshalIndent data: %w", err)
+	}
+
+	buf.Write(pp)
+
+	n, err := buf.WriteTo(os.Stdout)
+	return int(n), err
 }
