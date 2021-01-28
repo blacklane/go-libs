@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -23,6 +24,7 @@ type ConsoleWriter = zerolog.ConsoleWriter
 //   New(os.Stdout, "myAwesomeApp", WithStr("foo", "bar"))
 func New(w io.Writer, appName string, configs ...func(cfg *config)) Logger {
 	zerolog.TimestampFieldName = internal.FieldTimestamp
+	zerolog.TimeFieldFormat = time.RFC3339Nano
 
 	c := zerolog.New(w).
 		With().
