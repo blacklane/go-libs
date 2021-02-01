@@ -186,7 +186,7 @@ func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
 	hb.AddHandler(
 		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
 			log := logger.FromContext(ctx)
-			log.Info().Msgf("Handler function execution with tracking id = %v", tracking.IDFromContext(ctx))
+			log.Info().Msgf("Log from handler")
 			return nil
 		}))
 
@@ -196,7 +196,7 @@ func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"do_not_log_event"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Handler function execution with tracking id = tracking_id-ExampleEventsLogger_Success"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Log from handler"}
 	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"log_event succeeded"}
-	// {"level":"info","application":"ExampleEventsLogger","event":"do_not_log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Handler function execution with tracking id = tracking_id-ExampleEventsLogger_Success"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"do_not_log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Log from handler"}
 }
