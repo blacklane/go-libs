@@ -165,7 +165,7 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
 }
 
-func ExampleLogWithRequiredFieldsForAllEvents() {
+func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
 	// Set current time function so we can control the logged timestamp and duration
 	timeNowCalled := false
 	logger.SetNowFunc(func() time.Time {
