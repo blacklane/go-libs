@@ -27,7 +27,7 @@ func (m chain) apply(handler http.Handler) http.Handler {
 }
 
 func TestHTTPRequestLogger(t *testing.T) {
-	want := `{"level":"info","application":"TestHTTPRequestLogger","entry_point":false,"host":"example.com","ip":"localhost","params":"","path":"/do_not_skip","request_depth":0,"request_id":"a_known_id","route":"","tracking_id":"a_known_id","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":0,"request_duration":0,"timestamp":"2009-11-10T23:00:00Z","message":"GET /do_not_skip"}` + "\n"
+	want := `{"level":"info","application":"TestHTTPRequestLogger","entry_point":false,"host":"example.com","ip":"localhost","params":"","path":"/do_not_skip","request_depth":0,"request_id":"a_known_id","route":"","tracking_id":"a_known_id","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":0,"request_duration":0,"timestamp":"2009-11-10T23:00:00.000Z","message":"GET /do_not_skip"}` + "\n"
 
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {

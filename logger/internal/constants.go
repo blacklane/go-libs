@@ -26,6 +26,8 @@ const (
 	FieldStatus          = "status"
 	FieldRequestDuration = "request_duration"
 
+	TimeFieldFormat = "2006-01-02T15:04:05.000Z07:00"
+
 	// Event constants
 
 	// EventRequestFinished should be used as 'event' when logging a finished request/job

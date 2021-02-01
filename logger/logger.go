@@ -23,6 +23,7 @@ type ConsoleWriter = zerolog.ConsoleWriter
 //   New(os.Stdout, "myAwesomeApp", WithStr("foo", "bar"))
 func New(w io.Writer, appName string, configs ...func(cfg *config)) Logger {
 	zerolog.TimestampFieldName = internal.FieldTimestamp
+	zerolog.TimeFieldFormat = internal.TimeFieldFormat
 
 	c := zerolog.New(w).
 		With().
