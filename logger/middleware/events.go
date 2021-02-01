@@ -52,10 +52,6 @@ func EventsHandlerStatusLoggerWithNameFn(
 			}
 			evName := eventNameFn(e)
 
-			if !logEvent(evName, eventNames...) {
-				return next.Handle(ctx, e)
-			}
-
 			log := *logger.FromContext(ctx)
 			trackingID := tracking.IDFromContext(ctx)
 			logFields := map[string]interface{}{
@@ -66,6 +62,10 @@ func EventsHandlerStatusLoggerWithNameFn(
 
 			log = log.With().Fields(logFields).Logger()
 			ctx = log.WithContext(ctx)
+
+			if !logEvent(evName, eventNames...) {
+				return next.Handle(ctx, e)
+			}
 
 			defer func() {
 				zlEvent := log.Info()

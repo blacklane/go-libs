@@ -164,3 +164,39 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	// Output:
 	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
 }
+
+func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
+	// Set current time function so we can control the logged timestamp and duration
+	timeNowCalled := false
+	logger.SetNowFunc(func() time.Time {
+		now := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+		if timeNowCalled {
+			now = now.Add(time.Second)
+		}
+		timeNowCalled = true
+		return now
+	})
+
+	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
+
+	log := logger.New(os.Stdout, "ExampleEventsLogger")
+
+	hb := events.HandlerBuilder{}
+	hb.UseMiddleware(EventsHandlerStatusLogger("log_event"), EventsAddLogger(log))
+	hb.AddHandler(
+		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			log := logger.FromContext(ctx)
+			log.Info().Msgf("Log from handler")
+			return nil
+		}))
+
+	h := hb.Build()[0]
+
+	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"log_event"}`)})
+	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"do_not_log_event"}`)})
+
+	// Output:
+	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Log from handler"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"log_event succeeded"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"do_not_log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Log from handler"}
+}
