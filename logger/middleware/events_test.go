@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"testing"
 	"time"
 
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/blacklane/go-libs/logger"
 )
@@ -163,4 +166,24 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 
 	// Output:
 	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
+}
+
+func TestLogWithRequiredFieldsForAllEvents(t *testing.T){
+	log := logger.New(os.Stdout, "ExampleEventsLogger")
+	var ctxFromHandler context.Context
+
+	builder := events.HandlerBuilder{}
+	builder.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLoggerWithNameFn(nil, "eventName"))
+	builder.AddHandler(
+		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			fmt.Printf("==***== %v \n", ctx)
+			ctxFromHandler = ctx
+			return nil
+		}))
+	h := builder.Build()[0]
+
+	ctx := tracking.SetContextID(context.Background(), "tracking_id_here")
+	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"name":"anotherEventName"}`)})
+
+	assert.Equal(t, "tracking_id_here", logger.FromContext(ctxFromHandler))
 }
