@@ -4,14 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
-	"testing"
 	"time"
 
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/blacklane/go-libs/logger"
 )
@@ -168,22 +165,38 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"event_name_here succeeded"}
 }
 
-func TestLogWithRequiredFieldsForAllEvents(t *testing.T){
-	log := logger.New(os.Stdout, "ExampleEventsLogger")
-	var ctxFromHandler context.Context
+func ExampleLogWithRequiredFieldsForAllEvents() {
+	// Set current time function so we can control the logged timestamp and duration
+	timeNowCalled := false
+	logger.SetNowFunc(func() time.Time {
+		now := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+		if timeNowCalled {
+			now = now.Add(time.Second)
+		}
+		timeNowCalled = true
+		return now
+	})
 
-	builder := events.HandlerBuilder{}
-	builder.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLoggerWithNameFn(nil, "eventName"))
-	builder.AddHandler(
+	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
+
+	log := logger.New(os.Stdout, "ExampleEventsLogger")
+
+	hb := events.HandlerBuilder{}
+	hb.UseMiddleware(EventsHandlerStatusLogger("log_event"), EventsAddLogger(log))
+	hb.AddHandler(
 		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			fmt.Printf("==***== %v \n", ctx)
-			ctxFromHandler = ctx
+			log := logger.FromContext(ctx)
+			log.Info().Msgf("Handler function execution with tracking id = %v", tracking.IDFromContext(ctx))
 			return nil
 		}))
-	h := builder.Build()[0]
 
-	ctx := tracking.SetContextID(context.Background(), "tracking_id_here")
-	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"name":"anotherEventName"}`)})
+	h := hb.Build()[0]
 
-	assert.Equal(t, "tracking_id_here", logger.FromContext(ctxFromHandler))
+	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"log_event"}`)})
+	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"do_not_log_event"}`)})
+
+	// Output:
+	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Handler function execution with tracking id = tracking_id-ExampleEventsLogger_Success"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01Z","message":"log_event succeeded"}
+	// {"level":"info","application":"ExampleEventsLogger","event":"do_not_log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01Z","message":"Handler function execution with tracking id = tracking_id-ExampleEventsLogger_Success"}
 }
