@@ -7,17 +7,16 @@ const (
 
 	// Fields, Event and Headers constants following http://handbook.int.blacklane.io/monitoring/kiev.html
 
-	FieldApplication     = "application"
-	FieldTimestamp       = "timestamp"
-	FieldTimestampFormat = "2006-01-02T15:04:05.000Z07:00"
-	FieldEntryPoint      = "entry_point"
-	FieldRequestID       = "request_id"
-	FieldRequestDepth    = "request_depth"
-	FieldTreePath        = "tree_path"
-	FieldRoute           = "route"
-	FieldHost            = "host"
-	FieldVerb            = "verb"
-	FieldPath            = "path"
+	FieldApplication  = "application"
+	FieldTimestamp    = "timestamp"
+	FieldEntryPoint   = "entry_point"
+	FieldRequestID    = "request_id"
+	FieldRequestDepth = "request_depth"
+	FieldTreePath     = "tree_path"
+	FieldRoute        = "route"
+	FieldHost         = "host"
+	FieldVerb         = "verb"
+	FieldPath         = "path"
 
 	FieldEvent = "event"
 
@@ -26,6 +25,8 @@ const (
 	FieldUserAgent       = "user_agent"
 	FieldStatus          = "status"
 	FieldRequestDuration = "request_duration"
+
+	TimeFieldFormat = "2006-01-02T15:04:05.000Z07:00"
 
 	// Event constants
 
