@@ -1,0 +1,46 @@
+clone:
+  git:
+    image: blacklanedevops/drone-git:next
+
+pipeline:
+  pull:
+    image: yspro/drone-plugin-ecr-fetcher
+    pull: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    images:
+      - 721041513556.dkr.ecr.eu-central-1.amazonaws.com/aws-secrets-fetcher
+
+  aws_secrets:
+    image: 721041513556.dkr.ecr.eu-central-1.amazonaws.com/aws-secrets-fetcher
+    aws_secrets:
+      - GITHUB_TOKEN: devops/github/blacklane-deploy-token
+
+  test_tracking:
+    image: golang:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - export $(cat .ci-secrets | xargs)
+      - cd tracking
+      - make gitconfig test
+
+  test_logger:
+    image: golang:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - export $(cat .ci-secrets | xargs)
+      - cd logger
+      - make gitconfig test
+
+  test_x/events:
+    image: docker/compose:alpine-1.28.2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - apk --no-cache add make
+      - cd x/events
+      - make compose-tests
+
+branches: [ master ]
