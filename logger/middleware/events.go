@@ -12,7 +12,7 @@ import (
 	"github.com/blacklane/go-libs/logger/internal"
 )
 
-// EventsAddAll adds the necessary middleware for:
+// EventsAddDefault adds the necessary middleware for:
 //   - have tracking id in the context (read from the headers or a new one),
 //   - have a logger.Logger with tracking id and all required fields in the context,
 //   - log at the end of handler if it succeeded or failed and how log it took.
@@ -20,7 +20,7 @@ import (
 // - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
 // - middleware.EventsAddLogger
 // - middleware.EventsHandlerStatusLogger
-func EventsAddAll(handler events.Handler, log logger.Logger, eventNames ...string) events.Handler {
+func EventsAddDefault(handler events.Handler, log logger.Logger, eventNames ...string) events.Handler {
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
@@ -133,4 +133,9 @@ func eventName(e events.Event) string {
 	}
 
 	return payload.Name
+}
+
+// EventsMagic delegates to EventsAddDefault
+func EventsMagic(handler events.Handler, log logger.Logger, eventNames ...string) events.Handler {
+	return EventsAddDefault(handler, log, eventNames...)
 }
