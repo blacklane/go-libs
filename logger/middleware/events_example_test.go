@@ -12,7 +12,7 @@ import (
 	"github.com/blacklane/go-libs/logger"
 )
 
-func ExampleEventsAddAll() {
+func ExampleEventsAddDefault() {
 	trackingID := "the_tracking_id"
 
 	// Set current time function so we can control the logged timestamp
@@ -20,7 +20,7 @@ func ExampleEventsAddAll() {
 		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	})
 
-	log := logger.New(prettyWriter, "ExampleEventsAddAll")
+	log := logger.New(prettyJSONWriter{}, "ExampleEventsAddAll")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
 		l := logger.FromContext(ctx)
@@ -29,7 +29,7 @@ func ExampleEventsAddAll() {
 	})
 
 	eventNameToLog := "event_to_be_logged"
-	hh := EventsAddAll(h, log, eventNameToLog)
+	hh := EventsAddDefault(h, log, eventNameToLog)
 
 	eventToLog := events.Event{
 		Headers: map[string]string{"X-Tracking-Id": trackingID},
@@ -50,7 +50,7 @@ func ExampleEventsAddAll() {
 	//   "level": "info",
 	//   "message": "always logged",
 	//   "request_id": "the_tracking_id",
-	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
 	//   "tracking_id": "the_tracking_id"
 	// }
 	// {
@@ -60,14 +60,17 @@ func ExampleEventsAddAll() {
 	//   "level": "info",
 	//   "message": "event_to_be_logged succeeded",
 	//   "request_id": "the_tracking_id",
-	//   "timestamp": "2009-11-10T23:00:00Z",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
 	//   "tracking_id": "the_tracking_id"
 	// }
 	// {
 	//   "application": "ExampleEventsAddAll",
+	//   "event": "event_to_not_log",
 	//   "level": "info",
 	//   "message": "always logged",
-	//   "timestamp": "2009-11-10T23:00:00Z"
+	//   "request_id": "the_tracking_id",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "tracking_id": "the_tracking_id"
 	// }
 }
 
@@ -77,7 +80,7 @@ func ExampleEventsAddLogger() {
 		return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	})
 
-	log := logger.New(prettyWriter, "ExampleEventsAddLogger")
+	log := logger.New(prettyJSONWriter{}, "ExampleEventsAddLogger")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
 		l := logger.FromContext(ctx)
@@ -95,7 +98,7 @@ func ExampleEventsAddLogger() {
 	//   "application": "ExampleEventsAddLogger",
 	//   "level": "info",
 	//   "message": "Hello, Gophers from events",
-	//   "timestamp": "2009-11-10T23:00:00Z"
+	//   "timestamp": "2009-11-10T23:00:00.000Z"
 	// }
 }
 
@@ -113,7 +116,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
 
-	log := logger.New(prettyWriter, "ExampleEventsLogger")
+	log := logger.New(prettyJSONWriter{}, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger())
@@ -132,7 +135,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 	//   "level": "info",
 	//   "message": "event_name_here succeeded",
 	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
-	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "timestamp": "2009-11-10T23:00:01.000Z",
 	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
 	// }
 }
@@ -151,12 +154,16 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
 
-	log := logger.New(prettyWriter, "ExampleEventsLogger")
+	log := logger.New(prettyJSONWriter{}, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger("log_event"))
 	hb.AddHandler(
-		events.HandlerFunc(func(context.Context, events.Event) error { return nil }))
+		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			log := logger.FromContext(ctx)
+			log.Info().Msgf("Log from handler")
+			return nil
+		}))
 
 	h := hb.Build()[0]
 
@@ -166,16 +173,33 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 	// Output:
 	// {
 	//   "application": "ExampleEventsLogger",
+	//   "event": "log_event",
+	//   "level": "info",
+	//   "message": "Log from handler",
+	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
+	//   "timestamp": "2009-11-10T23:00:01.000Z",
+	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
+	// }
+	// {
+	//   "application": "ExampleEventsLogger",
 	//   "duration_ms": 1000,
 	//   "event": "log_event",
 	//   "level": "info",
 	//   "message": "log_event succeeded",
 	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
-	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "timestamp": "2009-11-10T23:00:01.000Z",
+	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
+	// }
+	// {
+	//   "application": "ExampleEventsLogger",
+	//   "event": "do_not_log_event",
+	//   "level": "info",
+	//   "message": "Log from handler",
+	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
+	//   "timestamp": "2009-11-10T23:00:01.000Z",
 	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
 	// }
 }
-
 func ExampleEventsHandlerStatusLogger_failure() {
 	// Set current time function so we can control the logged timestamp and duration
 	timeNowCalled := false
@@ -190,7 +214,7 @@ func ExampleEventsHandlerStatusLogger_failure() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Failure")
 
-	log := logger.New(prettyWriter, "ExampleEventsLogger")
+	log := logger.New(prettyJSONWriter{}, "ExampleEventsLogger")
 
 	hb := events.HandlerBuilder{}
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger())
@@ -210,7 +234,7 @@ func ExampleEventsHandlerStatusLogger_failure() {
 	//   "level": "error",
 	//   "message": "event_name_here failed",
 	//   "request_id": "tracking_id-ExampleEventsLogger_Failure",
-	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "timestamp": "2009-11-10T23:00:01.000Z",
 	//   "tracking_id": "tracking_id-ExampleEventsLogger_Failure"
 	// }
 }
@@ -229,7 +253,7 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 
 	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsHandlerStatusLoggerWithNameFn")
 
-	log := logger.New(prettyWriter, "ExampleEventsHandlerStatusLoggerWithNameFn")
+	log := logger.New(prettyJSONWriter{}, "ExampleEventsHandlerStatusLoggerWithNameFn")
 
 	hb := events.HandlerBuilder{}
 	nameFn := func(e events.Event) string {
@@ -260,43 +284,7 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	//   "level": "info",
 	//   "message": "event_name_here succeeded",
 	//   "request_id": "tracking_id-ExampleEventsHandlerStatusLoggerWithNameFn",
-	//   "timestamp": "2009-11-10T23:00:01Z",
+	//   "timestamp": "2009-11-10T23:00:01.000Z",
 	//   "tracking_id": "tracking_id-ExampleEventsHandlerStatusLoggerWithNameFn"
 	// }
-}
-
-func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
-	// Set current time function so we can control the logged timestamp and duration
-	timeNowCalled := false
-	logger.SetNowFunc(func() time.Time {
-		now := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-		if timeNowCalled {
-			now = now.Add(time.Second)
-		}
-		timeNowCalled = true
-		return now
-	})
-
-	ctx := tracking.SetContextID(context.Background(), "tracking_id-ExampleEventsLogger_Success")
-
-	log := logger.New(os.Stdout, "ExampleEventsLogger")
-
-	hb := events.HandlerBuilder{}
-	hb.UseMiddleware(EventsHandlerStatusLogger("log_event"), EventsAddLogger(log))
-	hb.AddHandler(
-		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			log := logger.FromContext(ctx)
-			log.Info().Msgf("Log from handler")
-			return nil
-		}))
-
-	h := hb.Build()[0]
-
-	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"log_event"}`)})
-	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"do_not_log_event"}`)})
-
-	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01.000Z","message":"Log from handler"}
-	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"log_event succeeded"}
-	// {"level":"info","application":"ExampleEventsLogger","event":"do_not_log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01.000Z","message":"Log from handler"}
 }
