@@ -4,8 +4,7 @@ GO ?= go
 GOLINT ?= golint
 STATICCHECK ?= staticcheck
 
-# Use a github token or similar to access private repos
-# In this example it's got no effect rather than changing from ssh to https
+# Use a github token to access private repos
 gitconfig:
 	@git config --global url.https://${GITHUB_TOKEN}@github.com.insteadOf https://github.com
 
