@@ -4,10 +4,14 @@ GO ?= go
 GOLINT ?= golint
 STATICCHECK ?= staticcheck
 
-download:
+# Use a github token to access private repos
+gitconfig:
+	@git config --global url.https://${GITHUB_TOKEN}@github.com.insteadOf https://github.com
+
+deps:
 	${GO} mod download
 
-test:
+test: deps
 	${GO} test -race ./...
 
 lint:
