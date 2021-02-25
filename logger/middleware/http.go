@@ -21,7 +21,7 @@ import (
 // - github.com/blacklane/go-libs/tracking/middleware.TrackingID
 // - middleware.HTTPAddLogger
 // - middleware.HTTPRequestLogger
-func HTTPAddDefault(log logger.Logger, skipRoutes []string) func(http.Handler) http.Handler {
+func HTTPAddDefault(log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := HTTPRequestLogger(skipRoutes)(next)
@@ -162,6 +162,6 @@ func (w *responseWriter) Write(buf []byte) (int, error) {
 }
 
 // HTTPMagic delegates to HTTPAddDefault
-func HTTPMagic(log logger.Logger, skipRoutes []string) func(http.Handler) http.Handler {
-	return HTTPAddDefault(log, skipRoutes)
+func HTTPMagic(log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
+	return HTTPAddDefault(log, skipRoutes...)
 }

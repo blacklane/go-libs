@@ -36,7 +36,7 @@ func ExampleHTTPAddDefault() {
 		_, _ = fmt.Fprint(w, "ExampleHTTPAddAll")
 	})
 
-	allInOneMiddleware := HTTPAddDefault(log, []string{livePath})
+	allInOneMiddleware := HTTPAddDefault(log, livePath)
 	h := allInOneMiddleware(handler)
 
 	h.ServeHTTP(respWriterLive, requestLive)
