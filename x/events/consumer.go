@@ -37,9 +37,10 @@ type kafkaConsumer struct {
 
 	handlers []Handler
 
-	runMu    sync.RWMutex
-	run      bool
-	shutdown bool
+	runMu          sync.RWMutex
+	run            bool
+	shutdown       bool
+	keysInProgress sync.Map
 }
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
@@ -141,16 +142,20 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 }
 
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
-	for _, h := range c.handlers {
-		c.wg.Add(1)
-		go func(h Handler) {
-			defer c.wg.Done()
-			e := messageToEvent(msg)
+	c.wg.Add(1)
+	e := messageToEvent(msg)
+	go func(handlers []Handler, keysInProgress *sync.Map) {
+		defer c.wg.Done()
 
-			// Errors are ignored, a middleware or the handler should handle them
+		keyMutex, _ := keysInProgress.LoadOrStore(string(e.Key), &sync.Mutex{})
+		keyMutex.(sync.Locker).Lock()
+		// Errors are ignored, a middleware or the handler should handle them
+		for _, h := range handlers {
 			_ = h.Handle(context.Background(), *e)
-		}(h)
-	}
+		}
+		keyMutex.(sync.Locker).Unlock()
+		keysInProgress.Delete(string(e.Key))
+	}(c.handlers, &c.keysInProgress)
 }
 
 func (c *kafkaConsumer) refreshToken() {

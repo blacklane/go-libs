@@ -1,8 +1,12 @@
 package events
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/go-cmp/cmp"
@@ -106,4 +110,58 @@ func TestNewKafkaConsumerConfigAllInitialised(t *testing.T) {
 	if kc.errFn == nil {
 		t.Errorf("errFn is nil")
 	}
+}
+
+func TestDeliverMessageOrderedPerKey(t *testing.T) {
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
+	processedEvents := make([]string, 0)
+	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
+		waitFor, _ := time.ParseDuration(string(e.Payload))
+		time.Sleep(waitFor)
+		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
+		return nil
+	}))
+	if err != nil {
+		t.Fatalf("cannot create kafka consumer: %v", err)
+	}
+
+	kc, ok := c.(*kafkaConsumer)
+	if !ok {
+		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+	}
+
+	msgWaiting3 := kafka.Message{
+		Key:   []byte("key"),
+		Value: []byte("3s"),
+	}
+
+	msgWaiting1 := kafka.Message{
+		Key:   []byte("key"),
+		Value: []byte("1s"),
+	}
+	otherMsgWaiting1 := kafka.Message{
+		Key:   []byte("other"),
+		Value: []byte("1s"),
+	}
+
+	kc.deliverMessage(&msgWaiting3)
+	time.Sleep(time.Millisecond)
+	kc.deliverMessage(&msgWaiting1)
+	time.Sleep(time.Millisecond)
+	kc.deliverMessage(&otherMsgWaiting1)
+	kc.wg.Wait()
+	const expectedOrder = "other:1s,key:3s,key:1s"
+	outOrder := strings.Join(processedEvents, ",")
+	if outOrder != expectedOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
+	}
+}
+
+func indexOf(element string, data []string) int {
+	for k, v := range data {
+		if element == v {
+			return k
+		}
+	}
+	return -1 //not found.
 }
