@@ -154,12 +154,3 @@ func TestDeliverMessageOrderedPerKey(t *testing.T) {
 		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
 	}
 }
-
-func indexOf(element string, data []string) int {
-	for k, v := range data {
-		if element == v {
-			return k
-		}
-	}
-	return -1 //not found.
-}
