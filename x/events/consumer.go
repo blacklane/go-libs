@@ -144,18 +144,19 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	c.wg.Add(1)
 	e := messageToEvent(msg)
-	go func(handlers []Handler, keysInProgress *sync.Map) {
-		defer c.wg.Done()
+	keyMutex, _ := c.keysInProgress.LoadOrStore(string(e.Key), &sync.Mutex{})
 
-		keyMutex, _ := keysInProgress.LoadOrStore(string(e.Key), &sync.Mutex{})
+	go func(handlers []Handler, keysInProgress *sync.Map, keyMutex sync.Locker) {
+		defer c.wg.Done()
 		keyMutex.(sync.Locker).Lock()
+
 		// Errors are ignored, a middleware or the handler should handle them
 		for _, h := range handlers {
 			_ = h.Handle(context.Background(), *e)
 		}
-		keyMutex.(sync.Locker).Unlock()
+		keyMutex.Unlock()
 		keysInProgress.Delete(string(e.Key))
-	}(c.handlers, &c.keysInProgress)
+	}(c.handlers, &c.keysInProgress, keyMutex.(sync.Locker))
 }
 
 func (c *kafkaConsumer) refreshToken() {

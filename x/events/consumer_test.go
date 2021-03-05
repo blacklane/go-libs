@@ -145,9 +145,7 @@ func TestDeliverMessageOrderedPerKey(t *testing.T) {
 	}
 
 	kc.deliverMessage(&msgWaiting3)
-	time.Sleep(time.Millisecond)
 	kc.deliverMessage(&msgWaiting1)
-	time.Sleep(time.Millisecond)
 	kc.deliverMessage(&otherMsgWaiting1)
 	kc.wg.Wait()
 	const expectedOrder = "other:1s,key:3s,key:1s"
