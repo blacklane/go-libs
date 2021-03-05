@@ -132,12 +132,12 @@ func TestDeliverMessageOrderedPerKey(t *testing.T) {
 
 	msgWaiting3 := kafka.Message{
 		Key:   []byte("key"),
-		Value: []byte("3s"),
+		Value: []byte("1.5s"),
 	}
 
 	msgWaiting1 := kafka.Message{
 		Key:   []byte("key"),
-		Value: []byte("1s"),
+		Value: []byte("200ms"),
 	}
 	otherMsgWaiting1 := kafka.Message{
 		Key:   []byte("other"),
@@ -148,7 +148,7 @@ func TestDeliverMessageOrderedPerKey(t *testing.T) {
 	kc.deliverMessage(&msgWaiting1)
 	kc.deliverMessage(&otherMsgWaiting1)
 	kc.wg.Wait()
-	const expectedOrder = "other:1s,key:3s,key:1s"
+	const expectedOrder = "other:1s,key:1.5s,key:200ms"
 	outOrder := strings.Join(processedEvents, ",")
 	if outOrder != expectedOrder {
 		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
