@@ -148,7 +148,7 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 
 	go func(handlers []Handler, keysInProgress *sync.Map, keyMutex sync.Locker) {
 		defer c.wg.Done()
-		keyMutex.(sync.Locker).Lock()
+		keyMutex.Lock()
 
 		// Errors are ignored, a middleware or the handler should handle them
 		for _, h := range handlers {
