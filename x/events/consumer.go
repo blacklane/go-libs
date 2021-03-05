@@ -40,7 +40,8 @@ type kafkaConsumer struct {
 	runMu          sync.RWMutex
 	run            bool
 	shutdown       bool
-	keysInProgress sync.Map
+	keysMu         sync.Mutex
+	keysInProgress map[string]chan struct{}
 }
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
@@ -81,7 +82,9 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
 
-		done: make(chan struct{}),
+		done:           make(chan struct{}),
+		keysMu:         sync.Mutex{},
+		keysInProgress: make(map[string]chan struct{}),
 	}, nil
 }
 
@@ -144,19 +147,30 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	c.wg.Add(1)
 	e := messageToEvent(msg)
-	keyMutex, _ := c.keysInProgress.LoadOrStore(string(e.Key), &sync.Mutex{})
 
-	go func(handlers []Handler, keysInProgress *sync.Map, keyMutex sync.Locker) {
+	c.keysMu.Lock()
+	key := string(e.Key)
+	keyLock, found := c.keysInProgress[key]
+	if !found {
+		keyLock = make(chan struct{}, 1)
+		c.keysInProgress[key] = keyLock
+	}
+	c.keysMu.Unlock()
+
+	go func(handlers []Handler, keysInProgress *map[string]chan struct{}, keyLock chan struct{}, keysMu *sync.Mutex) {
 		defer c.wg.Done()
-		keyMutex.Lock()
+		keyLock <- struct{}{}
 
 		// Errors are ignored, a middleware or the handler should handle them
 		for _, h := range handlers {
 			_ = h.Handle(context.Background(), *e)
 		}
-		keyMutex.Unlock()
-		keysInProgress.Delete(string(e.Key))
-	}(c.handlers, &c.keysInProgress, keyMutex.(sync.Locker))
+
+		_ = <-keyLock
+		keysMu.Lock()
+		delete(*keysInProgress, string(e.Key))
+		keysMu.Unlock()
+	}(c.handlers, &c.keysInProgress, keyLock, &c.keysMu)
 }
 
 func (c *kafkaConsumer) refreshToken() {
