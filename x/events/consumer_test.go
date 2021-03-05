@@ -130,23 +130,23 @@ func TestDeliverMessageOrderedPerKey(t *testing.T) {
 		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
 	}
 
-	msgWaiting3 := kafka.Message{
+	msgWaitingLonger := kafka.Message{
 		Key:   []byte("key"),
 		Value: []byte("1.5s"),
 	}
 
-	msgWaiting1 := kafka.Message{
+	msgWaitingShorter := kafka.Message{
 		Key:   []byte("key"),
 		Value: []byte("200ms"),
 	}
-	otherMsgWaiting1 := kafka.Message{
+	otherMsgWaiting := kafka.Message{
 		Key:   []byte("other"),
 		Value: []byte("1s"),
 	}
 
-	kc.deliverMessage(&msgWaiting3)
-	kc.deliverMessage(&msgWaiting1)
-	kc.deliverMessage(&otherMsgWaiting1)
+	kc.deliverMessage(&msgWaitingLonger)
+	kc.deliverMessage(&msgWaitingShorter)
+	kc.deliverMessage(&otherMsgWaiting)
 	kc.wg.Wait()
 	const expectedOrder = "other:1s,key:1.5s,key:200ms"
 	outOrder := strings.Join(processedEvents, ",")
