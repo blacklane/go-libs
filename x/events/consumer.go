@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -24,7 +25,18 @@ type Consumer interface {
 // *kafkaConfig.WithXXX` methods as well
 type KafkaConsumerConfig struct {
 	*kafkaConfig
+	orderKey OrderKey
 }
+
+type OrderKey int
+
+const (
+	OrderByMessageKey OrderKey = iota
+	OrderByTrackingId
+	OrderByTimestamp
+	OrderByOffset
+	OrderByNotSpecified
+)
 
 type kafkaConsumer struct {
 	*kafkaCommon
@@ -37,9 +49,11 @@ type kafkaConsumer struct {
 
 	handlers []Handler
 
-	runMu          sync.RWMutex
-	run            bool
-	shutdown       bool
+	runMu    sync.RWMutex
+	run      bool
+	shutdown bool
+
+	orderKey       OrderKey
 	keysInProgress sync.Map
 }
 
@@ -51,7 +65,13 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 			tokenSource: emptyTokenSource{},
 			errFn:       func(error) {},
 		},
+		orderKey: OrderByNotSpecified,
 	}
+}
+
+func (k *KafkaConsumerConfig) WithOrder(orderKey OrderKey) *KafkaConsumerConfig {
+	k.orderKey = orderKey
+	return k
 }
 
 // NewKafkaConsumer returns a Consumer which will send every message to all
@@ -81,7 +101,8 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
 
-		done: make(chan struct{}),
+		done:     make(chan struct{}),
+		orderKey: config.orderKey,
 	}, nil
 }
 
@@ -144,19 +165,60 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	c.wg.Add(1)
 	e := messageToEvent(msg)
-	keyMutex, _ := c.keysInProgress.LoadOrStore(string(e.Key), &sync.Mutex{})
 
-	go func(handlers []Handler, keysInProgress *sync.Map, keyMutex sync.Locker) {
+	var orderKey string
+	var orderMutex sync.Locker
+	var sorted bool
+	switch c.orderKey {
+	case OrderByNotSpecified:
+		orderMutex = &sync.Mutex{} // always new mutex
+	case OrderByOffset:
+		orderKey = msg.TopicPartition.Offset.String()
+		sorted = true
+	case OrderByTimestamp:
+		orderKey = msg.Timestamp.Format(time.RFC3339Nano) // as it sorts nicely on strings
+		sorted = true
+	case OrderByMessageKey:
+		orderKey = string(e.Key)
+	case OrderByTrackingId:
+		orderKey = e.Headers[HeaderTrackingID]
+	}
+	println(fmt.Sprintf("%s", e.Key), orderKey, ":")
+
+	if sorted {
+		var prevOrderKey string
+		c.keysInProgress.Range(func(key, value interface{}) bool {
+			orderMutex = value.(sync.Locker)
+			prevOrderKey = fmt.Sprintf("%v", key)
+			println("range:", prevOrderKey, prevOrderKey <= orderKey)
+			if c.orderKey == OrderByOffset {
+				offset, _ := strconv.ParseInt(orderKey, 10, 64)
+				keyOffset, _ := strconv.ParseInt(prevOrderKey, 10, 64)
+				return keyOffset <= offset
+			}
+			return prevOrderKey <= orderKey
+		})
+		if orderMutex != nil && orderKey != prevOrderKey {
+			// c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
+			orderKey = prevOrderKey
+		}
+	}
+	if orderMutex == nil {
+		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
+		orderMutex = keyMutex.(sync.Locker)
+	}
+
+	go func(handlers []Handler, orderKey string, keysInProgress *sync.Map, orderMutex sync.Locker) {
 		defer c.wg.Done()
-		keyMutex.Lock()
+		orderMutex.Lock()
 
 		// Errors are ignored, a middleware or the handler should handle them
 		for _, h := range handlers {
 			_ = h.Handle(context.Background(), *e)
 		}
-		keyMutex.Unlock()
-		keysInProgress.Delete(string(e.Key))
-	}(c.handlers, &c.keysInProgress, keyMutex.(sync.Locker))
+		orderMutex.Unlock()
+		keysInProgress.Delete(orderKey)
+	}(c.handlers, orderKey, &c.keysInProgress, orderMutex)
 }
 
 func (c *kafkaConsumer) refreshToken() {
