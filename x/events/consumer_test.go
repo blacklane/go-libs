@@ -244,3 +244,96 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
 	}
 }
+
+func TestDeliverMessageOrderedByOffset(t *testing.T) {
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"}).WithOrder(OrderByOffset)
+	processedEvents := make([]string, 0)
+	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
+		waitFor, _ := time.ParseDuration(string(e.Payload))
+		time.Sleep(waitFor)
+		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
+		return nil
+	}))
+	if err != nil {
+		t.Fatalf("cannot create kafka consumer: %v", err)
+	}
+
+	kc, ok := c.(*kafkaConsumer)
+	if !ok {
+		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+	}
+
+	msgWaitingLonger := kafka.Message{
+		Key:            []byte("key"),
+		Value:          []byte("1.5s"),
+		TopicPartition: kafka.TopicPartition{Offset: kafka.Offset(1)},
+	}
+
+	msgWaitingShorter := kafka.Message{
+		Key:            []byte("key"),
+		Value:          []byte("200ms"),
+		TopicPartition: kafka.TopicPartition{Offset: kafka.Offset(3)},
+	}
+	otherMsgWaiting := kafka.Message{
+		Key:            []byte("other"),
+		Value:          []byte("1s"),
+		TopicPartition: kafka.TopicPartition{Offset: kafka.Offset(2)},
+	}
+
+	kc.deliverMessage(&msgWaitingLonger)
+	kc.deliverMessage(&otherMsgWaiting)
+	kc.deliverMessage(&msgWaitingShorter)
+	kc.wg.Wait()
+	const expectedOrder = "key:1.5s,other:1s,key:200ms"
+	outOrder := strings.Join(processedEvents, ",")
+	if outOrder != expectedOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
+	}
+}
+
+func TestDeliverMessageOrderedByTimestamp(t *testing.T) {
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"}).WithOrder(OrderByTimestamp)
+	processedEvents := make([]string, 0)
+	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
+		waitFor, _ := time.ParseDuration(string(e.Payload))
+		time.Sleep(waitFor)
+		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
+		return nil
+	}))
+	if err != nil {
+		t.Fatalf("cannot create kafka consumer: %v", err)
+	}
+
+	kc, ok := c.(*kafkaConsumer)
+	if !ok {
+		t.Fatalf("cannot cast Consumer to *kafkaConsumer")
+	}
+
+	msgWaitingLonger := kafka.Message{
+		Key:       []byte("key"),
+		Value:     []byte("1.5s"),
+		Timestamp: time.Unix(1615201245, 33621),
+	}
+
+	otherMsgWaiting := kafka.Message{
+		Key:       []byte("other"),
+		Value:     []byte("1s"),
+		Timestamp: time.Unix(1615201246, 0),
+	}
+
+	msgWaitingShorter := kafka.Message{
+		Key:       []byte("key2"),
+		Value:     []byte("200ms"),
+		Timestamp: time.Unix(1615201246, 33660),
+	}
+
+	kc.deliverMessage(&msgWaitingLonger)
+	kc.deliverMessage(&otherMsgWaiting)
+	kc.deliverMessage(&msgWaitingShorter)
+	kc.wg.Wait()
+	const expectedOrder = "key:1.5s,other:1s,key2:200ms"
+	outOrder := strings.Join(processedEvents, ",")
+	if outOrder != expectedOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
+	}
+}

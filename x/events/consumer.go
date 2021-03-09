@@ -52,8 +52,10 @@ type kafkaConsumer struct {
 	run      bool
 	shutdown bool
 
-	orderKey       OrderKey
-	keysInProgress sync.Map
+	orderKey             OrderKey
+	orderMu              sync.Mutex
+	keysInProgress       sync.Map
+	sortedKeysInProgress []string
 }
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
@@ -100,8 +102,9 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
 
-		done:     make(chan struct{}),
-		orderKey: config.orderKey,
+		done:                 make(chan struct{}),
+		orderKey:             config.orderKey,
+		sortedKeysInProgress: make([]string, 0),
 	}, nil
 }
 
@@ -167,6 +170,8 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 
 	var orderKey string
 	var orderMutex sync.Locker
+	var sorted bool
+	var nextOrderKey string
 	switch c.orderKey {
 	case OrderByNotSpecified:
 		orderMutex = &sync.Mutex{} // always new mutex
@@ -174,14 +179,41 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 		orderKey = string(e.Key)
 	case OrderByTrackingId:
 		orderKey = e.Headers[HeaderTrackingID]
+	case OrderByOffset:
+		orderKey = msg.TopicPartition.Offset.String()
+		sorted = true
+	case OrderByTimestamp:
+		orderKey = msg.Timestamp.Format(time.RFC3339Nano) // as it sorts nicely on strings
+		sorted = true
 	}
+	if sorted {
+		c.orderMu.Lock()
+		nextOrderKey = orderKey
+		if keysLen := len(c.sortedKeysInProgress); keysLen > 0 {
+			orderKey = c.sortedKeysInProgress[keysLen-1]
+			keyValue, found := c.keysInProgress.Load(orderKey)
+			if found {
+				orderMutex = keyValue.(sync.Locker)
+			}
+		}
 
-	if orderMutex == nil {
+		if orderMutex == nil {
+			orderKey = "pre-" + orderKey
+			keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
+			orderMutex = keyMutex.(sync.Locker)
+		}
+		keyMutex, _ := c.keysInProgress.LoadOrStore(nextOrderKey, &sync.Mutex{}) // for next call
+		c.sortedKeysInProgress = append(c.sortedKeysInProgress, nextOrderKey)
+		c.orderMu.Unlock()
+		defer func() {
+			keyMutex.(sync.Locker).Lock()
+		}()
+	} else if orderMutex == nil {
 		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
 		orderMutex = keyMutex.(sync.Locker)
 	}
 
-	go func(handlers []Handler, orderKey string, keysInProgress *sync.Map, orderMutex sync.Locker) {
+	go func(handlers []Handler, orderKey, nextOrderKey string, orderMutex sync.Locker) {
 		defer c.wg.Done()
 		orderMutex.Lock()
 
@@ -190,8 +222,17 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 			_ = h.Handle(context.Background(), *e)
 		}
 		orderMutex.Unlock()
-		keysInProgress.Delete(orderKey)
-	}(c.handlers, orderKey, &c.keysInProgress, orderMutex)
+		nextMutex, found := c.keysInProgress.Load(nextOrderKey)
+		if found {
+			nextMutex.(sync.Locker).Unlock()
+		}
+		c.orderMu.Lock()
+		c.keysInProgress.Delete(orderKey)
+		if sorted && c.sortedKeysInProgress[0] == orderKey {
+			c.sortedKeysInProgress = c.sortedKeysInProgress[1:]
+		}
+		c.orderMu.Unlock()
+	}(c.handlers, orderKey, nextOrderKey, orderMutex)
 }
 
 func (c *kafkaConsumer) refreshToken() {
