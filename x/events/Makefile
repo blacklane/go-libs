@@ -23,6 +23,7 @@ check:
 	$(GOLINT) $$($(GO) list ./...)
 
 compose-tests:
+	export COMPOSE_PROJECT_NAME="demeter-build-$DRONE_BUILD_NUMBER"
 	docker-compose --env-file .env_compose up \
 		--build \
 		--force-recreate \
