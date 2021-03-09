@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -168,41 +167,15 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 
 	var orderKey string
 	var orderMutex sync.Locker
-	var sorted bool
 	switch c.orderKey {
 	case OrderByNotSpecified:
 		orderMutex = &sync.Mutex{} // always new mutex
-	case OrderByOffset:
-		orderKey = msg.TopicPartition.Offset.String()
-		sorted = true
-	case OrderByTimestamp:
-		orderKey = msg.Timestamp.Format(time.RFC3339Nano) // as it sorts nicely on strings
-		sorted = true
 	case OrderByMessageKey:
 		orderKey = string(e.Key)
 	case OrderByTrackingId:
 		orderKey = e.Headers[HeaderTrackingID]
 	}
-	println(fmt.Sprintf("%s", e.Key), orderKey, ":")
 
-	if sorted {
-		var prevOrderKey string
-		c.keysInProgress.Range(func(key, value interface{}) bool {
-			orderMutex = value.(sync.Locker)
-			prevOrderKey = fmt.Sprintf("%v", key)
-			println("range:", prevOrderKey, prevOrderKey <= orderKey)
-			if c.orderKey == OrderByOffset {
-				offset, _ := strconv.ParseInt(orderKey, 10, 64)
-				keyOffset, _ := strconv.ParseInt(prevOrderKey, 10, 64)
-				return keyOffset <= offset
-			}
-			return prevOrderKey <= orderKey
-		})
-		if orderMutex != nil && orderKey != prevOrderKey {
-			// c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
-			orderKey = prevOrderKey
-		}
-	}
 	if orderMutex == nil {
 		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
 		orderMutex = keyMutex.(sync.Locker)
