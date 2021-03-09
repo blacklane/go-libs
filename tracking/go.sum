@@ -1,8 +1,8 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/blacklane/go-libs/logger v0.2.0 h1:ndIm17cQHeBaOpacaWReQVDqjwWRJf381maN5CDtSGs=
-github.com/blacklane/go-libs/logger v0.2.0/go.mod h1:cF10lTGctsI9dlYO1Splz2isIEDKYVakibH6vUFU6dQ=
+github.com/blacklane/go-libs/logger v0.5.1 h1:EDHvypI0zmZNCwXhX4iFulK+exQwGR2dAFVTcJ2H5Rk=
+github.com/blacklane/go-libs/logger v0.5.1/go.mod h1:y6b3vg6DXd2LHdqUZ5KIkqcHj9pl64eYx0PVbBo4Osw=
 github.com/blacklane/go-libs/tracking v0.0.1/go.mod h1:mnDJmT2e0oqtVY5qoQNSrdP5kPMe/XOpNQ3WeVNiM7U=
 github.com/blacklane/go-libs/x/events v0.0.0-20200729083625-bff51d3ec664 h1:IXFmjxcEY3IYu/Ue8ZivelmDSQXuiAPX1eFAZop8C/g=
 github.com/blacklane/go-libs/x/events v0.0.0-20200729083625-bff51d3ec664/go.mod h1:9XVqU/pwOlbeFpSzzFIGm+iSWXmIYiTJyvOL38XoIzQ=
@@ -63,6 +63,8 @@ golang.org/x/net v0.0.0-20190603091049-60506f45cf65/go.mod h1:HSz+uSET+XFnRR8LxR
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200625001655-4c5254603344 h1:vGXIOMxbNfDTk/aXCmfdLgkrSV+Z2tcbze+pEc3v5W4=
 golang.org/x/net v0.0.0-20200625001655-4c5254603344/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
+golang.org/x/net v0.0.0-20200707034311-ab3426394381 h1:VXak5I6aEWmAXeQjA+QSZzlgNrpq9mjcfDemuexIKsU=
+golang.org/x/net v0.0.0-20200707034311-ab3426394381/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d h1:TzXSXBo42m9gQenoE3b9BGiEpg5IG2JkU5FkPIawgtw=
 golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
