@@ -71,8 +71,8 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 }
 
 // WithOrder allows to setup some order into execution of handlers on message delivery.
-// When OrderByMessageKey is setup there is guarantee no two message handlers for same
-// message key will be running at the same time. Default is OrderByNotSpecified
+// When OrderByMessageKey is setup there is a guarantee no two message handlers for same
+// message key will be running at the same time. Default is OrderByNotSpecified with noOpLocker.
 func (k *KafkaConsumerConfig) WithOrder(order DeliveryOrder) *KafkaConsumerConfig {
 	k.deliveryOrder = order
 	return k
