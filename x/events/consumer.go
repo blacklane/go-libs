@@ -24,15 +24,20 @@ type Consumer interface {
 // *kafkaConfig.WithXXX` methods as well
 type KafkaConsumerConfig struct {
 	*kafkaConfig
-	orderKey OrderKey
+	deliveryOrder DeliveryOrder
 }
 
-type OrderKey int
+type DeliveryOrder int
 
 const (
-	OrderByMessageKey OrderKey = iota
+	OrderByMessageKey DeliveryOrder = iota
 	OrderByNotSpecified
 )
+
+type noOpLocker struct{}
+
+func (n noOpLocker) Lock()   {}
+func (n noOpLocker) Unlock() {}
 
 type kafkaConsumer struct {
 	*kafkaCommon
@@ -49,7 +54,7 @@ type kafkaConsumer struct {
 	run      bool
 	shutdown bool
 
-	orderKey       OrderKey
+	deliveryOrder  DeliveryOrder
 	keysInProgress sync.Map
 }
 
@@ -61,12 +66,15 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 			tokenSource: emptyTokenSource{},
 			errFn:       func(error) {},
 		},
-		orderKey: OrderByNotSpecified,
+		deliveryOrder: OrderByNotSpecified,
 	}
 }
 
-func (k *KafkaConsumerConfig) WithOrder(orderKey OrderKey) *KafkaConsumerConfig {
-	k.orderKey = orderKey
+// WithOrder allows to setup some order into execution of handlers on message delivery.
+// When OrderByMessageKey is setup there is guarantee no two message handlers for same
+// message key will be running at the same time. Default is OrderByNotSpecified
+func (k *KafkaConsumerConfig) WithOrder(order DeliveryOrder) *KafkaConsumerConfig {
+	k.deliveryOrder = order
 	return k
 }
 
@@ -97,8 +105,8 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
 
-		done:     make(chan struct{}),
-		orderKey: config.orderKey,
+		done:          make(chan struct{}),
+		deliveryOrder: config.deliveryOrder,
 	}, nil
 }
 
@@ -158,32 +166,28 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-type noOpLocker struct{}
-
-func (n noOpLocker) Lock()   {}
-func (n noOpLocker) Unlock() {}
-
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
+	var orderKey string
+	var orderLocker sync.Locker
+
 	c.wg.Add(1)
 	e := messageToEvent(msg)
 
-	var orderKey string
-	var orderLocker sync.Locker
-	switch c.orderKey {
-	case OrderByNotSpecified:
-		orderLocker = noOpLocker{}
+	switch c.deliveryOrder {
 	case OrderByMessageKey:
 		orderKey = string(e.Key)
 		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
 		orderLocker = keyMutex.(sync.Locker)
+	case OrderByNotSpecified:
+		orderLocker = noOpLocker{}
 	}
 
 	go func(handlers []Handler, orderKey string, orderLocker sync.Locker) {
 		defer c.wg.Done()
 		orderLocker.Lock()
 
-		// Errors are ignored, a middleware or the handler should handle them
 		for _, h := range handlers {
+			// Errors are ignored, a middleware or the handler should handle them
 			_ = h.Handle(context.Background(), *e)
 		}
 
