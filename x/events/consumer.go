@@ -158,32 +158,38 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+type noOpLocker struct{}
+
+func (n noOpLocker) Lock()   {}
+func (n noOpLocker) Unlock() {}
+
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	c.wg.Add(1)
 	e := messageToEvent(msg)
 
 	var orderKey string
-	var orderMutex sync.Locker
+	var orderLocker sync.Locker
 	switch c.orderKey {
 	case OrderByNotSpecified:
-		orderMutex = &sync.Mutex{} // always new mutex
+		orderLocker = noOpLocker{}
 	case OrderByMessageKey:
 		orderKey = string(e.Key)
 		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
-		orderMutex = keyMutex.(sync.Locker)
+		orderLocker = keyMutex.(sync.Locker)
 	}
 
-	go func(handlers []Handler, orderKey string, orderMutex sync.Locker) {
+	go func(handlers []Handler, orderKey string, orderLocker sync.Locker) {
 		defer c.wg.Done()
-		orderMutex.Lock()
+		orderLocker.Lock()
 
 		// Errors are ignored, a middleware or the handler should handle them
 		for _, h := range handlers {
 			_ = h.Handle(context.Background(), *e)
 		}
-		orderMutex.Unlock()
+
+		orderLocker.Unlock()
 		c.keysInProgress.Delete(orderKey)
-	}(c.handlers, orderKey, orderMutex)
+	}(c.handlers, orderKey, orderLocker)
 }
 
 func (c *kafkaConsumer) refreshToken() {
