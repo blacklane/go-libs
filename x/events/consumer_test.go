@@ -113,7 +113,7 @@ func TestNewKafkaConsumerConfigAllInitialised(t *testing.T) {
 }
 
 func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
-	const expectedOrder = "other:100ms,key:150ms,key:20ms"
+	const wantOrder = "other:100ms,key:150ms,key:20ms"
 
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
 	kcc.WithDeliveryOrder(OrderByEventKey)
@@ -154,13 +154,13 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	kc.wg.Wait()
 
 	got := strings.Join(processedEvents, ",")
-	if got != expectedOrder {
-		t.Errorf("incorrect order of processed messages %q when should be %q", got, expectedOrder)
+	if got != wantOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", got, wantOrder)
 	}
 }
 
 func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
-	const expectedOrder = "key2:20ms,other:100ms,key:150ms" // by time it takes to execute, if arrive at more-less same time
+	const wantOrder = "key2:20ms,other:100ms,key:150ms" // by time it takes to execute, if arrive at more-less same time
 
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
 	var processedEvents []string
@@ -198,7 +198,7 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 	kc.wg.Wait()
 
 	got := strings.Join(processedEvents, ",")
-	if got != expectedOrder {
-		t.Errorf("incorrect order of processed messages %q when should be %q", got, expectedOrder)
+	if got != wantOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", got, wantOrder)
 	}
 }
