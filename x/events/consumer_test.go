@@ -147,6 +147,7 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	}
 
 	kc.deliverMessage(&msgWaitingLonger)
+	// time.Sleep here and below to incorporate some real-life delay between message deliveries
 	time.Sleep(time.Millisecond)
 	kc.deliverMessage(&msgWaitingShorter)
 	time.Sleep(time.Millisecond)
