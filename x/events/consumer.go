@@ -30,8 +30,9 @@ type KafkaConsumerConfig struct {
 type DeliveryOrder int
 
 const (
-	OrderByMessageKey DeliveryOrder = iota
-	OrderByNotSpecified
+	OrderNotSpecified DeliveryOrder = iota
+	// OrderByEventKey ensures all events with the same key are processed sequentially in the order they arrive.
+	OrderByEventKey
 )
 
 type noOpLocker struct{}
@@ -66,16 +67,16 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 			tokenSource: emptyTokenSource{},
 			errFn:       func(error) {},
 		},
-		deliveryOrder: OrderByNotSpecified,
+		deliveryOrder: OrderNotSpecified,
 	}
 }
 
-// WithOrder allows to setup some order into execution of handlers on message delivery.
-// When OrderByMessageKey is setup there is a guarantee no two message handlers for same
-// message key will be running at the same time. Default is OrderByNotSpecified with noOpLocker.
-func (k *KafkaConsumerConfig) WithOrder(order DeliveryOrder) *KafkaConsumerConfig {
+// WithDeliveryOrder ensures the events are processed in the chosen order and the handlers
+// are called synchronously for each event. See DeliveryOrder for possible ordering options.
+// The default is OrderNotSpecified which does not apply any ordering.
+// OrderByEventKey ensures all events with the same key are processed sequentially in the order they arrive.
+func (k *KafkaConsumerConfig) WithDeliveryOrder(order DeliveryOrder) {
 	k.deliveryOrder = order
-	return k
 }
 
 // NewKafkaConsumer returns a Consumer which will send every message to all
@@ -174,11 +175,11 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	e := messageToEvent(msg)
 
 	switch c.deliveryOrder {
-	case OrderByMessageKey:
+	case OrderByEventKey:
 		orderKey = string(e.Key)
 		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
 		orderLocker = keyMutex.(sync.Locker)
-	case OrderByNotSpecified:
+	case OrderNotSpecified:
 		orderLocker = noOpLocker{}
 	}
 

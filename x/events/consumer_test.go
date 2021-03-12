@@ -113,8 +113,11 @@ func TestNewKafkaConsumerConfigAllInitialised(t *testing.T) {
 }
 
 func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
-	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"}).WithOrder(OrderByMessageKey)
-	processedEvents := make([]string, 0)
+	const expectedOrder = "other:100ms,key:150ms,key:20ms"
+
+	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
+	kcc.WithDeliveryOrder(OrderByEventKey)
+	var processedEvents []string
 	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
 		waitFor, _ := time.ParseDuration(string(e.Payload))
 		time.Sleep(waitFor)
@@ -134,7 +137,6 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 		Key:   []byte("key"),
 		Value: []byte("150ms"),
 	}
-
 	msgWaitingShorter := kafka.Message{
 		Key:   []byte("key"),
 		Value: []byte("20ms"),
@@ -150,16 +152,18 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	kc.deliverMessage(&otherMsgWaiting)
 	kc.wg.Wait()
-	const expectedOrder = "other:100ms,key:150ms,key:20ms"
-	outOrder := strings.Join(processedEvents, ",")
-	if outOrder != expectedOrder {
-		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
+
+	got := strings.Join(processedEvents, ",")
+	if got != expectedOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", got, expectedOrder)
 	}
 }
 
 func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
+	const expectedOrder = "key2:20ms,other:100ms,key:150ms" // by time it takes to execute, if arrive at more-less same time
+
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
-	processedEvents := make([]string, 0)
+	var processedEvents []string
 	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
 		waitFor, _ := time.ParseDuration(string(e.Payload))
 		time.Sleep(waitFor)
@@ -179,12 +183,10 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 		Key:   []byte("key"),
 		Value: []byte("150ms"),
 	}
-
 	otherMsgWaiting := kafka.Message{
 		Key:   []byte("other"),
 		Value: []byte("100ms"),
 	}
-
 	msgWaitingShorter := kafka.Message{
 		Key:   []byte("key2"),
 		Value: []byte("20ms"),
@@ -194,9 +196,9 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 	kc.deliverMessage(&otherMsgWaiting)
 	kc.deliverMessage(&msgWaitingShorter)
 	kc.wg.Wait()
-	const expectedOrder = "key2:20ms,other:100ms,key:150ms" // by time it takes to execute, if arrive at more-less same time
-	outOrder := strings.Join(processedEvents, ",")
-	if outOrder != expectedOrder {
-		t.Errorf("incorrect order of processed messages %q when should be %q", outOrder, expectedOrder)
+
+	got := strings.Join(processedEvents, ",")
+	if got != expectedOrder {
+		t.Errorf("incorrect order of processed messages %q when should be %q", got, expectedOrder)
 	}
 }
