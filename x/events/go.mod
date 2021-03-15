@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/confluentinc/confluent-kafka-go v1.4.2
+	github.com/confluentinc/confluent-kafka-go v1.6.1
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-cmp v0.5.0
 	github.com/stretchr/testify v1.6.1 // indirect
