@@ -24,7 +24,21 @@ type Consumer interface {
 // *kafkaConfig.WithXXX` methods as well
 type KafkaConsumerConfig struct {
 	*kafkaConfig
+	deliveryOrder DeliveryOrder
 }
+
+type DeliveryOrder int
+
+const (
+	OrderNotSpecified DeliveryOrder = iota
+	// OrderByEventKey ensures all events with the same key are processed sequentially in the order they arrive.
+	OrderByEventKey
+)
+
+type noOpLocker struct{}
+
+func (n noOpLocker) Lock()   {}
+func (n noOpLocker) Unlock() {}
 
 type kafkaConsumer struct {
 	*kafkaCommon
@@ -40,6 +54,9 @@ type kafkaConsumer struct {
 	runMu    sync.RWMutex
 	run      bool
 	shutdown bool
+
+	deliveryOrder  DeliveryOrder
+	keysInProgress sync.Map
 }
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
@@ -50,7 +67,16 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 			tokenSource: emptyTokenSource{},
 			errFn:       func(error) {},
 		},
+		deliveryOrder: OrderNotSpecified,
 	}
+}
+
+// WithDeliveryOrder ensures the events are processed in the chosen order and the handlers
+// are called synchronously for each event. See DeliveryOrder for possible ordering options.
+// The default is OrderNotSpecified which does not apply any ordering.
+// OrderByEventKey ensures all events with the same key are processed sequentially in the order they arrive.
+func (k *KafkaConsumerConfig) WithDeliveryOrder(order DeliveryOrder) {
+	k.deliveryOrder = order
 }
 
 // NewKafkaConsumer returns a Consumer which will send every message to all
@@ -80,7 +106,8 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 		wg:           &sync.WaitGroup{},
 		activeConnMu: sync.Mutex{},
 
-		done: make(chan struct{}),
+		done:          make(chan struct{}),
+		deliveryOrder: config.deliveryOrder,
 	}, nil
 }
 
@@ -141,16 +168,33 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 }
 
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
-	for _, h := range c.handlers {
-		c.wg.Add(1)
-		go func(h Handler) {
-			defer c.wg.Done()
-			e := messageToEvent(msg)
+	var orderKey string
+	var orderLocker sync.Locker
 
+	c.wg.Add(1)
+	e := messageToEvent(msg)
+
+	switch c.deliveryOrder {
+	case OrderByEventKey:
+		orderKey = string(e.Key)
+		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
+		orderLocker = keyMutex.(sync.Locker)
+	case OrderNotSpecified:
+		orderLocker = noOpLocker{}
+	}
+
+	go func(handlers []Handler, orderKey string, orderLocker sync.Locker) {
+		defer c.wg.Done()
+		orderLocker.Lock()
+
+		for _, h := range handlers {
 			// Errors are ignored, a middleware or the handler should handle them
 			_ = h.Handle(context.Background(), *e)
-		}(h)
-	}
+		}
+
+		orderLocker.Unlock()
+		c.keysInProgress.Delete(orderKey)
+	}(c.handlers, orderKey, orderLocker)
 }
 
 func (c *kafkaConsumer) refreshToken() {

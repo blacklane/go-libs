@@ -5,8 +5,6 @@ services:
     restart: on-failure:3
     links:
       - zookeeper
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_ADVERTISED_HOST_NAME:
       KAFKA_VERSION: '0.11.0.1'
@@ -17,8 +15,6 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
   zookeeper:
     image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
   tests:
     build: .
     environment:
