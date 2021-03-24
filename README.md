@@ -39,3 +39,17 @@ as much as possible.
 > "This change modifies X to _____." 
 > That means it does not start with a capital letter, 
 > is not a complete sentence, and actually summarizes the result of the change. 
+
+## Requirements to download packages
+ 
+The following must be done in order for `go get github.com/blackalne/go-libs/logger` to work (`logger` can also be `x/events` or `tracking`)
+
+- your `GITHUB_TOKEN` must be set as an environment variable
+- set `GOPRIVATE=github.com/blacklane/*` as an environment variable
+- configure git to use ssh, add the below two lines to your `~/.gitconfig`:
+```
+[url "ssh://git@github.com/"]
+	insteadOf = https://github.com/
+[url "git@github.com/"]
+	insteadOf = https://github.com/
+```
