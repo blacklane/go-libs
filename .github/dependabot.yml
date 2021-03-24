@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/tracking"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ready for review"
+
+  - package-ecosystem: "gomod"
+    directory: "/logger"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ready for review"
+
+  - package-ecosystem: "gomod"
+    directory: "/x/events"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ready for review"
