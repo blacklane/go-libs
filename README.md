@@ -39,3 +39,47 @@ as much as possible.
 > "This change modifies X to _____." 
 > That means it does not start with a capital letter, 
 > is not a complete sentence, and actually summarizes the result of the change. 
+
+## Requirements to download Go private modules
+
+ - Avoid the [Go proxy](https://proxy.golang.org/) and [Go sum database](https://sum.golang.org/).
+	In order to do so, set `GOPRIVATE=github.com/blacklane/*`. For details check the [docs](https://golang.org/cmd/go/#hdr-Configuration_for_downloading_non_public_code).
+ - Ensure `go get` makes authenticated calls to Github.
+	In order to do so, configure `git` authentication either for _HTTPS_ or _SSH_
+
+### Configuring git authentication over HTTPS
+
+Make `git` to use `https://$GITHUB_TOKEN@github.com/` instead of `https://github.com/`, where `GITHUB_TOKEN` is your [_personal access token_](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+To do so run: `git config --global url.https://$GITHUB_TOKEN@github.com/.insteadOf https://github.com`
+Alternatively you can manually edit your `~/.gitconfig` and add the following:
+
+```
+[url "https://YOUR_GITHUB_TOKEN@github.com/"]
+	insteadOf = https://github.com/
+
+```
+
+This is the best option to be used when building a docker image, also `GITHUB_TOKEN` is already available on our drone
+
+### Configuring git authentication over SSH
+
+Make `git` to use `ssh://git@github.com/` instead of `https://github.com/`
+To do so run: `git config --global url.ssh://git@github.com/.insteadOf https://github.com/`
+Alternatively you can manually edit your `~/.gitconfig` and add the following:
+```
+[url "ssh://git@github.com/"]
+	insteadOf = https://github.com/
+```
+
+This is the most common for local setup as usually git authentication over SSH is already configured.
+
+### Troubleshooting
+
+ - Ensure your git authentication is set up and working by cloning a private repo over HTTPS:
+   `git clone https://github.com/blacklane/go-libs.git`
+
+ - Ensure `GOPRIVATE` is set and contains `github.com/blacklane/*`:
+   `go env | grep GOPRIVATE`
+
+ - When building a docker image, ensure you pass `GITHUB_TOKEN` as a build argument:
+   `[docker|docker-build] build --build-arg GITHUB_TOKEN=$GITHUB_TOKEN`
