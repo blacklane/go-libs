@@ -42,8 +42,7 @@ as much as possible.
 
 ## Requirements to download Go private modules
 
- - Avoid the [Go proxy](https://proxy.golang.org/) and [Go sum database](https://sum.golang.org/).
-	In order to do so, set `GOPRIVATE=github.com/blacklane/*`. For details check the [docs](https://golang.org/cmd/go/#hdr-Configuration_for_downloading_non_public_code).
+-  Set `GOPRIVATE=github.com/blacklane/*`. For details check the [docs](https://golang.org/cmd/go/#hdr-Configuration_for_downloading_non_public_code). Note that, you should avoid the [Go proxy](https://proxy.golang.org/) and [Go sum database](https://sum.golang.org/).
  - Ensure `go get` makes authenticated calls to Github.
 	In order to do so, configure `git` authentication either for _HTTPS_ or _SSH_
 
