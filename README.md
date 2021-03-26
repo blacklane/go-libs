@@ -42,20 +42,22 @@ as much as possible.
 
 ## Requirements to download Go private modules
 
--  Set `GOPRIVATE=github.com/blacklane/*`. For details check the [docs](https://golang.org/cmd/go/#hdr-Configuration_for_downloading_non_public_code). Note that, you should avoid the [Go proxy](https://proxy.golang.org/) and [Go sum database](https://sum.golang.org/).
+-  Set `GOPRIVATE=github.com/blacklane/*`.
+        For details check the [docs](https://golang.org/cmd/go/#hdr-Configuration_for_downloading_non_public_code). Note that, you should avoid the [Go proxy](https://proxy.golang.org/) and [Go sum database](https://sum.golang.org/).
  - Ensure `go get` makes authenticated calls to Github.
-	In order to do so, configure `git` authentication either for _HTTPS_ or _SSH_
+        In order to do so, configure `git` authentication either for _HTTPS_ or _SSH_
 
 ### Configuring git authentication over HTTPS
 
 Make `git` to use `https://$GITHUB_TOKEN@github.com/` instead of `https://github.com/`, where `GITHUB_TOKEN` is your [_personal access token_](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+
 To do so run: `git config --global url.https://$GITHUB_TOKEN@github.com/.insteadOf https://github.com`
+
 Alternatively you can manually edit your `~/.gitconfig` and add the following:
 
 ```
 [url "https://YOUR_GITHUB_TOKEN@github.com/"]
 	insteadOf = https://github.com/
-
 ```
 
 This is the best option to be used when building a docker image, also `GITHUB_TOKEN` is already available on our drone
