@@ -65,7 +65,9 @@ This is the best option to be used when building a docker image, also `GITHUB_TO
 ### Configuring git authentication over SSH
 
 Make `git` to use `ssh://git@github.com/` instead of `https://github.com/`
+
 To do so run: `git config --global url.ssh://git@github.com/.insteadOf https://github.com/`
+
 Alternatively you can manually edit your `~/.gitconfig` and add the following:
 ```
 [url "ssh://git@github.com/"]
