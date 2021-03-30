@@ -1,6 +1,6 @@
 # logger
 
-`logger` is a working in progress logger for Blacklane. It's a wrapper around 
+`logger` is a working in progress logger for Blacklane. It's a wrapper around
 [zerolog](https://github.com/rs/zerolog)
 
 ## Installation
@@ -16,10 +16,12 @@ go get -u github.com/blacklane/go-libs/logger
 l := logger.New(
     os.Stdout,
     "example",
-    Str("key1", "value1"),
-    Str("key2", "value2"))
+    logger.WithStr("key1", "value1"),
+    logger.WithStr("key2", "value2"),
+    logger.WithLevel(logger.InfoLevel))
 
 l.Info().Msg("Hello, Gophers!")
+l.Debug().Msg("This Message will not appear by logger level")
 ```
 
 ### To see full API:
@@ -30,7 +32,7 @@ GO111MODULE=off go install golang.org/x/tools/cmd/godoc
 
 # run godoc
 godoc -http=localhost:6060
-``` 
+```
 
 then head to:
  - [go-libs/logger](http://localhost:6060/pkg/github.com/blacklane/go-libs/logger/)
