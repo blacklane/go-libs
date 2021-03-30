@@ -11,10 +11,10 @@ func TestParseLevel(t *testing.T) {
 		level string
 		errOk func(error) bool
 	}{
-		{name: "level debug", level: "debug", errOk: errNil},
-		{name: "level info", level: "info", errOk: errNil},
-		{name: "level warn", level: "warn", errOk: errNil},
-		{name: "level error", level: "error", errOk: errNil},
+		{name: "level debug", level: DebugLevel, errOk: errNil},
+		{name: "level info", level: InfoLevel, errOk: errNil},
+		{name: "level warn", level: WarnLevel, errOk: errNil},
+		{name: "level error", level: ErrorLevel, errOk: errNil},
 		{
 			name:  "level bad",
 			level: "",

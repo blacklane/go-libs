@@ -18,6 +18,13 @@ type config struct {
 type Logger = zerolog.Logger
 type ConsoleWriter = zerolog.ConsoleWriter
 
+const (
+	DebugLevel = "debug"
+	InfoLevel  = "info"
+	WarnLevel  = "warn"
+	ErrorLevel = "error"
+)
+
 // New creates a new logger writing to w.
 // Use WithStr(key, value) to add new fields to the logger, example:
 //   New(os.Stdout, "myAwesomeApp", WithStr("foo", "bar"))
@@ -58,7 +65,7 @@ func WithStr(key, value string) func(cfg *config) {
 }
 
 // WithLevel sets the minimum level to be logged.
-// The log levels are: debug, info, warn and error.
+// The log levels are: DebugLevel, InfoLevel, WarnLevel and ErrorLevel.
 // If an invalid level is given it'll have no effect.
 // Use ParseLevel to ensure the level is valid
 func WithLevel(level string) func(cfg *config) {
