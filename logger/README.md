@@ -21,8 +21,10 @@ l := logger.New(
     logger.WithLevel(logger.InfoLevel))
 
 l.Info().Msg("Hello, Gophers!")
-l.Debug().Msg("This Message will not appear by logger level")
+l.Debug().Str("Hello", "World").Msg("This Message will not appear by logger level")
 ```
+
+tips: `logger.ConsoleWriter` works for human-friendly logging. The detail can be found [here](https://github.com/rs/zerolog#pretty-logging)
 
 ### To see full API:
 
