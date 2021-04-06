@@ -62,7 +62,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
+	// {"level":"debug","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
 }
 
 func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
@@ -92,7 +92,7 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"event":"do_not_log_event"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"log_event succeeded"}
+	// {"level":"debug","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"log_event succeeded"}
 }
 
 func ExampleEventsHandlerStatusLogger_failure() {
@@ -162,7 +162,7 @@ func ExampleEventsHandlerStatusLoggerWithNameFn() {
 	_ = h.Handle(ctx, events.Event{Payload: []byte(`{"name":"event_name_here"}`)})
 
 	// Output:
-	// {"level":"info","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
+	// {"level":"debug","application":"ExampleEventsLogger","event":"event_name_here","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"event_name_here succeeded"}
 }
 
 func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
@@ -197,6 +197,6 @@ func ExampleEventsHandlerStatusLogger_loggerFieldsSetForAllEvents() {
 
 	// Output:
 	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01.000Z","message":"Log from handler"}
-	// {"level":"info","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"log_event succeeded"}
+	// {"level":"debug","application":"ExampleEventsLogger","event":"log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","duration_ms":1000,"timestamp":"2009-11-10T23:00:01.000Z","message":"log_event succeeded"}
 	// {"level":"info","application":"ExampleEventsLogger","event":"do_not_log_event","request_id":"tracking_id-ExampleEventsLogger_Success","tracking_id":"tracking_id-ExampleEventsLogger_Success","timestamp":"2009-11-10T23:00:01.000Z","message":"Log from handler"}
 }

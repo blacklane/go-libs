@@ -68,7 +68,7 @@ func EventsHandlerStatusLoggerWithNameFn(
 			}
 
 			defer func() {
-				zlEvent := log.Info()
+				zlEvent := log.Debug()
 				status := "succeeded"
 
 				duration := logger.Now().Sub(startTime)
