@@ -73,6 +73,7 @@ func New(addr string) Probe {
 		liveChan:  make(chan bool),
 		readyChan: make(chan bool),
 	}
+
 	mux := chi.NewMux()
 	mux.Get("/live", p.liveHandler)
 	mux.Get("/ready", p.readyHandler)
