@@ -12,7 +12,8 @@ import (
 func main() {
 	// Addr is set as the http.Server Addr.
 	// See net.Dial for details of the address format.
-	p := probes.New(":4242")
+	addr := ":4242"
+	p := probes.New(addr)
 
 	// Start the probes on a goroutine as p.Start() is a blocking call
 	go func() {
