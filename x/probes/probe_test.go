@@ -160,3 +160,37 @@ func freeAddr(t *testing.T) string {
 
 	return l.Addr().String()
 }
+
+func TestProbe_raceCondition(t *testing.T) {
+	const want = "error, check the logs"
+
+	addr := freeAddr(t)
+	p := New(addr)
+
+	go func() {
+		err := p.Start()
+		if err != nil && err != http.ErrServerClosed {
+			panic("could not start probes server")
+		}
+	}()
+
+	go func() {
+		p.ReadinessFail()
+	}()
+
+	p.ReadinessFail()
+
+	respLive, err := http.Get("http://" + addr + "/ready")
+	if err != nil {
+		panic("liveness probe failed: " + err.Error())
+	}
+
+	liveBody, err := io.ReadAll(respLive.Body)
+	if err != nil {
+		t.Fatalf("failed to read /live response body: " + err.Error())
+	}
+
+	if string(liveBody) != want {
+		t.Errorf("got: %q, want: %q", string(liveBody), want)
+	}
+}
