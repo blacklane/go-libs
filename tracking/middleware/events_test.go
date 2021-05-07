@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/tracking/internal/constants"
-	"github.com/blacklane/go-libs/x/events"
 )
 
 func TestEventsAddTrackingIDCreatesIDWhenEventHeaderEmpty(t *testing.T) {
@@ -37,7 +37,7 @@ func TestEventsAddTrackingIDDoesNotChangeTrackingIDIfAlreadyPresent(t *testing.T
 			Headers: events.Header(map[string]string{headerName: testId}),
 		}
 
-		testHandler :=  EventsAddTrackingID(events.Handler(
+		testHandler := EventsAddTrackingID(events.Handler(
 			events.HandlerFunc(func(ctx context.Context, e events.Event) error {
 				got := tracking.IDFromContext(ctx)
 				if !cmp.Equal(got, testId) {

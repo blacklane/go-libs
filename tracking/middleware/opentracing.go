@@ -21,7 +21,7 @@ func HTTPAddOpentracing(path string, tracer opentracing.Tracer, handler http.Han
 	return path, func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		span := httpExtractSpan(r, path, tracer)
+		span := httpGetChildSpan(r, path, tracer)
 		defer span.Finish()
 
 		ctx = opentracing.ContextWithSpan(ctx, span)
@@ -49,27 +49,25 @@ func HTTPAddOpentracing(path string, tracer opentracing.Tracer, handler http.Han
 // safer as it'll return a disabled span if none is found in the context.
 func EventsAddOpentracing(eventName string, tracer opentracing.Tracer, handler events.Handler) events.Handler {
 	return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-		span := eventExtractSpan(ctx, e, eventName, tracer)
+		trackingID := eventsExtractTrackingID(ctx, e)
+
+		span := eventGetChildSpan(ctx, e, eventName, tracer)
 		defer span.Finish()
 
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		// Set as not all systems will update to opentracing at once
-		span.SetTag("tracking_id", tracking.IDFromContext(ctx))
+		span.SetTag("tracking_id", trackingID)
 
-		err := tracer.Inject(
-			span.Context(),
-			opentracing.TextMap,
-			opentracing.TextMapCarrier(e.Headers))
-		if err != nil {
-			logger.FromContext(ctx).Err(err).Msg("could not inject opentracing span")
+		if e.Headers == nil {
+			e.Headers = map[string]string{}
 		}
 
 		return handler.Handle(ctx, e)
 	})
 }
 
-func httpExtractSpan(r *http.Request, path string, tracer opentracing.Tracer) opentracing.Span {
+func httpGetChildSpan(r *http.Request, path string, tracer opentracing.Tracer) opentracing.Span {
 	carrier := opentracing.HTTPHeadersCarrier(r.Header)
 
 	spanContext, err := tracer.Extract(opentracing.HTTPHeaders, carrier)
@@ -77,24 +75,20 @@ func httpExtractSpan(r *http.Request, path string, tracer opentracing.Tracer) op
 		logger.FromContext(r.Context()).Err(err).Msg("could not extract span")
 	}
 
-	span := tracer.StartSpan(
-		path,
-		opentracing.ChildOf(spanContext))
+	span := tracer.StartSpan(path, opentracing.ChildOf(spanContext))
 
 	return span
 }
 
-func eventExtractSpan(ctx context.Context, ev events.Event, evName string, tracer opentracing.Tracer) opentracing.Span {
-	carrier := opentracing.TextMapCarrier(ev.Headers)
+func eventGetChildSpan(ctx context.Context, e events.Event, eName string, tracer opentracing.Tracer) opentracing.Span {
+	carrier := opentracing.TextMapCarrier(e.Headers)
 
 	spanContext, err := tracer.Extract(opentracing.TextMap, carrier)
 	if err != nil {
-		logger.FromContext(ctx).Err(err).Msg("could not extract span")
+		logger.FromContext(ctx).Err(err).Msg("opentracing: could not extract span")
 	}
 
-	span := tracer.StartSpan(
-		evName,
-		opentracing.ChildOf(spanContext))
+	span := tracer.StartSpan(eName, opentracing.ChildOf(spanContext))
 
 	return span
 }

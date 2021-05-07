@@ -9,4 +9,6 @@ const (
 	HeaderRequestDepth = "X-Request-Depth"
 	HeaderTrackingID   = "X-Tracking-Id"
 	HeaderTreePath     = "X-Tree-Path"
+
+	TagTrackingID = "tracking_id"
 )
