@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/blacklane/go-libs/logger"
@@ -71,8 +72,10 @@ func httpGetChildSpan(r *http.Request, path string, tracer opentracing.Tracer) o
 	carrier := opentracing.HTTPHeadersCarrier(r.Header)
 
 	spanContext, err := tracer.Extract(opentracing.HTTPHeaders, carrier)
-	if err != nil {
-		logger.FromContext(r.Context()).Err(err).Msg("could not extract span")
+	if err != nil && !errors.Is(err, opentracing.ErrSpanContextNotFound) {
+		logger.FromContext(r.Context()).
+			Err(err).
+			Msg("tracing http: could not extract span")
 	}
 
 	span := tracer.StartSpan(path, opentracing.ChildOf(spanContext))
@@ -84,8 +87,10 @@ func eventGetChildSpan(ctx context.Context, e events.Event, eName string, tracer
 	carrier := opentracing.TextMapCarrier(e.Headers)
 
 	spanContext, err := tracer.Extract(opentracing.TextMap, carrier)
-	if err != nil {
-		logger.FromContext(ctx).Err(err).Msg("opentracing: could not extract span")
+	if err != nil && !errors.Is(err, opentracing.ErrSpanContextNotFound) {
+		logger.FromContext(ctx).
+			Err(err).
+			Msg("tracing events: could not extract span")
 	}
 
 	span := tracer.StartSpan(eName, opentracing.ChildOf(spanContext))

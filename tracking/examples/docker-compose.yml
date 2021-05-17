@@ -1,0 +1,37 @@
+version: "3"
+services:
+  kafka:
+    image: wurstmeister/kafka:2.11-0.11.0.3
+    ports:
+      - "9092:9092"
+    restart: on-failure:3
+    links:
+      - zookeeper
+    environment:
+      KAFKA_CREATE_TOPICS: 'tracing-example:1:1'
+      KAFKA_ADVERTISED_HOST_NAME: 'localhost'
+      KAFKA_VERSION: '0.11.0.1'
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_ADVERTISED_PORT: '9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+
+  jaegertracing:
+    image: jaegertracing/all-in-one:1.21
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/opentracing/opentracing-go"
@@ -13,9 +14,9 @@ import (
 )
 
 // NewTracer returns a Jeager implementation of opentracing.Tracer
-func NewTracer(logger logger.Logger) (opentracing.Tracer, io.Closer) {
+func NewTracer(serviceName string, logger logger.Logger) (opentracing.Tracer, io.Closer) {
 	jaegerCfg := jaegerconfig.Configuration{
-		ServiceName: "Opentracing-integration-test",
+		ServiceName: serviceName,
 		Sampler: &jaegerconfig.SamplerConfig{
 			Type:  jaeger.SamplerTypeConst,
 			Param: 1,
@@ -32,7 +33,10 @@ func NewTracer(logger logger.Logger) (opentracing.Tracer, io.Closer) {
 
 	// Initialize tracer with a logger and a metrics factory
 	tracer, closer, err := jaegerCfg.NewTracer(
-		jaegerconfig.Logger(JaegerLogger(logger)),
+		jaegerconfig.Logger(
+			JaegerLogger(logger.With().
+				Str("component", "JaegerTracer").
+				Logger())),
 		jaegerconfig.Metrics(jMetricsFactory))
 	if err != nil {
 		panic(fmt.Errorf("could not initialize jaeger tracer: %w", err))
@@ -46,15 +50,14 @@ type JaegerLogger logger.Logger
 
 func (l JaegerLogger) Error(msg string) {
 	log := logger.Logger(l)
-	log.Err(errors.New(msg)).Msg("jeager tracing error")
+	log.Err(errors.New(msg)).Msg("jeager tracer error")
 }
 
 func (l JaegerLogger) Infof(msg string, args ...interface{}) {
-	log := logger.Logger(l)
-	log.Info().Msgf("%q", fmt.Sprintf(msg, args...))
+	l.Debugf(msg, args)
 }
 
 func (l JaegerLogger) Debugf(msg string, args ...interface{}) {
 	log := logger.Logger(l)
-	log.Debug().Msgf("%q", fmt.Sprintf(msg, args...))
+	log.Debug().Msgf("%s", fmt.Sprintf(strings.TrimSpace(msg), args...))
 }
