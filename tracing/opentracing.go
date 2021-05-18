@@ -1,13 +1,14 @@
-package tracking
+package tracing
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/blacklane/go-libs/tracking/internal/constants"
+	"github.com/blacklane/go-libs/tracing/internal/constants"
 )
 
 // SpanFromContext returns the non-nil span returned by opentracing.SpanFromContext
@@ -32,7 +33,7 @@ func EventsOpentracingInject(ctx context.Context, span opentracing.Span, event *
 	}
 
 	if _, ok := event.Headers[constants.HeaderTrackingID]; !ok {
-		event.Headers[constants.HeaderTrackingID] = IDFromContext(ctx)
+		event.Headers[constants.HeaderTrackingID] = tracking.IDFromContext(ctx)
 	}
 
 	err := span.Tracer().

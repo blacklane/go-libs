@@ -9,7 +9,7 @@ RUN apk update && \
 
 # First only download the dependencies, so the dependencies can be cahced before we copy the code
 WORKDIR /app/
-COPY ./go.mod ./go.sum ./Makefile ./
+COPY go.mod ./go.sum ./Makefile ./
 
 ARG GITHUB_TOKEN
 
