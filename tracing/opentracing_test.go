@@ -1,4 +1,4 @@
-package tracking
+package tracing
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/blacklane/go-libs/tracking/internal/jeager"
+	"github.com/blacklane/go-libs/tracing/internal/jeager"
 )
 
 func TestSpanFromContext(t *testing.T) {
