@@ -14,7 +14,7 @@ import (
 )
 
 // NewTracer returns a Jeager implementation of opentracing.Tracer
-func NewTracer(serviceName string, logger logger.Logger) (opentracing.Tracer, io.Closer) {
+func NewTracer(host string, serviceName string, logger logger.Logger) (opentracing.Tracer, io.Closer) {
 	jaegerCfg := jaegerconfig.Configuration{
 		ServiceName: serviceName,
 		Sampler: &jaegerconfig.SamplerConfig{
@@ -23,7 +23,7 @@ func NewTracer(serviceName string, logger logger.Logger) (opentracing.Tracer, io
 		},
 		Reporter: &jaegerconfig.ReporterConfig{
 			LogSpans:          true,
-			CollectorEndpoint: "http://localhost:14268/api/traces",
+			CollectorEndpoint: host,
 		},
 	}
 
@@ -48,15 +48,18 @@ func NewTracer(serviceName string, logger logger.Logger) (opentracing.Tracer, io
 // JaegerLogger implements the jaeger.Logger interface for logger.Logger
 type JaegerLogger logger.Logger
 
+// Error ...
 func (l JaegerLogger) Error(msg string) {
 	log := logger.Logger(l)
 	log.Err(errors.New(msg)).Msg("jeager tracer error")
 }
 
+// Infof ...
 func (l JaegerLogger) Infof(msg string, args ...interface{}) {
 	l.Debugf(msg, args)
 }
 
+// Debugf ...
 func (l JaegerLogger) Debugf(msg string, args ...interface{}) {
 	log := logger.Logger(l)
 	log.Debug().Msgf("%s", fmt.Sprintf(strings.TrimSpace(msg), args...))

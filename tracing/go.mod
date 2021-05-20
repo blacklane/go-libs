@@ -17,5 +17,4 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 )

@@ -14,19 +14,20 @@ import (
 func TestEventsAddOpentracing_noSpan(t *testing.T) {
 	wantTrackingID := "TestEventsAddOpentracing"
 	handler := events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-		validateRootSpan(t, ctx, wantTrackingID)
+		validateRootSpan(t, SpanFromContext(ctx), wantTrackingID)
 		return nil
 	})
 
-	tracer, closer := jeager.NewTracer("Opentracing-integration-test", noopLogger)
+	tracer, closer := jeager.NewTracer("", "Opentracing-integration-test", noopLogger)
 	defer func() {
 		if err := closer.Close(); err != nil {
 			t.Errorf("error closing tracer: %v", err)
 		}
 	}()
 
-	h := EventsAddOpentracing("TestEventsAddOpentracing", tracer, handler)
-	_ = h.Handle(tracking.SetContextID(context.Background(), wantTrackingID), events.Event{})
+	h := EventsAddOpentracing("TestEventsAddOpentracing", tracer)(handler)
+	ctx := tracking.SetContextID(context.Background(), wantTrackingID)
+	_ = h.Handle(ctx, events.Event{})
 }
 
 func TestEventsAddOpentracing_existingSpan(t *testing.T) {
@@ -34,11 +35,11 @@ func TestEventsAddOpentracing_existingSpan(t *testing.T) {
 	eventName := "TestEventsAddOpentracing_existingSpan"
 	wantTrackingID := "TestEventsAddOpentracing"
 	handler := events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-		validateChildSpan(t, ctx, wantTrackingID)
+		validateChildSpan(t, SpanFromContext(ctx), wantTrackingID)
 		return nil
 	})
 
-	tracer, closer := jeager.NewTracer("Opentracing-integration-test", noopLogger)
+	tracer, closer := jeager.NewTracer("", "Opentracing-integration-test", noopLogger)
 	defer func() {
 		if err := closer.Close(); err != nil {
 			t.Errorf("error closing tracer: %v", err)
@@ -54,6 +55,6 @@ func TestEventsAddOpentracing_existingSpan(t *testing.T) {
 		t.Fatalf("could not inject span into event headers: %v", err)
 	}
 
-	h := EventsAddOpentracing("TestEventsAddOpentracing", tracer, handler)
+	h := EventsAddOpentracing("TestEventsAddOpentracing", tracer)(handler)
 	_ = h.Handle(tracking.SetContextID(context.Background(), wantTrackingID), e)
 }

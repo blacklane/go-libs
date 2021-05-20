@@ -14,10 +14,10 @@ import (
 func TestHTTPAddOpentracing_noSpan(t *testing.T) {
 	wantTrackingID := "TestHTTPAddOpentracing_noSpan"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		validateRootSpan(t, r.Context(), wantTrackingID)
+		validateRootSpan(t, SpanFromContext(r.Context()), wantTrackingID)
 	})
 
-	tracer, closer := jeager.NewTracer("Opentracing-integration-test", noopLogger)
+	tracer, closer := jeager.NewTracer("", "Opentracing-integration-test", noopLogger)
 	defer func() {
 		if err := closer.Close(); err != nil {
 			t.Errorf("error closing tracer: %v", err)
@@ -27,7 +27,7 @@ func TestHTTPAddOpentracing_noSpan(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.WithContext(tracking.SetContextID(r.Context(), wantTrackingID))
 
-	_, h := HTTPAddOpentracing("/TestHTTPAddOpentracing_noSpan", tracer, handler)
+	h := HTTPAddOpentracing("/TestHTTPAddOpentracing_noSpan", tracer, handler)
 	h.ServeHTTP(httptest.NewRecorder(), r)
 }
 
@@ -36,10 +36,10 @@ func TestHTTPAddOpentracing_existingSpan(t *testing.T) {
 	path := "/TestHTTPAddOpentracing_noSpan"
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		validateChildSpan(t, r.Context(), wantTrackingID)
+		validateChildSpan(t, SpanFromContext(r.Context()), wantTrackingID)
 	})
 
-	tracer, closer := jeager.NewTracer("Opentracing-integration-test", noopLogger)
+	tracer, closer := jeager.NewTracer("", "Opentracing-integration-test", noopLogger)
 	defer func() {
 		if err := closer.Close(); err != nil {
 			t.Errorf("error closing tracer: %v", err)
@@ -58,6 +58,6 @@ func TestHTTPAddOpentracing_existingSpan(t *testing.T) {
 		t.Fatalf("could not inject span into event headers: %v", err)
 	}
 
-	_, h := HTTPAddOpentracing(path, tracer, handler)
+	h := HTTPAddOpentracing(path, tracer, handler)
 	h.ServeHTTP(httptest.NewRecorder(), r)
 }
