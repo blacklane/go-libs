@@ -11,17 +11,25 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-// HTTPAddDefault adds the necessary middleware for:
+// HTTPDefaultMiddleware adds the necessary middleware for:
 //   - have tracking id in the context (read from the headers or a new one),
 //   - have a logger.Logger with tracking id and all required fields in the context,
 //   - log, at the end of handler, if it succeeded or failed and how log it took.
+// For more details, check the middleware used:
 // - github.com/blacklane/go-libs/tracking/middleware.TrackingID
-// - middleware.HTTPAddLogger
-// - middleware.HTTPRequestLogger
-func HTTPAddDefault(log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
+// - github.com/blacklane/go-libs/logger/middleware.HTTPAddLogger
+// - github.com/blacklane/go-libs/logger/middleware.HTTPRequestLogger
+// - HTTPAddOpentracing
+// TODO(Anderson): update docs
+func HTTPDefaultMiddleware(
+	path string,
+	tracer opentracing.Tracer,
+	log logger.Logger,
+	skipRoutes ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h := logmiddleware.HTTPRequestLogger(skipRoutes)(next)
+			h := HTTPAddOpentracing(path, tracer, next)
+			h = logmiddleware.HTTPRequestLogger(skipRoutes)(h)
 			h = logmiddleware.HTTPAddLogger(log)(h)
 			h = trackingmiddleware.TrackingID(h)
 			h.ServeHTTP(w, r)
@@ -35,8 +43,8 @@ func HTTPAddDefault(log logger.Logger, skipRoutes ...string) func(http.Handler) 
 // technically safe to call opentracing.SpanFromContext after this middleware
 // and trust the returned span is not nil. However tracking.SpanFromContext is
 // safer as it'll return a disabled span if none is found in the context.
-func HTTPAddOpentracing(path string, tracer opentracing.Tracer, handler http.Handler) (string, http.HandlerFunc) {
-	return path, func(w http.ResponseWriter, r *http.Request) {
+func HTTPAddOpentracing(path string, tracer opentracing.Tracer, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		span := httpGetChildSpan(r, path, tracer)
@@ -56,7 +64,16 @@ func HTTPAddOpentracing(path string, tracer opentracing.Tracer, handler http.Han
 		}
 
 		handler.ServeHTTP(w, r.WithContext(ctx))
-	}
+	})
+}
+
+// HTTPMagicMiddleware delegates to HTTPDefaultMiddleware
+func HTTPMagicMiddleware(
+	path string,
+	tracer opentracing.Tracer,
+	log logger.Logger,
+	skipRoutes ...string) func(http.Handler) http.Handler {
+	return HTTPDefaultMiddleware(path, tracer, log, skipRoutes...)
 }
 
 func httpGetChildSpan(r *http.Request, path string, tracer opentracing.Tracer) opentracing.Span {

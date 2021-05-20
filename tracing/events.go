@@ -20,15 +20,18 @@ import (
 //   - log at the end of handler if it succeeded or failed and how log it took.
 // For more details, check the middleware used:
 // - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
-// - middleware.EventsAddLogger
-// - middleware.EventsHandlerStatusLogger
-func EventsAddDefault(handler events.Handler, log logger.Logger, eventNames ...string) events.Handler {
+// - github.com/blacklane/go-libs/logger/middleware.EventsAddLogger
+// - github.com/blacklane/go-libs/logger/middleware.EventsHandlerStatusLogger
+// - EventsAddOpentracing
+// TODO(Anderson): update docs
+func EventsAddDefault(handler events.Handler, log logger.Logger, tracer opentracing.Tracer, eventName string) events.Handler {
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
 		trackmiddleware.EventsAddTrackingID,
 		logmiddleware.EventsAddLogger(log),
-		logmiddleware.EventsHandlerStatusLogger(eventNames...))
+		logmiddleware.EventsHandlerStatusLogger(eventName),
+		EventsAddOpentracing(eventName, tracer))
 
 	return hb.Build()[0]
 }
@@ -39,24 +42,26 @@ func EventsAddDefault(handler events.Handler, log logger.Logger, eventNames ...s
 // technically safe to call opentracing.SpanFromContext after this middleware
 // and trust the returned span is not nil. However tracking.SpanFromContext is
 // safer as it'll return a disabled span if none is found in the context.
-func EventsAddOpentracing(eventName string, tracer opentracing.Tracer, handler events.Handler) events.Handler {
-	return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-		trackingID := eventsExtractTrackingID(ctx, e)
+func EventsAddOpentracing(eventName string, tracer opentracing.Tracer) events.Middleware {
+	return func(handler events.Handler) events.Handler {
+		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			trackingID := eventsExtractTrackingID(ctx, e)
 
-		span := eventGetChildSpan(ctx, e, eventName, tracer)
-		defer span.Finish()
+			span := eventGetChildSpan(ctx, e, eventName, tracer)
+			defer span.Finish()
 
-		ctx = opentracing.ContextWithSpan(ctx, span)
+			ctx = opentracing.ContextWithSpan(ctx, span)
 
-		// Set as not all systems will update to opentracing at once
-		span.SetTag("tracking_id", trackingID)
+			// Set as not all systems will update to opentracing at once
+			span.SetTag("tracking_id", trackingID)
 
-		if e.Headers == nil {
-			e.Headers = map[string]string{}
-		}
+			if e.Headers == nil {
+				e.Headers = map[string]string{}
+			}
 
-		return handler.Handle(ctx, e)
-	})
+			return handler.Handle(ctx, e)
+		})
+	}
 }
 
 func eventGetChildSpan(ctx context.Context, e events.Event, eName string, tracer opentracing.Tracer) opentracing.Span {
