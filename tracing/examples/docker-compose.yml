@@ -43,8 +43,8 @@ services:
       dockerfile: examples/Dockerfile
       args:
         GITHUB_TOKEN:
-        KAFKA_BOOTSTRAP_SERVERS: kafka-compose
     environment:
+      KAFKA_BOOTSTRAP_SERVERS: http://kafka-compose:9092
       TRACER_HOST: http://jaegertracing:14268/api/traces
     ports:
         - "4242:4242"

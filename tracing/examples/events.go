@@ -20,16 +20,9 @@ func eventsHandler() events.HandlerFunc {
 	}
 }
 
-func newConsumer(serviceName string, tracer opentracing.Tracer, topic string) events.Consumer {
+func newConsumer(serviceName string, tracer opentracing.Tracer, topic string, conf *kafka.ConfigMap) events.Consumer {
 	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
-
-	conf := &kafka.ConfigMap{
-		"group.id":           "consumer-example",
-		"bootstrap.servers":  "localhost:9092",
-		"session.timeout.ms": 6000,
-		"auto.offset.reset":  "earliest",
-	}
 
 	// Add the opentracing middleware which parses a span from the headers and
 	// injects it on the context. If not span is found, it creates one.
@@ -43,22 +36,20 @@ func newConsumer(serviceName string, tracer opentracing.Tracer, topic string) ev
 		panic(err)
 	}
 
-	log.Info().Msgf("starting to consume events from topic: %s", topic)
 	c.Run(time.Second)
+	log.Info().Msgf("started to consume events from topic: %s", topic)
+	log.Info().Msgf("consumer kafka configs: %v", conf)
 
 	return c
 }
 
-func newProducer() events.Producer {
+func newProducer(conf *kafka.ConfigMap) events.Producer {
 	errHandler := func(event events.Event, err error) {
 		log.Err(err).Msgf("failed to deliver the event %s",
 			string(event.Payload))
 	}
 
-	kpc := events.NewKafkaProducerConfig(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:9092",
-		"message.timeout.ms": 1000,
-	})
+	kpc := events.NewKafkaProducerConfig(conf)
 	kpc.WithEventDeliveryErrHandler(errHandler)
 
 	p, err := events.NewKafkaProducer(kpc)
@@ -68,6 +59,7 @@ func newProducer() events.Producer {
 
 	// handle failed deliveries
 	_ = p.HandleEvents()
+	log.Info().Msgf("producer kafka configs: %v", conf)
 
 	return p
 }

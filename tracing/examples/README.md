@@ -21,7 +21,7 @@ make run-compose
 Run a redis on docker so graphql won't be logging thousands of errors :/
 ```shell
 docker run --rm --name graphql-redis -d -p 6379:6379 redis:alpine
-npm run start:dev
+REDIS_HOST=localhost npm run start:dev
 ```
 
  - Execute the _tracing_ query a few times.

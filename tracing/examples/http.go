@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"net/http/httputil"
 	"os"
 
 	"github.com/blacklane/go-libs/logger"
@@ -44,8 +43,8 @@ func httpHandler(producer events.Producer) http.Handler {
 		defer func() { count++ }()
 		ctx := r.Context()
 
-		dump, _ := httputil.DumpRequest(r, true)
-		fmt.Println(string(dump))
+		// dump, _ := httputil.DumpRequest(r, true)
+		// fmt.Println(string(dump))
 
 		// Gets the opentracing span
 		sp := tracing.SpanFromContext(ctx)
