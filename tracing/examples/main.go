@@ -7,6 +7,7 @@ import (
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/caarlos0/env"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"github.com/blacklane/go-libs/tracing/internal/jeager"
 )
@@ -35,6 +36,8 @@ func init() {
 
 	topic = cfg.Topic
 	tracerHost = cfg.TracerHost
+
+	log.Debug().Msgf("config: %#v", cfg)
 }
 
 func main() {
@@ -53,10 +56,22 @@ func main() {
 	defer bCloser.Close()
 
 	// Simulates a service consuming messages from Kafka, listening the topic defined by the `topic` variable.
-	c := newConsumer(serviceNameB, bTracer, topic)
+	c := newConsumer(
+		serviceNameB,
+		bTracer,
+		topic,
+		&kafka.ConfigMap{
+			"group.id":           cfg.KafkaGroupID,
+			"bootstrap.servers":  cfg.KafkaServer,
+			"session.timeout.ms": 6000,
+			"auto.offset.reset":  "earliest",
+		})
 	defer c.Shutdown(context.TODO())
 
-	p := newProducer()
+	p := newProducer(&kafka.ConfigMap{
+		"bootstrap.servers":  cfg.KafkaServer,
+		"message.timeout.ms": 6000,
+	})
 	defer p.Shutdown(context.TODO())
 
 	// Simulates a service providing a HTTP API on localhost:4242.
