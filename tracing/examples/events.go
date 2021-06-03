@@ -8,7 +8,6 @@ import (
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/opentracing/opentracing-go"
 
 	"github.com/blacklane/go-libs/tracing"
 )
@@ -20,13 +19,13 @@ func eventsHandler() events.HandlerFunc {
 	}
 }
 
-func newConsumer(serviceName string, tracer opentracing.Tracer, topic string, conf *kafka.ConfigMap) events.Consumer {
+func newConsumer(serviceName string, topic string, conf *kafka.ConfigMap) events.Consumer {
 	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
 
 	// Add the opentracing middleware which parses a span from the headers and
 	// injects it on the context. If not span is found, it creates one.
-	handler := tracing.EventsAddDefault(eventsHandler(), log, tracer, eventName)
+	handler := tracing.EventsAddDefault(eventsHandler(), log, eventName)
 
 	c, err := events.NewKafkaConsumer(
 		events.NewKafkaConsumerConfig(conf),

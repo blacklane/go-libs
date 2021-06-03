@@ -36,9 +36,8 @@ compose-dependencies:
 	docker compose up \
     		--build \
     		--force-recreate \
-    		--remove-orphans \
     		-d \
-    		kafka zookeeper jaegertracing
+    		kafka zookeeper
 
 .PHONY: compose-down
 compose-down clean:

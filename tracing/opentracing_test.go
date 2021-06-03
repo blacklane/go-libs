@@ -14,7 +14,7 @@ import (
 func TestSpanFromContext(t *testing.T) {
 	noopSpan := opentracing.NoopTracer{}.StartSpan("noopTracer")
 	tracer, closer :=
-		jeager.NewTracer("", "Opentracing-test", *logger.FromContext(context.Background()))
+		jeager.NewOpentracingTracer("", "Opentracing-test", *logger.FromContext(context.Background()))
 	defer closer.Close()
 
 	want := tracer.StartSpan("TestSpanFromContext")
@@ -40,7 +40,7 @@ func TestSpanFromContext_noopSpan(t *testing.T) {
 
 func TestEventsOpentracingInject(t *testing.T) {
 	tracer, closer :=
-		jeager.NewTracer("", "Opentracing-test", *logger.FromContext(context.Background()))
+		jeager.NewOpentracingTracer("", "Opentracing-test", *logger.FromContext(context.Background()))
 	defer closer.Close()
 
 	e := events.Event{}

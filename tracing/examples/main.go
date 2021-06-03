@@ -20,10 +20,11 @@ var topic = "tracing-example"
 var tracerHost string
 
 type config struct {
-	KafkaServer  string `env:"KAFKA_BOOTSTRAP_SERVERS" envDefault:"http://localhost:9092"`
+	KafkaServer  string `env:"KAFKA_BOOTSTRAP_SERVERS" envDefault:"localhost:9092"`
 	KafkaGroupID string `env:"KAFKA_GROUP_ID" envDefault:"tracing-example"`
 	Topic        string `env:"KAFKA_TOPIC" envDefault:"tracing-example"`
-	TracerHost   string `env:"TRACER_HOST" envDefault:"http://localhost:14268/api/traces"`
+	TracerHost   string `env:"TRACER_HOST" envDefault:"localhost:55680"`
+	// TracerHost   string `env:"TRACER_HOST" envDefault:"http://localhost:14268/api/traces"`
 }
 
 var cfg = config{}
@@ -45,24 +46,16 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt) // a.k.a ctrl+C
 
-	// Opentracing tracer for service A.
-	// In production it'll be DataDog's tracer: https://pkg.go.dev/gopkg.in/DataDog/dd-trace-go.v1/ddtrace#example-package-Datadog
-	aTracer, aCloser := jeager.NewTracer(tracerHost, serviceNameA, log)
-	defer aCloser.Close()
-
-	// Opentracing tracer for service B
-	// In production it'll be DataDog's tracer: https://pkg.go.dev/gopkg.in/DataDog/dd-trace-go.v1/ddtrace#example-package-Datadog
-	bTracer, bCloser := jeager.NewTracer(tracerHost, serviceNameB, log)
-	defer bCloser.Close()
+	// OpenTelemetry (OTel) tracer for service A.
+	jeager.InitOpenTelemetry("tracing-example-app", "devel", tracerHost)
 
 	// Simulates a service consuming messages from Kafka, listening the topic defined by the `topic` variable.
 	c := newConsumer(
 		serviceNameB,
-		bTracer,
 		topic,
 		&kafka.ConfigMap{
 			"group.id":           cfg.KafkaGroupID,
-			"bootstrap.servers":  cfg.KafkaServer,
+			"bootstrap.servers":  "http://" + cfg.KafkaServer,
 			"session.timeout.ms": 6000,
 			"auto.offset.reset":  "earliest",
 		})
@@ -75,7 +68,7 @@ func main() {
 	defer p.Shutdown(context.TODO())
 
 	// Simulates a service providing a HTTP API on localhost:4242.
-	newHTTPServer(serviceNameA, aTracer, p)
+	newHTTPServerWithOTel(serviceNameA, p)
 
 	<-signalChan
 	log.Info().Msg("Goodbye cruel world!")

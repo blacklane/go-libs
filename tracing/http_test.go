@@ -17,7 +17,7 @@ func TestHTTPAddOpentracing_noSpan(t *testing.T) {
 		validateRootSpan(t, SpanFromContext(r.Context()), wantTrackingID)
 	})
 
-	tracer, closer := jeager.NewTracer("", "Opentracing-integration-test", noopLogger)
+	tracer, closer := jeager.NewOpentracingTracer("", "Opentracing-integration-test", noopLogger)
 	defer func() {
 		if err := closer.Close(); err != nil {
 			t.Errorf("error closing tracer: %v", err)
@@ -39,7 +39,7 @@ func TestHTTPAddOpentracing_existingSpan(t *testing.T) {
 		validateChildSpan(t, SpanFromContext(r.Context()), wantTrackingID)
 	})
 
-	tracer, closer := jeager.NewTracer("", "Opentracing-integration-test", noopLogger)
+	tracer, closer := jeager.NewOpentracingTracer("", "Opentracing-integration-test", noopLogger)
 	defer func() {
 		if err := closer.Close(); err != nil {
 			t.Errorf("error closing tracer: %v", err)

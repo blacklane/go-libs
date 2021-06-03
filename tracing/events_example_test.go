@@ -6,7 +6,6 @@ import (
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/x/events"
-	"github.com/opentracing/opentracing-go"
 
 	"github.com/blacklane/go-libs/tracing/internal/constants"
 )
@@ -28,7 +27,7 @@ func ExampleEventsAddDefault() {
 	})
 
 	eventNameToLog := "event_to_be_logged"
-	hh := EventsAddDefault(h, log, opentracing.NoopTracer{}, eventNameToLog)
+	hh := EventsAddDefault(h, log, eventNameToLog)
 
 	eventToLog := events.Event{
 		Headers: map[string]string{"X-Tracking-Id": trackingID},
