@@ -17,13 +17,30 @@ type Handler interface {
 
 type HandlerFunc func(ctx context.Context, e Event) error
 
-func (h HandlerFunc) Handle(ctx context.Context, e Event) error {
-	return h(ctx, e)
-}
-
 type HandlerBuilder struct {
 	middleware  []Middleware
 	rawHandlers []Handler
+}
+
+func (h Header) Get(key string) string {
+	return h[key]
+}
+
+func (h Header) Set(key, value string) {
+	h[key] = value
+}
+
+func (h Header) Keys() []string {
+	keys := make([]string, len(h))
+	for k := range h {
+		keys = append(keys, k)
+	}
+
+	return keys
+}
+
+func (h HandlerFunc) Handle(ctx context.Context, e Event) error {
+	return h(ctx, e)
 }
 
 func (hb *HandlerBuilder) UseMiddleware(m ...Middleware) {

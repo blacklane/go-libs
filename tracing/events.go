@@ -10,9 +10,15 @@ import (
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/tracing/internal/constants"
 )
+
+const KeyTrackingID = attribute.Key("tracking_id")
+const KeyError = attribute.Key("error")
 
 // EventsAddDefault adds the necessary middleware for:
 //   - have tracking id in the context (read from the headers or a new one),
@@ -24,14 +30,14 @@ import (
 // - github.com/blacklane/go-libs/logger/middleware.EventsHandlerStatusLogger
 // - EventsAddOpentracing
 // TODO(Anderson): update docs
-func EventsAddDefault(handler events.Handler, log logger.Logger, tracer opentracing.Tracer, eventName string) events.Handler {
+func EventsAddDefault(handler events.Handler, log logger.Logger, eventName string) events.Handler {
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
 		trackmiddleware.EventsAddTrackingID,
 		logmiddleware.EventsAddLogger(log),
 		logmiddleware.EventsHandlerStatusLogger(eventName),
-		EventsAddOpentracing(eventName, tracer))
+		EventsAddOpenTelemetry(eventName))
 
 	return hb.Build()[0]
 }
@@ -55,9 +61,60 @@ func EventsAddOpentracing(eventName string, tracer opentracing.Tracer) events.Mi
 			// Set as not all systems will update to opentracing at once
 			span.SetTag("tracking_id", trackingID)
 
-			if e.Headers == nil {
-				e.Headers = map[string]string{}
-			}
+			return handler.Handle(ctx, e)
+		})
+	}
+}
+
+// EventsAddOpenTelemetry adds an opentracing span to the context and finishes the span
+// when the handler returns.
+// Use tracking.SpanFromContext to get the span from the context. It is
+// technically safe to call opentracing.SpanFromContext after this middleware
+// and trust the returned span is not nil. However tracking.SpanFromContext is
+// safer as it'll return a disabled span if none is found in the context.
+func EventsAddOpenTelemetry(eventName string) events.Middleware {
+	return func(handler events.Handler) events.Handler {
+		propagator := otel.GetTextMapPropagator()
+		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			// Get the global TracerProvider.
+			tr := otel.Tracer("github.com/blacklane/go-libs/tracing")
+
+			trackingID := eventsExtractTrackingID(ctx, e)
+
+			ctx = propagator.Extract(ctx, e.Headers)
+
+			ctx, span := tr.Start(ctx,
+				eventName,
+				trace.WithSpanKind(trace.SpanKindConsumer),
+				trace.WithAttributes(KeyTrackingID.String(trackingID)),
+			)
+			defer span.End()
+
+			span.AddEvent(eventName)
+
+			// Do bar...
+			// defaultOpts := []Option{
+			// 	WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)),
+			// 	WithSpanNameFormatter(defaultHandlerFormatter),
+			// }
+			//
+			// opts := append([]trace.SpanOption{
+			// 	trace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", r)...),
+			// 	trace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(r)...),
+			// 	trace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(h.operation, "", r)...),
+			// }, h.spanStartOptions...) // start with the configured options
+			//
+			// ctx := h.propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+			// ctx, span := h.tracer.Start(ctx, h.spanNameFormatter(h.operation, r), opts...)
+			// defer span.End()
+			//
+			// span := eventGetChildSpan(ctx, e, eventName, tracer)
+			// defer span.Finish()
+			//
+			// ctx = opentracing.ContextWithSpan(ctx, span)
+			//
+			// // Set as not all systems will update to opentracing at once
+			// span.SetTag("tracking_id", trackingID)
 
 			return handler.Handle(ctx, e)
 		})

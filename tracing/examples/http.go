@@ -12,22 +12,22 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
-	opentracinglog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/tracing"
-	"github.com/blacklane/go-libs/tracing/internal/constants"
 )
 
-func newHTTPServer(serviceName string, tracer opentracing.Tracer, producer events.Producer) {
+func newHTTPServerWithOTel(serviceName string, producer events.Producer) {
 	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
 
 	path := "/tracing/example/path"
 
-	middleware := tracing.HTTPDefaultMiddleware(path, tracer, log)
-	handler := middleware(httpHandler(producer))
+	middleware := tracing.HTTPDefaultOTelMiddleware(serviceName, path, log)
+	handler := middleware(httpHandler(producer, serviceName))
+
 	httpServer := http.Server{
 		Addr:    ":4242",
 		Handler: handler,
@@ -37,36 +37,32 @@ func newHTTPServer(serviceName string, tracer opentracing.Tracer, producer event
 	log.Info().Msgf("Starting HTTP server on %s", httpServer.Addr)
 }
 
-func httpHandler(producer events.Producer) http.Handler {
+func httpHandler(producer events.Producer, serviceName string) http.Handler {
 	var count int
+	propagator := otel.GetTextMapPropagator()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		glTracer := otel.GetTracerProvider()
+		tracer := glTracer.Tracer(serviceName, trace.WithInstrumentationVersion("development"))
+		ctx, sp := tracer.
+			Start(r.Context(),
+				"http_handler", // Span name
+				trace.WithAttributes(
+					attribute.String("some_uuid", uuid.New().String()),
+					attribute.String("some_key", "some_value"),
+					attribute.Int("some_int", count)))
+		defer sp.End()
+
 		defer func() { count++ }()
-		ctx := r.Context()
 
-		// dump, _ := httputil.DumpRequest(r, true)
-		// fmt.Println(string(dump))
-
-		// Gets the opentracing span
-		sp := tracing.SpanFromContext(ctx)
-
-		// add fields to a log entry on this span
-		sp.LogFields(
-			opentracinglog.String("some_uuid", uuid.New().String()),
-			opentracinglog.String("some_key", "some_value"),
-			opentracinglog.Int("some_number", 1500),
-			opentracinglog.Message("some message"))
-
+		// The headers will be sent as part of the response body to show the
+		// headers OpenTelemetry uses.
 		headers, _ := json.Marshal(w.Header())
 
 		// simulates a failure by flipping a coin.
 		if rand.Int()%2 == 0 {
 			err := errors.New(http.StatusText(http.StatusTeapot))
-
-			// Flags an error happened on this span
-			ext.Error.Set(sp, true)
-
-			// Logs the error on the span
-			sp.LogFields(opentracinglog.Error(err))
+			sp.RecordError(err)
 
 			w.WriteHeader(http.StatusTeapot)
 			_, _ = fmt.Fprintf(w, "I'm a tea pot\ntracking_id: %s\nheaders: %s",
@@ -76,29 +72,31 @@ func httpHandler(producer events.Producer) http.Handler {
 		}
 
 		event := events.Event{
-			Headers: nil,
+			Headers: map[string]string{},
 			Key:     []byte(fmt.Sprintf("%d", count)),
 			Payload: []byte(fmt.Sprintf(`{"event":"%s","count":%d}`, eventName, count)),
 		}
 
-		// Injects the span into the events headers.
-		// It's how the span is propagated through different services.
-		err := tracing.EventsOpentracingInject(ctx, sp, &event)
-		if err != nil {
-			logger.FromContext(ctx).Err(err).
-				Str(constants.FieldEvent, eventName).
-				Msg("could not inject span into event")
-		}
+		// logger.FromContext(ctx).Debug().
+		// 	Str("ctx", fmt.Sprintf("%v", ctx)).
+		// 	Msg("ctx before propagator.Inject")
+		// logger.FromContext(ctx).Debug().
+		// 	Str("event_headers", fmt.Sprintf("%v", event.Headers)).
+		// 	Msg("before propagator.Inject")
+		propagator.Inject(ctx, event.Headers)
+		// logger.FromContext(ctx).Debug().
+		// 	Str("event_headers", fmt.Sprintf("%v", event.Headers)).
+		// 	Msg("after propagator.Inject")
 
-		err = producer.Send(event, topic)
+		logger.FromContext(ctx).Debug().
+			Str("event_produced_headers", fmt.Sprintf("%v", event.Headers)).
+			RawJSON("event_produced_payload", event.Payload).
+			Str("event_produced_topic", topic).Msg("producing event")
+		err := producer.Send(event, topic)
 		if err != nil {
 			err := fmt.Errorf("could not send event: %w", err)
 
-			// Flags an error happened on this span
-			ext.Error.Set(sp, true)
-
-			// Logs the error on the span
-			sp.LogFields(opentracinglog.Error(err))
+			sp.RecordError(err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprintf(w, `{"error":"internal server error","tracking_id":"%s","headers":%q}`,

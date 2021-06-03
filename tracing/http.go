@@ -9,6 +9,7 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 	trackingmiddleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // HTTPDefaultMiddleware adds the necessary middleware for:
@@ -29,6 +30,19 @@ func HTTPDefaultMiddleware(
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := HTTPAddOpentracing(path, tracer, next)
+			h = logmiddleware.HTTPRequestLogger(skipRoutes)(h)
+			h = logmiddleware.HTTPAddLogger(log)(h)
+			h = trackingmiddleware.TrackingID(h)
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
+func HTTPDefaultOTelMiddleware(serviceName, path string, log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := otelhttp.WithRouteTag(path, next) // TODO(Anderson): name a tracer here?
+			h = otelhttp.NewHandler(h, serviceName)
 			h = logmiddleware.HTTPRequestLogger(skipRoutes)(h)
 			h = logmiddleware.HTTPAddLogger(log)(h)
 			h = trackingmiddleware.TrackingID(h)

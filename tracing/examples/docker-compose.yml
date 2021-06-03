@@ -1,5 +1,40 @@
 version: "3"
 services:
+  app:
+    build:
+      context: ../
+      # The 'dockerfile' directive is relative to the 'context', therefore the parent directory.
+      dockerfile: examples/Dockerfile
+      args:
+        GITHUB_TOKEN:
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: http://kafka-compose:9092
+      TRACER_HOST: http://jaegertracing:14268/api/traces
+    ports:
+      - "4242:4242"
+    links:
+      - kafka-compose
+      - jaegertracing
+
+  kafka-compose:
+    image: wurstmeister/kafka:2.11-0.11.0.3
+    ports:
+      - "9092:9092"
+    restart: on-failure:3
+    links:
+      - zookeeper
+    environment:
+      KAFKA_CREATE_TOPICS: 'tracing-example:1:1'
+      KAFKA_ADVERTISED_HOST_NAME: 'kafka-compose'
+      KAFKA_VERSION: '0.11.0.1'
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_ADVERTISED_PORT: '9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   kafka:
     image: wurstmeister/kafka:2.11-0.11.0.3
     ports:
@@ -23,50 +58,77 @@ services:
     image: wurstmeister/zookeeper
 
   jaegertracing:
-    image: jaegertracing/all-in-one:1.21
+    image: jaegertracing/opentelemetry-all-in-one
     ports:
+      - "13133:13133"
+      - "14250:14250"
+      - "14268:14268"
+      - "16686:16686"
+      - "55680:55680"
       - "5775:5775/udp"
+      - "5778:5778"
       - "6831:6831/udp"
       - "6832:6832/udp"
-      - "5778:5778"
-      - "16686:16686"
-      - "14268:14268"
-      - "14250:14250"
       - "9411:9411"
     environment:
-      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+      SPAN_STORAGE_TYPE: elasticsearch
+    volumes:
+      - ./:/config
 
-  app:
-    build:
-      context: ../
-      # The 'dockerfile' directive is relative to the 'context', therefore the parent directory.
-      dockerfile: examples/Dockerfile
-      args:
-        GITHUB_TOKEN:
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: http://kafka-compose:9092
-      TRACER_HOST: http://jaegertracing:14268/api/traces
-    ports:
-        - "4242:4242"
-    links:
-      - kafka-compose
-      - jaegertracing
 
-  kafka-compose:
-    image: wurstmeister/kafka:2.11-0.11.0.3
-    ports:
-      - "9092:9092"
-    restart: on-failure:3
-    links:
-      - zookeeper
+
+
+
+  jaeger:
+    image: jaegertracing/opentelemetry-all-in-one
+    command:
+      --config-file=/config/config.yaml
+      --es.server-urls=http://elasticsearch:9200
+      --es.num-shards=3
+    container_name: jaeger
     environment:
-      KAFKA_CREATE_TOPICS: 'tracing-example:1:1'
-      KAFKA_ADVERTISED_HOST_NAME: 'kafka-compose'
-      KAFKA_VERSION: '0.11.0.1'
-      KAFKA_BROKER_ID: 1
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_ADVERTISED_PORT: '9092'
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      SPAN_STORAGE_TYPE: elasticsearch
+    ports:
+      - "55680:55680"
+      - "13133:13133"
+      - "16686:16686"
+    networks:
+      - otel
+    volumes:
+      - ./config-jaeger-collector.yaml:/config/config.yaml
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+    container_name: elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - cluster.name=docker-cluster
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-XX:UseAVX=2 -Xms1g -Xmx1g
+    ulimits:
+      memlock:
+        hard: -1
+        soft: -1
+    volumes:
+      - otel:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - otel
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+
+volumes:
+  otel:
+    driver: local
+
+networks:
+  otel:
+    driver: bridge
