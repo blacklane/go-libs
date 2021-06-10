@@ -24,7 +24,8 @@ func StartServerWithOTel(serviceName string, producer events.Producer, topic str
 
 	path := "/tracing/example/path"
 
-	applyMiddleware := tracing.HTTPDefaultOTelMiddleware(
+	// Using HTTPAllMiddleware as it's been applied directly to the handler.
+	applyMiddleware := tracing.HTTPAllMiddleware(
 		serviceName,
 		"my-awesome-handler",
 		path,

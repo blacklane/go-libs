@@ -7,7 +7,6 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 	trackingMidleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/blacklane/go-libs/x/events"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -73,11 +72,8 @@ func EventsHandlerStatusLoggerWithNameFn(
 
 			log := *logger.FromContext(ctx)
 
-			traceID := trace.SpanFromContext(ctx).SpanContext().TraceID()
 			trackingID := tracking.IDFromContext(ctx)
-
 			logFields := map[string]interface{}{
-				internal.FieldTraceID:    traceID,
 				internal.FieldTrackingID: trackingID,
 				internal.FieldRequestID:  trackingID,
 				internal.FieldEvent:      evName,
