@@ -10,6 +10,7 @@ import (
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
+	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -22,50 +23,51 @@ const (
 	OtelKeyTrackingID = attribute.Key("tracking_id")
 )
 
-// EventsAddDefault adds the necessary middleware for:
-//   - have tracking id in the context (read from the headers or a new one),
-//   - have a logger.Logger with tracking id and all required fields in the context,
-//   - log at the end of handler if it succeeded or failed and how log it took.
-// For more details, check the middleware used:
-// - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
-// - github.com/blacklane/go-libs/logger/middleware.EventsAddLogger
-// - github.com/blacklane/go-libs/logger/middleware.EventsHandlerStatusLogger
-// - EventsAddOpentracing
-// TODO(Anderson): update docs
+// EventsAddDefault returns the composition of EventsGenericMiddleware and
+// EventsHandlerMiddleware. Therefore it should be applied to each events.Handler
+// individually.
 func EventsAddDefault(handler events.Handler, log logger.Logger, eventName string) events.Handler {
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
-		trackmiddleware.EventsAddTrackingID,
-		EventsAddOpenTelemetry(eventName),
-		logmiddleware.EventsAddLogger(log),
-		logmiddleware.EventsHandlerStatusLogger(eventName),
+		EventsGenericMiddleware(log),
+		EventsHandlerMiddleware(eventName),
 	)
 
 	return hb.Build()[0]
 }
 
-// EventsAddOpentracing adds an opentracing span to the context and finishes the span
-// when the handler returns.
-// Use tracking.SpanFromContext to get the span from the context. It is
-// technically safe to call opentracing.SpanFromContext after this middleware
-// and trust the returned span is not nil. However tracking.SpanFromContext is
-// safer as it'll return a disabled span if none is found in the context.
-func EventsAddOpentracing(eventName string, tracer opentracing.Tracer) events.Middleware {
+// EventsGenericMiddleware adds all middlewares which aren't specific to a handler.
+// They are:
+// - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
+// - github.com/blacklane/go-libs/logger/middleware.EventsAddLogger
+// It adds log as the logger and will not log any route in skipRoutes.
+func EventsGenericMiddleware(log logger.Logger) events.Middleware {
 	return func(handler events.Handler) events.Handler {
-		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			trackingID := eventsExtractTrackingID(ctx, e)
+		hb := events.HandlerBuilder{}
+		hb.AddHandler(handler)
+		hb.UseMiddleware(
+			trackmiddleware.EventsAddTrackingID,
+			logmiddleware.EventsAddLogger(log),
+		)
 
-			span := eventGetChildSpan(ctx, e, eventName, tracer)
-			defer span.Finish()
+		return hb.Build()[0]
+	}
+}
 
-			ctx = opentracing.ContextWithSpan(ctx, span)
+// EventsHandlerMiddleware are event specific middleware. It adds:
+// - EventsAddOpenTelemetry
+// - github.com/blacklane/go-libs/logger/middleware.EventsHandlerStatusLogger
+func EventsHandlerMiddleware(eventName string) events.Middleware {
+	return func(handler events.Handler) events.Handler {
+		hb := events.HandlerBuilder{}
+		hb.AddHandler(handler)
+		hb.UseMiddleware(
+			EventsAddOpenTelemetry(eventName),
+			logmiddleware.EventsHandlerStatusLogger(eventName),
+		)
 
-			// Set as not all systems will update to opentracing at once
-			span.SetTag("tracking_id", trackingID)
-
-			return handler.Handle(ctx, e)
-		})
+		return hb.Build()[0]
 	}
 }
 
@@ -86,7 +88,7 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 
 			ctx = propagator.Extract(ctx, e.Headers)
 
-			ctx, span := tr.Start(
+			ctx, sp := tr.Start(
 				ctx,
 				eventName,
 				trace.WithSpanKind(trace.SpanKindConsumer),
@@ -94,7 +96,11 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 					OtelKeyTrackingID.String(trackingID),
 					OtelKeyEventName.String(eventName)),
 			)
-			defer span.End()
+			defer sp.End()
+
+			logger.FromContext(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
+				return c.Str(constants.TraceID, sp.SpanContext().TraceID().String())
+			})
 
 			return handler.Handle(ctx, e)
 		})

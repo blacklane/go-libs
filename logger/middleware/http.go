@@ -9,7 +9,6 @@ import (
 
 	"github.com/blacklane/go-libs/tracking"
 	trackingMiddleware "github.com/blacklane/go-libs/tracking/middleware"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -60,11 +59,9 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			ctx := r.Context()
 			log := *logger.FromContext(ctx)
 
-			traceID := trace.SpanFromContext(ctx).SpanContext().TraceID()
 			trackingID := tracking.IDFromContext(ctx)
 
 			logFields := map[string]interface{}{
-				internal.FieldTraceID:    traceID,
 				internal.FieldTrackingID: trackingID,
 				internal.FieldRequestID:  trackingID,
 				internal.FieldParams:     r.URL.RawQuery,

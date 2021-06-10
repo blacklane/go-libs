@@ -8,6 +8,7 @@ const (
 	HeaderRequestID    = "X-Request-Id"
 	HeaderTrackingID   = "X-Tracking-Id"
 
+	TraceID       = "trace_id"
 	TagTrackingID = "tracking_id"
 )
 
