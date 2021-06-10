@@ -18,12 +18,8 @@ import (
 //   - have tracking id in the context (read from the headers or a new one),
 //   - have a logger.Logger with tracking id and all required fields in the context,
 //   - log, at the end of handler, if it succeeded or failed and how log it took.
-// For more details, check the middleware used:
-// - github.com/blacklane/go-libs/tracking/middleware.TrackingID
-// - github.com/blacklane/go-libs/logger/middleware.HTTPAddLogger
-// - github.com/blacklane/go-libs/logger/middleware.HTTPRequestLogger
-// - HTTPAddOpentracing
-// TODO(Anderson): update docs
+// For more details, check the middleware used.
+// deprecated
 func HTTPDefaultMiddleware(
 	path string,
 	tracer opentracing.Tracer,
@@ -40,32 +36,32 @@ func HTTPDefaultMiddleware(
 	}
 }
 
-func HTTPDefaultOTelMiddleware(serviceName, path string, log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
+// TODO: Add docs and rename it.
+func HTTPDefaultOTelMiddleware(serviceName, handlerName, path string, log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := logmiddleware.HTTPRequestLogger(skipRoutes)(next)
 			h = logmiddleware.HTTPAddLogger(log)(h)
-			h = otelhttp.WithRouteTag(path, h) // TODO(Anderson): name a tracer here?
-			h = HTTPAddOpenTelemetry(path, h)  // TODO(Anderson): name a tracer here?
-			h = otelhttp.NewHandler(h, serviceName)
+			h = HTTPAddOpenTelemetry(serviceName, handlerName, path, h)
 			h = trackingmiddleware.TrackingID(h)
 			h.ServeHTTP(w, r)
 		})
 	}
 }
 
-func HTTPAddOpenTelemetry(path string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func HTTPAddOpenTelemetry(serviceName string, handlerName string, path string, next http.Handler) http.Handler {
+	return otelhttp.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		trackingID := tracking.IDFromContext(ctx)
 
-		trace.SpanFromContext(ctx).
-			SetAttributes(
-				semconv.HTTPRouteKey.String(path), // same as adding otelhttp.WithRouteTag
-				OtelKeyTrackingID.String(trackingID))
+		sp := trace.SpanFromContext(ctx)
+		sp.SetName(handlerName)
+		sp.SetAttributes(
+			semconv.HTTPRouteKey.String(path), // same as adding otelhttp.WithRouteTag
+			OtelKeyTrackingID.String(trackingID))
 
 		next.ServeHTTP(w, r)
-	})
+	}), serviceName)
 }
 
 // HTTPAddOpentracing adds an opentracing span to the context and finishes the span

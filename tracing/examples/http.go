@@ -13,23 +13,24 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/semconv"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/tracing"
 )
 
 func StartServerWithOTel(serviceName string, producer events.Producer, topic string, eventName string) {
-	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
 
 	path := "/tracing/example/path"
 
-	middleware := tracing.HTTPDefaultOTelMiddleware(serviceName, path, log)
-	handler := middleware(httpHandler(producer, serviceName, topic, eventName))
+	applyMiddleware := tracing.HTTPDefaultOTelMiddleware(
+		serviceName,
+		"my-awesome-handler",
+		path,
+		log)
+
+	handler := applyMiddleware(newHandler(producer, topic, eventName))
 
 	httpServer := http.Server{
 		Addr:    ":4242",
@@ -40,14 +41,11 @@ func StartServerWithOTel(serviceName string, producer events.Producer, topic str
 	log.Info().Msgf("Starting HTTP server on %s", httpServer.Addr)
 }
 
-func httpHandler(producer events.Producer, serviceName string, topic string, eventName string) http.Handler {
+func newHandler(producer events.Producer, topic string, eventName string) http.Handler {
 	var count int
-	propagator := otel.GetTextMapPropagator()
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		sp := trace.SpanFromContext(ctx)
-		sp.SetName("my-awesome-http-handler")
 		sp.SetAttributes(
 			attribute.String("some_uuid", uuid.New().String()),
 			attribute.String("some_key", "some_value"),
@@ -73,7 +71,7 @@ func httpHandler(producer events.Producer, serviceName string, topic string, eve
 			return
 		}
 
-		err := produceEvent(ctx, propagator, producer, serviceName, topic, eventName, count)
+		err := produceEvent(ctx, producer, topic, eventName, count)
 		if err != nil {
 			err := fmt.Errorf("could not send event: %w", err)
 
@@ -97,23 +95,17 @@ func httpHandler(producer events.Producer, serviceName string, topic string, eve
 	})
 }
 
-func produceEvent(ctx context.Context, propagator propagation.TextMapPropagator, producer events.Producer, serviceName string, topic string, eventName string, count int) error {
-	ctx, sp := tracing.SpanStartProducedEvent(ctx, eventName, topic)
-	defer sp.End()
-
+func produceEvent(ctx context.Context, producer events.Producer, topic string, eventName string, count int) error {
 	event := events.Event{
 		Headers: map[string]string{"X-Example": "a-value"},
 		Key:     []byte(fmt.Sprintf("%d", count)),
 		Payload: []byte(fmt.Sprintf(`{"event":"%s","count":%d}`, eventName, count)),
 	}
-	sp.SetAttributes(semconv.MessagingMessageIDKey.String(string(event.Key)))
-
-	propagator.Inject(ctx, event.Headers)
 
 	logger.FromContext(ctx).Debug().
 		Str("event_produced_headers", fmt.Sprintf("%v", event.Headers)).
 		RawJSON("event_produced_payload", event.Payload).
 		Str("event_produced_topic", topic).Msg("producing event")
 
-	return producer.Send(event, topic)
+	return producer.SendCtx(ctx, eventName, event, topic)
 }

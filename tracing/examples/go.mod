@@ -13,7 +13,6 @@ require (
 	github.com/rs/zerolog v1.22.0
 	go.opentelemetry.io/otel v0.20.0
 	go.opentelemetry.io/otel/trace v0.20.0
-	google.golang.org/appengine v1.6.7 // indirect
 )
 
 replace github.com/blacklane/go-libs/tracing => ../
