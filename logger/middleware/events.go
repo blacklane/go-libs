@@ -7,6 +7,7 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 	trackingMidleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/blacklane/go-libs/x/events"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -58,7 +59,7 @@ func EventsHandlerStatusLogger(eventNames ...string) events.Middleware {
 	return EventsHandlerStatusLoggerWithNameFn(eventName, eventNames...)
 }
 
-// EventsLoggerWithNameFn is the same as EventsHandlerStatusLogger, but using a custom
+// EventsHandlerStatusLoggerWithNameFn is the same as EventsHandlerStatusLogger, but using a custom
 // function to extract the event name.
 func EventsHandlerStatusLoggerWithNameFn(
 	eventNameFn func(e events.Event) string,
@@ -73,8 +74,12 @@ func EventsHandlerStatusLoggerWithNameFn(
 			evName := eventNameFn(e)
 
 			log := *logger.FromContext(ctx)
+
+			traceID := trace.SpanFromContext(ctx).SpanContext().TraceID()
 			trackingID := tracking.IDFromContext(ctx)
+
 			logFields := map[string]interface{}{
+				internal.FieldTraceID:    traceID,
 				internal.FieldTrackingID: trackingID,
 				internal.FieldRequestID:  trackingID,
 				internal.FieldEvent:      evName,

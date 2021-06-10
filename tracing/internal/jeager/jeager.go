@@ -22,32 +22,8 @@ import (
 	"go.opentelemetry.io/otel/semconv"
 )
 
-// // NewOpenTelemetryTracer returns an OpenTelemetry TracerProvider configured to use
-// // the Jaeger exporter that will send spans to the provided url. The returned
-// // TracerProvider will also use a Resource configured with all the information
-// // about the application.
-// func NewOpenTelemetryTracer(service, url string, log logger.Logger) *tracesdk.TracerProvider {
-// 	// Create the Jaeger exporter
-// 	exp, err := oteljeager.NewRawExporter(oteljeager.WithCollectorEndpoint(oteljeager.WithEndpoint("http://localhost:13133/api/traces")))
-// 	if err != nil {
-// 		log.Panic().Err(err).Msg("failed to create a otel Jeager exporter")
-// 	}
-// 	tp := tracesdk.NewTracerProvider(
-// 		// Always be sure to batch in production, use tracesdk.WithBatcher instead.
-// 		//   WithSyncer: sets to use a SpanProcessor that will synchronously
-// 		//     send completed spans to the exporter immediately.
-// 		tracesdk.WithSyncer(exp),
-// 		// Record information about this application in an Resource.
-// 		tracesdk.WithResource(
-// 			resource.NewWithAttributes(
-// 				semconv.ServiceNameKey.String(service),
-// 				attribute.String("environment", "local"),
-// 			)),
-// 	)
-// 	return tp
-// }
-
 // NewOpentracingTracer returns a Jeager implementation of opentracing.Tracer
+// deprecated
 func NewOpentracingTracer(host string, serviceName string, logger logger.Logger) (opentracing.Tracer, io.Closer) {
 	jaegerCfg := jaegerconfig.Configuration{
 		ServiceName: serviceName,
@@ -96,7 +72,7 @@ func (jl JaegerLogger) Debugf(msg string, args ...interface{}) {
 	l.Debug().Msgf("%s", fmt.Sprintf(strings.TrimSpace(msg), args...))
 }
 
-func InitOpenTelemetry(appName, appVersion, exporterURL string) {
+func InitOpenTelemetry(serviceName, serviceVersion, exporterURL string) {
 	// Create an gRPC-based OTLP exporter that
 	// will receive the created telemetry data
 	driver := otlpgrpc.NewDriver(
@@ -112,8 +88,8 @@ func InitOpenTelemetry(appName, appVersion, exporterURL string) {
 	// with common attributes from OTel spec
 	res, err := resource.New(context.TODO(),
 		resource.WithAttributes(
-			semconv.ServiceNameKey.String(appName),
-			semconv.ServiceVersionKey.String(appVersion),
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVersion),
 			semconv.DeploymentEnvironmentKey.String("example"),
 		),
 	)

@@ -129,6 +129,8 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 				if kev.Code() != kafka.ErrTimedOut {
 					c.errFn(fmt.Errorf("failed to read message: %w", kev))
 				}
+			default:
+				c.errFn(fmt.Errorf("unkon kafka message type: %T", kev))
 			}
 		}
 
@@ -216,8 +218,8 @@ func parseHeaders(headers []kafka.Header) Header {
 
 func (c *kafkaConsumer) startRunning() bool {
 	c.runMu.RLock()
-	c.run = true
 	defer c.runMu.RUnlock()
+	c.run = true
 	return c.run
 }
 

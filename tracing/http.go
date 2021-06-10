@@ -10,6 +10,8 @@ import (
 	trackingmiddleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/opentracing/opentracing-go"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/semconv"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // HTTPDefaultMiddleware adds the necessary middleware for:
@@ -41,14 +43,29 @@ func HTTPDefaultMiddleware(
 func HTTPDefaultOTelMiddleware(serviceName, path string, log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h := otelhttp.WithRouteTag(path, next) // TODO(Anderson): name a tracer here?
-			h = otelhttp.NewHandler(h, serviceName)
-			h = logmiddleware.HTTPRequestLogger(skipRoutes)(h)
+			h := logmiddleware.HTTPRequestLogger(skipRoutes)(next)
 			h = logmiddleware.HTTPAddLogger(log)(h)
+			h = otelhttp.WithRouteTag(path, h) // TODO(Anderson): name a tracer here?
+			h = HTTPAddOpenTelemetry(path, h)  // TODO(Anderson): name a tracer here?
+			h = otelhttp.NewHandler(h, serviceName)
 			h = trackingmiddleware.TrackingID(h)
 			h.ServeHTTP(w, r)
 		})
 	}
+}
+
+func HTTPAddOpenTelemetry(path string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		trackingID := tracking.IDFromContext(ctx)
+
+		trace.SpanFromContext(ctx).
+			SetAttributes(
+				semconv.HTTPRouteKey.String(path), // same as adding otelhttp.WithRouteTag
+				OtelKeyTrackingID.String(trackingID))
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 // HTTPAddOpentracing adds an opentracing span to the context and finishes the span

@@ -18,26 +18,35 @@ deps: gitconfig
 gitconfig:
 	@git config --global url.https://${GITHUB_TOKEN}@github.com.insteadOf https://github.com
 
-.PHONY: run
-run: deps
-	go run ${BUILD_TAGS} *.go
+.PHONY: run-http
+run-http: deps
+	go run ${BUILD_TAGS} cmd/http/main.go
 
-.PHONY: run-compose
-run-compose:
-	@KAFKA_BOOTSTRAP_SERVERS=kafka-compose GITHUB_TOKEN=${GITHUB_TOKEN} docker compose up \
-			--build \
-			--force-recreate \
-			--remove-orphans \
-			-d \
-			app kafka-compose zookeeper jaegertracing
+.PHONY: run-events
+run-events: deps
+	go run ${BUILD_TAGS} cmd/events/main.go
+
+#.PHONY: run-compose
+#run-compose:
+#	@KAFKA_BOOTSTRAP_SERVERS=kafka-compose GITHUB_TOKEN=${GITHUB_TOKEN} docker compose up \
+#			--build \
+#			--force-recreate \
+#			--remove-orphans \
+#			-d \
+#			app kafka-compose zookeeper jaegertracing
 
 .PHONY: compose-dependencies
 compose-dependencies:
 	docker compose up \
-    		--build \
-    		--force-recreate \
     		-d \
-    		kafka zookeeper
+    		elasticsearch kafka zookeeper jaeger
+
+.PHONY: compose-jaeger
+compose-jaeger:
+	docker compose up \
+    		--remove-orphans \
+    		-d \
+    		elasticsearch kafka zookeeper jaeger-collector jaeger-agent jaeger-ui
 
 .PHONY: compose-down
 compose-down clean:
