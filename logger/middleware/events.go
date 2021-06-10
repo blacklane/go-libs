@@ -17,10 +17,8 @@ import (
 //   - have tracking id in the context (read from the headers or a new one),
 //   - have a logger.Logger with tracking id and all required fields in the context,
 //   - log at the end of handler if it succeeded or failed and how log it took.
-// For more details, check the middleware used:
-// - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
-// - middleware.EventsAddLogger
-// - middleware.EventsHandlerStatusLogger
+// For more details, check the middleware used.
+// TODO(Anderson): update docs
 func EventsAddDefault(handler events.Handler, log logger.Logger, eventNames ...string) events.Handler {
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
@@ -59,8 +57,8 @@ func EventsHandlerStatusLogger(eventNames ...string) events.Middleware {
 	return EventsHandlerStatusLoggerWithNameFn(eventName, eventNames...)
 }
 
-// EventsHandlerStatusLoggerWithNameFn is the same as EventsHandlerStatusLogger, but using a custom
-// function to extract the event name.
+// EventsHandlerStatusLoggerWithNameFn is the same as EventsHandlerStatusLogger,
+// but using a custom function to extract the event name.
 func EventsHandlerStatusLoggerWithNameFn(
 	eventNameFn func(e events.Event) string,
 	eventNames ...string) events.Middleware {

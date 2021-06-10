@@ -19,7 +19,11 @@ var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
 type Producer interface {
 	// Send an event to the given topic
+	// deprecated, use SendCtx instead
 	Send(event Event, topic string) error
+	// SendCtx
+	// TODO(Add docs):
+	SendCtx(ctx context.Context, eventName string, event Event, topic string) error
 	// SendWithTrackingID adds the tracking ID to the event's headers and sends it to the given topic
 	SendWithTrackingID(trackingID string, event Event, topic string) error
 	// HandleEvents starts to listen to the producer events channel
@@ -150,10 +154,15 @@ func (p *kafkaProducer) refreshToken() {
 // SendCtx adds the tracking ID to the event's headers. If the event already
 // has the tracking ID header set, it does nothing.
 func (p *kafkaProducer) SendCtx(ctx context.Context, eventName string, event Event, topic string) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("could not send event: %w", err)
+	}
+
 	ctx, sp := trace.SpanFromContext(ctx).Tracer().
-		Start(ctx, "producer:"+eventName,
+		Start(ctx, "produced:"+eventName,
 			trace.WithSpanKind(trace.SpanKindProducer),
 			trace.WithAttributes(semconv.MessagingDestinationKey.String(topic)))
+	defer sp.End()
 
 	sp.SetAttributes(semconv.MessagingMessageIDKey.String(string(event.Key)))
 
