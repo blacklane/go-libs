@@ -10,3 +10,8 @@ const (
 
 	TagTrackingID = "tracking_id"
 )
+
+const (
+	// TracerName is the name for the OpenTelemetry Tracer
+	TracerName = "github.com/blacklane/go-libs/tracing/events"
+)

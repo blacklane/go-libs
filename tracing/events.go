@@ -17,8 +17,10 @@ import (
 	"github.com/blacklane/go-libs/tracing/internal/constants"
 )
 
-const KeyTrackingID = attribute.Key("tracking_id")
-const KeyError = attribute.Key("error")
+const (
+	OtelKeyEventName  = attribute.Key("event.name")
+	OtelKeyTrackingID = attribute.Key("tracking_id")
+)
 
 // EventsAddDefault adds the necessary middleware for:
 //   - have tracking id in the context (read from the headers or a new one),
@@ -35,9 +37,10 @@ func EventsAddDefault(handler events.Handler, log logger.Logger, eventName strin
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
 		trackmiddleware.EventsAddTrackingID,
+		EventsAddOpenTelemetry(eventName),
 		logmiddleware.EventsAddLogger(log),
 		logmiddleware.EventsHandlerStatusLogger(eventName),
-		EventsAddOpenTelemetry(eventName))
+	)
 
 	return hb.Build()[0]
 }
@@ -76,45 +79,22 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 	return func(handler events.Handler) events.Handler {
 		propagator := otel.GetTextMapPropagator()
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			// Get the global TracerProvider.
-			tr := otel.Tracer("github.com/blacklane/go-libs/tracing")
+			// Get the global TracerProvider. // TODO:make it a constant and have one for http
+			tr := otel.Tracer(constants.TracerName)
 
 			trackingID := eventsExtractTrackingID(ctx, e)
 
 			ctx = propagator.Extract(ctx, e.Headers)
 
-			ctx, span := tr.Start(ctx,
+			ctx, span := tr.Start(
+				ctx,
 				eventName,
 				trace.WithSpanKind(trace.SpanKindConsumer),
-				trace.WithAttributes(KeyTrackingID.String(trackingID)),
+				trace.WithAttributes(
+					OtelKeyTrackingID.String(trackingID),
+					OtelKeyEventName.String(eventName)),
 			)
 			defer span.End()
-
-			span.AddEvent(eventName)
-
-			// Do bar...
-			// defaultOpts := []Option{
-			// 	WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)),
-			// 	WithSpanNameFormatter(defaultHandlerFormatter),
-			// }
-			//
-			// opts := append([]trace.SpanOption{
-			// 	trace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", r)...),
-			// 	trace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(r)...),
-			// 	trace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(h.operation, "", r)...),
-			// }, h.spanStartOptions...) // start with the configured options
-			//
-			// ctx := h.propagators.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
-			// ctx, span := h.tracer.Start(ctx, h.spanNameFormatter(h.operation, r), opts...)
-			// defer span.End()
-			//
-			// span := eventGetChildSpan(ctx, e, eventName, tracer)
-			// defer span.Finish()
-			//
-			// ctx = opentracing.ContextWithSpan(ctx, span)
-			//
-			// // Set as not all systems will update to opentracing at once
-			// span.SetTag("tracking_id", trackingID)
 
 			return handler.Handle(ctx, e)
 		})

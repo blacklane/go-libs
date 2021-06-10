@@ -16,6 +16,7 @@ const (
 	FieldRequestDuration = "duration_ms"
 	FieldRequestID       = "request_id"
 	FieldTimestamp       = "timestamp"
+	FieldTraceID         = "trace_id"
 	FieldTrackingID      = "tracking_id"
 	FieldUserAgent       = "user_agent"
 	FieldVerb            = "verb"

@@ -1,7 +1,8 @@
-package main
+package examples
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -14,12 +15,15 @@ import (
 
 func eventsHandler() events.HandlerFunc {
 	return func(ctx context.Context, e events.Event) error {
-		logger.FromContext(ctx).Info().Msgf("consumed event: %s", e.Payload)
+		logger.FromContext(ctx).Info().
+			Str("event_headers", fmt.Sprintf("%v", e.Headers)).
+			Str("event_payload", string(e.Payload)).
+			Msg("consumed event")
 		return nil
 	}
 }
 
-func newConsumer(serviceName string, topic string, conf *kafka.ConfigMap) events.Consumer {
+func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string, eventName string) events.Consumer {
 	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
 
@@ -42,7 +46,7 @@ func newConsumer(serviceName string, topic string, conf *kafka.ConfigMap) events
 	return c
 }
 
-func newProducer(conf *kafka.ConfigMap) events.Producer {
+func NewProducer(conf *kafka.ConfigMap, log logger.Logger) events.Producer {
 	errHandler := func(event events.Event, err error) {
 		log.Err(err).Msgf("failed to deliver the event %s",
 			string(event.Payload))
