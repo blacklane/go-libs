@@ -24,7 +24,7 @@ services:
     links:
       - zookeeper
     environment:
-      KAFKA_CREATE_TOPICS: 'tracing-example:1:1'
+      KAFKA_CREATE_TOPICS: 'tracing-example:1:1,chauffeur-positions:1:1,commands-bookings:1:1,events-bookings:1:1,on-demand-chauffeur-offers:1:1,events-rides:1:1,on-demand-ride-fulfilment:1:1,on-demand-chauffeur-status:1:1'
       KAFKA_ADVERTISED_HOST_NAME: 'kafka-compose'
       KAFKA_VERSION: '0.11.0.1'
       KAFKA_BROKER_ID: 1
@@ -73,6 +73,8 @@ services:
       - "55680:55680"
       - "13133:13133"
       - "16686:16686"
+      - "14268:14268"
+      - "14269:14269"
     networks:
       - otel
     volumes:
@@ -174,6 +176,15 @@ services:
       interval: 10s
       retries: 20
       test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+
+  redis-graphql:
+    image: redis:alpine
+    container_name: redis-graphql
+    ports:
+      - 6379:6379
+    networks:
+      - otel
+
 
 volumes:
   otel:
