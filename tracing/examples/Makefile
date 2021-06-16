@@ -35,22 +35,26 @@ run-events: deps
 #			-d \
 #			app kafka-compose zookeeper jaegertracing
 
+#.PHONY: compose-dependencies
+#compose-dependencies:
+#	docker compose up \
+#    		-d \
+#    		elasticsearch kafka zookeeper jaeger
+
 .PHONY: compose-dependencies
 compose-dependencies:
 	docker compose up \
-    		-d \
-    		elasticsearch kafka zookeeper jaeger
-
-.PHONY: compose-jaeger
-compose-jaeger:
-	docker compose up \
     		--remove-orphans \
     		-d \
-    		elasticsearch kafka zookeeper jaeger-collector jaeger-agent jaeger-ui
+    		elasticsearch kafka zookeeper jaeger redis-graphql
 
 .PHONY: compose-down
-compose-down clean:
+compose-down:
 	docker compose down
+
+.PHONY: clean
+clean:
+	docker compose down --volumes --remove-orphans
 
 .PHONY: jaegertracing-docker
 jaegertracing-docker:

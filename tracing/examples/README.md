@@ -1,27 +1,40 @@
 # Tracing example
 
-It shows the basic usage of our tracing package which provides [OpenTracing](https://opentracing.io/)
+It shows the basic usage of our tracing package which provides [OpenTelemetry](https://opentelemetry.io/)
 middleware for [HTTP](https://golang.org/pkg/net/http/#Handler)
 and [Events](https://github.com/blacklane/go-libs/blob/master/x/events/events.go#L14) 
 handlers as well as functions to get the opntracing.Span from the context.
 
 ## Running
 
-### Docker compose
+- Run the dependencies
 
- - Run the example:
 ```shell
-make run-compose
+make compose-dependencies
+```
+
+- Run the Go examples
+
+```shell
+make run-http
+```
+
+```shell
+make run-evcents
 ```
 
  - You call [localhost:4242](http://localhost:4242/) directly, or use our graphql (see below).
 
- - Run graphql using branch `opentracing`:
+ - Graphql using branch `opentelemetry`:
 
 Run a redis on docker so graphql won't be logging thousands of errors :/
 ```shell
 docker run --rm --name graphql-redis -d -p 6379:6379 redis:alpine
-REDIS_HOST=localhost npm run start:dev
+```
+
+```shell
+source .env.example
+KAFKA_USE_SASL=false REDIS_HOST=localhost npm run start:dev
 ```
 
  - Execute the _tracing_ query a few times.
@@ -37,22 +50,10 @@ query {
 
  - Have fun :)
 
-## Locally
 
 Alternatively you can run the Go application locally and the dependecies through 
 docker compose.
 
- - Run the dependencies
-
-```shell
-make compose-dependencies
-```
-
- - Run the Go example
-
-```shell
-make run
-```
 
 ## The flow
 
@@ -62,6 +63,8 @@ The produced event is consumed by another service which prints the event.
 Accessing [Jaeger UI](http://localhost:16686/search) you can see the flow across
 the different services. There is also an automatically generated [service map](http://localhost:16686/dependencies).
 
+
+// TODO(Anderson): Update links to OpenTelemetry
 ## More on OpenTracing:
 ### Go:
 - https://github.com/opentracing/opentracing-go
