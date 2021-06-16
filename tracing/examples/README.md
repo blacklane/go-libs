@@ -51,10 +51,6 @@ query {
  - Have fun :)
 
 
-Alternatively you can run the Go application locally and the dependecies through 
-docker compose.
-
-
 ## The flow
 
 It simulates an HTTP server which upon receiving a request produces an event to kafka, or fails without producing an event.
@@ -63,6 +59,7 @@ The produced event is consumed by another service which prints the event.
 Accessing [Jaeger UI](http://localhost:16686/search) you can see the flow across
 the different services. There is also an automatically generated [service map](http://localhost:16686/dependencies).
 
+Optionally the `teacing` graphql query can call the HTTP server.
 
 // TODO(Anderson): Update links to OpenTelemetry
 ## More on OpenTracing:
