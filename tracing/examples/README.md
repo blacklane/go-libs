@@ -27,8 +27,8 @@ make run-evcents
 
  - Graphql using branch `opentelemetry`:
 
-Run a redis on docker so graphql won't be logging thousands of errors :/
 ```shell
+# Run a redis on docker so graphql won't be logging thousands of errors :/
 docker run --rm --name graphql-redis -d -p 6379:6379 redis:alpine
 ```
 
