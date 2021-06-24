@@ -19,7 +19,9 @@ import (
 	"github.com/blacklane/go-libs/tracing"
 )
 
-func StartServerWithOTel(serviceName string, producer events.Producer, topic string, eventName string) {
+// StartHTTPServer creates and starts a http.Server listening on port 4242, with no router
+// and a single handler. See newHandler for details about the handler.
+func StartHTTPServer(serviceName string, producer events.Producer, topic string, eventName string) {
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
 
 	path := "/tracing/example/path"

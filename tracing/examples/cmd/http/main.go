@@ -33,7 +33,7 @@ func main() {
 	defer p.Shutdown(context.TODO())
 
 	// Simulates a service providing a HTTP API on localhost:4242.
-	examples.StartServerWithOTel(serviceName, p, cfg.Topic, eventName)
+	examples.StartHTTPServer(serviceName, p, cfg.Topic, eventName)
 
 	<-signalChan
 	log.Info().Msg("Goodbye cruel world!")

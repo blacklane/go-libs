@@ -26,21 +26,6 @@ run-http: deps
 run-events: deps
 	go run ${BUILD_TAGS} cmd/events/main.go
 
-#.PHONY: run-compose
-#run-compose:
-#	@KAFKA_BOOTSTRAP_SERVERS=kafka-compose GITHUB_TOKEN=${GITHUB_TOKEN} docker compose up \
-#			--build \
-#			--force-recreate \
-#			--remove-orphans \
-#			-d \
-#			app kafka-compose zookeeper jaegertracing
-
-#.PHONY: compose-dependencies
-#compose-dependencies:
-#	docker compose up \
-#    		-d \
-#    		elasticsearch kafka zookeeper jaeger
-
 .PHONY: compose-dependencies
 compose-dependencies:
 	docker compose up \

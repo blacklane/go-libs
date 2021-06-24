@@ -23,6 +23,7 @@ func eventsHandler() events.HandlerFunc {
 	}
 }
 
+// NewStartedConsumer creates, initialises, starts and then returns a new Kafka consumer.
 func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string, eventName string) events.Consumer {
 	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
@@ -46,6 +47,7 @@ func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string,
 	return c
 }
 
+// NewProducer creates, initialises, starts delivery failure handling and then returns a new Kafka producer.
 func NewProducer(conf *kafka.ConfigMap, log logger.Logger) events.Producer {
 	errHandler := func(event events.Event, err error) {
 		log.Err(err).Msgf("failed to deliver the event %s",

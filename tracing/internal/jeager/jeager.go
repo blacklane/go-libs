@@ -58,6 +58,7 @@ func NewOpentracingTracer(host string, serviceName string, logger logger.Logger)
 // JaegerLogger implements the jaeger.Logger interface for logger.Logger
 type JaegerLogger logger.Logger
 
+//revive:disable // Internal package and docs on the type definition.
 func (jl JaegerLogger) Error(msg string) {
 	l := logger.Logger(jl)
 	l.Err(errors.New(msg)).Msg("jeager tracer error")
@@ -72,6 +73,9 @@ func (jl JaegerLogger) Debugf(msg string, args ...interface{}) {
 	l.Debug().Msgf("%s", fmt.Sprintf(strings.TrimSpace(msg), args...))
 }
 
+//revive:enable
+
+//revive:disable-line // Obvious function, unnecessary to document.
 func InitOpenTelemetry(serviceName, serviceVersion, exporterURL string) {
 	// Create an gRPC-based OTLP exporter that
 	// will receive the created telemetry data

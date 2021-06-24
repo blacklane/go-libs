@@ -2,14 +2,12 @@ package tracing
 
 import (
 	"context"
-	"errors"
 
 	"github.com/blacklane/go-libs/logger"
 	logmiddleware "github.com/blacklane/go-libs/logger/middleware"
 	trackmiddleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
-	"github.com/opentracing/opentracing-go"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,6 +16,7 @@ import (
 	"github.com/blacklane/go-libs/tracing/internal/constants"
 )
 
+// OpenTelemetry attribute Keys
 const (
 	OtelKeyEventName  = attribute.Key("event.name")
 	OtelKeyTrackingID = attribute.Key("tracking_id")
@@ -105,21 +104,6 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 			return handler.Handle(ctx, e)
 		})
 	}
-}
-
-func eventGetChildSpan(ctx context.Context, e events.Event, eName string, tracer opentracing.Tracer) opentracing.Span {
-	carrier := opentracing.TextMapCarrier(e.Headers)
-
-	spanContext, err := tracer.Extract(opentracing.TextMap, carrier)
-	if err != nil && !errors.Is(err, opentracing.ErrSpanContextNotFound) {
-		logger.FromContext(ctx).
-			Err(err).
-			Msg("tracing events: could not extract span")
-	}
-
-	span := tracer.StartSpan(eName, opentracing.ChildOf(spanContext))
-
-	return span
 }
 
 func eventsExtractTrackingID(ctx context.Context, e events.Event) string {
