@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/blacklane/go-libs/tracking"
-	trackingMidleware "github.com/blacklane/go-libs/tracking/middleware"
+	trackingMiddleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/blacklane/go-libs/x/events"
 
 	"github.com/blacklane/go-libs/logger"
@@ -22,7 +22,7 @@ func EventsAddDefault(handler events.Handler, log logger.Logger, eventNames ...s
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
-		trackingMidleware.EventsAddTrackingID,
+		trackingMiddleware.EventsAddTrackingID,
 		EventsAddLogger(log),
 		EventsHandlerStatusLogger(eventNames...))
 
