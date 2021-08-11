@@ -4,15 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"strings"
 
 	"github.com/blacklane/go-libs/logger"
-	"github.com/opentracing/opentracing-go"
-	"github.com/uber/jaeger-client-go"
-	jaegerconfig "github.com/uber/jaeger-client-go/config"
-	"github.com/uber/jaeger-lib/metrics"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
@@ -21,39 +16,6 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
 )
-
-// NewOpentracingTracer returns a Jeager implementation of opentracing.Tracer
-// deprecated
-func NewOpentracingTracer(host string, serviceName string, logger logger.Logger) (opentracing.Tracer, io.Closer) {
-	jaegerCfg := jaegerconfig.Configuration{
-		ServiceName: serviceName,
-		Sampler: &jaegerconfig.SamplerConfig{
-			Type:  jaeger.SamplerTypeConst,
-			Param: 1,
-		},
-		Reporter: &jaegerconfig.ReporterConfig{
-			LogSpans:          true,
-			CollectorEndpoint: host,
-		},
-	}
-
-	// Example metrics factory. Use github.com/uber/jaeger-lib/metrics to bind
-	// to real metric framework.
-	jMetricsFactory := metrics.NullFactory
-
-	// Initialize tracer with a logger and a metrics factory
-	tracer, closer, err := jaegerCfg.NewTracer(
-		jaegerconfig.Logger(
-			JaegerLogger(logger.With().
-				Str("component", "JaegerTracer").
-				Logger())),
-		jaegerconfig.Metrics(jMetricsFactory))
-	if err != nil {
-		panic(fmt.Errorf("could not initialize jaeger tracer: %w", err))
-	}
-
-	return tracer, closer
-}
 
 // JaegerLogger implements the jaeger.Logger interface for logger.Logger
 type JaegerLogger logger.Logger
