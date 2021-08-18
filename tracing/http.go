@@ -9,7 +9,7 @@ import (
 	trackingmiddleware "github.com/blacklane/go-libs/tracking/middleware"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/tracing/internal/constants"

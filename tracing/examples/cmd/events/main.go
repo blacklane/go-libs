@@ -8,8 +8,9 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/rs/zerolog/log"
 
+	"github.com/blacklane/go-libs/tracing"
+
 	"github.com/blacklane/go-libs/tracing/examples"
-	"github.com/blacklane/go-libs/tracing/internal/jeager"
 )
 
 const eventName = "tracing-example-event"
@@ -24,7 +25,7 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// OpenTelemetry (OTel) Jaeger tracer
-	jeager.InitOpenTelemetry(serviceName, serviceVersion, cfg.TracerHost)
+	tracing.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log, tracing.WithServiceVersion(serviceVersion))
 
 	kafkaCfg := &kafka.ConfigMap{
 		"group.id":           cfg.KafkaGroupID,

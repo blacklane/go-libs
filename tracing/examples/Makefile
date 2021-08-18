@@ -55,3 +55,23 @@ jaegertracing-docker:
 	  -p 14250:14250 \
 	  -p 9411:9411 \
 	  jaegertracing/all-in-one:1.21
+
+# This is the otel collector we use in production. In the exceptional case it's
+# needed to send local telemetry to DataDog, this collector should be used.
+.PHONY: otel-collector-contrib
+otel-collector-contrib:
+	docker run \
+		--rm \
+		-d \
+		--name otel-collector-contrib \
+		-p 55680:55680 \
+		-p 55681:55681 \
+		-p 14250:14250 \
+		-p 14268:14268 \
+		-p 6831:6831/udp \
+		-v $(PWD)/otel-collector-dd-config-dev.yaml:/etc/otel/config.yaml \
+		otel/opentelemetry-collector-contrib:0.27.0 \
+		--log-level DEBUG \
+		--metrics-level detailed \
+		--config /etc/otel/config.yaml \
+		--set=exporters.datadog/api.api.key=$(DD_API_KEY)

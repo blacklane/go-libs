@@ -12,10 +12,10 @@ import (
 type Config struct {
 	ServiceName string
 
-	KafkaServer  string `env:"KAFKA_BOOTSTRAP_SERVERS" envDefault:"127.0.0.1:9092"`
-	KafkaGroupID string `env:"KAFKA_GROUP_ID" envDefault:"tracing-example"`
-	Topic        string `env:"KAFKA_TOPIC" envDefault:"tracing-example"`
-	TracerHost   string `env:"TRACER_HOST" envDefault:"localhost:55680"`
+	KafkaServer          string `env:"KAFKA_BOOTSTRAP_SERVERS" envDefault:"127.0.0.1:9092"`
+	KafkaGroupID         string `env:"KAFKA_GROUP_ID" envDefault:"tracing-example"`
+	Topic                string `env:"KAFKA_TOPIC" envDefault:"tracing-example"`
+	OTelExporterEndpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" envDefault:"localhost:55680"`
 
 	Log logger.Logger `json:"-"`
 }

@@ -1,0 +1,40 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+    timeout: 10s
+  # The resource detector injects the pod IP
+  # to every metric so that the k8s_tagger can
+  # fetch information afterwards.
+  resourcedetection:
+    detectors: [env]
+    timeout: 5s
+    override: false
+  # The k8s_tagger in the Agent is in passthrough mode
+  # so that it only tags with the minimal info for the
+  # collector k8s_tagger to complete
+  k8s_tagger:
+    passthrough: true
+extensions:
+  health_check: {}
+  zpages: {}
+
+exporters:
+  datadog/api:
+    env: testing
+
+    api:
+      key: OVERRIDEN_BY_CLI_FLAG_YOUR_API_KEY
+      site: datadoghq.com
+
+service:
+  extensions: [health_check, zpages]
+  pipelines:
+    traces/2:
+      receivers: [otlp]
+      processors: [resourcedetection, batch, k8s_tagger]
+      exporters: [datadog/api]

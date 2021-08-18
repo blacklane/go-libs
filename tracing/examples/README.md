@@ -3,7 +3,7 @@
 It shows the basic usage of our tracing package which provides [OpenTelemetry](https://opentelemetry.io/)
 middleware for [HTTP](https://golang.org/pkg/net/http/#Handler)
 and [Events](https://github.com/blacklane/go-libs/blob/master/x/events/events.go#L14) 
-handlers as well as functions to get the opntracing.Span from the context.
+handlers as well as functions to get the otel Span from the context.
 
 ## Running
 
@@ -20,7 +20,7 @@ make run-http
 ```
 
 ```shell
-make run-evcents
+make run-events
 ```
 
  - You call [localhost:4242](http://localhost:4242/) directly, or use our graphql (see below).
