@@ -13,7 +13,7 @@ import (
 	"github.com/blacklane/go-libs/tracing/examples"
 )
 
-const eventName = "tracing-example-event"
+const eventName = "event-tracing-example"
 const serviceName = "events-example"
 const serviceVersion = "devel"
 

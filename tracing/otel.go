@@ -7,8 +7,8 @@ import (
 
 	"github.com/blacklane/go-libs/logger"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -77,15 +77,12 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 	}
 	log.Debug().Str("cfg", string(bs)).Msg("otel configuration")
 
-	// Create an gRPC-based OTLP exporter that
-	// will receive the created telemetry data
-	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithInsecure(),
-		otlpgrpc.WithEndpoint(exporterEndpoint),
-	)
-	exporter, err := otlp.NewExporter(context.TODO(), driver)
+	otlpClient := otlptracegrpc.NewClient(
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithEndpoint(exporterEndpoint))
+	otlpExporter, err := otlptrace.New(context.TODO(), otlpClient)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to create otel exporter, disabling otel")
+		log.Warn().Err(err).Msg("failed to create OTel exporter, disabling OTel")
 		return
 	}
 
@@ -102,22 +99,22 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 		log.Warn().Err(err).Msg("failed to create otel sdk/resource")
 	}
 
-	traceExporter, err := stdouttrace.New(
-		stdouttrace.WithPrettyPrint(),
-	)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to initialize stdouttrace export pipeline")
-	}
-
-	ssp := trace.NewSimpleSpanProcessor(exporter)
-	// bsp := trace.NewBatchSpanProcessor(exporter)
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithSampler(trace.AlwaysSample()),
 		trace.WithResource(res),
-		// trace.WithSpanProcessor(bsp),
-		trace.WithSpanProcessor(ssp),
-		trace.WithSpanProcessor(traceExporter),
+		trace.WithBatcher(otlpExporter),
 	)
+	if cfg.debug {
+		log.Debug().Msg("adding stdout span processor")
+
+		stdoutExporter, err := stdouttrace.New()
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to initialize stdouttrace export pipeline")
+		}
+
+		tracerProvider.RegisterSpanProcessor(
+			trace.NewSimpleSpanProcessor(stdoutExporter))
+	}
 
 	// Register the tracer provider and propagator
 	// so libraries and frameworks used in the app

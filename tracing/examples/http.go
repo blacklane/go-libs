@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/tracking"
@@ -22,7 +23,8 @@ import (
 // StartHTTPServer creates and starts a http.Server listening on port 4242, with no router
 // and a single handler. See newHandler for details about the handler.
 func StartHTTPServer(serviceName string, producer events.Producer, topic string, eventName string) {
-	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
+	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName).With().
+		Str("environment", "otel").Logger()
 
 	path := "/tracing/example/path"
 
@@ -74,6 +76,7 @@ func newHandler(producer events.Producer, topic string, eventName string) http.H
 			return
 		}
 
+		time.Sleep(time.Duration(5*rand.Intn(5)) * time.Millisecond)
 		err := produceEvent(ctx, producer, topic, eventName, count)
 		if err != nil {
 			err := fmt.Errorf("could not send event: %w", err)

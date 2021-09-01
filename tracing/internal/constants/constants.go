@@ -14,5 +14,6 @@ const (
 
 const (
 	// TracerName is the name for the OpenTelemetry Tracer
-	TracerName = "github.com/blacklane/go-libs/tracing/events"
+	// TODO: change it to something shorter like "blacklane-otel" or "blacklane-otel-go"
+	TracerName = "github.com/blacklane/go-libs/otel"
 )

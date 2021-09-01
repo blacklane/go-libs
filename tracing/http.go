@@ -60,7 +60,7 @@ func HTTPRequestMiddleware(serviceName, handlerName, path string) func(http.Hand
 			sp.SetName(handlerName)
 			sp.SetAttributes(
 				semconv.HTTPRouteKey.String(path), // same as adding otelhttp.WithRouteTag
-				OtelKeyTrackingID.String(trackingID))
+				OTelKeyTrackingID.String(trackingID))
 
 			logger.FromContext(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
 				return c.Str(constants.TraceID, sp.SpanContext().TraceID().String())

@@ -10,7 +10,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -158,8 +158,9 @@ func (p *kafkaProducer) SendCtx(ctx context.Context, eventName string, event Eve
 		return fmt.Errorf("could not send event: %w", err)
 	}
 
-	ctx, sp := trace.SpanFromContext(ctx).Tracer().
-		Start(ctx, "produced:"+eventName,
+	ctx, sp := otel.Tracer(OTelTracerName).
+		Start(ctx,
+			"produced:"+eventName,
 			trace.WithSpanKind(trace.SpanKindProducer),
 			trace.WithAttributes(semconv.MessagingDestinationKey.String(topic)))
 	defer sp.End()

@@ -13,7 +13,7 @@ import (
 	"github.com/blacklane/go-libs/tracing/examples"
 )
 
-const eventName = "tracing-example-event"
+const eventName = "event-tracing-example"
 const serviceName = "http-example"
 const serviceVersion = "devel"
 
@@ -25,7 +25,12 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// OpenTelemetry (OTel) tracer for service A.
-	tracing.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log, tracing.WithServiceVersion(serviceVersion))
+	tracing.SetUpOTel(
+		serviceName,
+		cfg.OTelExporterEndpoint,
+		cfg.Log,
+		tracing.WithServiceVersion(serviceVersion),
+		tracing.WithDebug())
 
 	p := examples.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers":  cfg.KafkaServer,

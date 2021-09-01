@@ -3,6 +3,7 @@ package examples
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 
 func eventsHandler() events.HandlerFunc {
 	return func(ctx context.Context, e events.Event) error {
+		time.Sleep(time.Duration(5*rand.Intn(5)) * time.Millisecond)
+
 		logger.FromContext(ctx).Info().
 			Str("event_headers", fmt.Sprintf("%v", e.Headers)).
 			Str("event_payload", string(e.Payload)).
@@ -26,7 +29,9 @@ func eventsHandler() events.HandlerFunc {
 // NewStartedConsumer creates, initialises, starts and then returns a new Kafka consumer.
 func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string, eventName string) events.Consumer {
 	// Creates a logger for this "service"
-	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName)
+	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName).
+		With().
+		Str("environment", "otel").Logger()
 
 	// Add the opentracing middleware which parses a span from the headers and
 	// injects it on the context. If not span is found, it creates one.

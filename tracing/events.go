@@ -18,8 +18,8 @@ import (
 
 // OpenTelemetry attribute Keys
 const (
-	OtelKeyEventName  = attribute.Key("event.name")
-	OtelKeyTrackingID = attribute.Key("tracking_id")
+	OTelKeyEventName  = attribute.Key("event.name")
+	OTelKeyTrackingID = attribute.Key("tracking_id")
 )
 
 // EventsAddDefault returns the composition of EventsGenericMiddleware and
@@ -92,8 +92,8 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 				eventName,
 				trace.WithSpanKind(trace.SpanKindConsumer),
 				trace.WithAttributes(
-					OtelKeyTrackingID.String(trackingID),
-					OtelKeyEventName.String(eventName)),
+					OTelKeyTrackingID.String(trackingID),
+					OTelKeyEventName.String(eventName)),
 			)
 			defer sp.End()
 

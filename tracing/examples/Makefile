@@ -62,7 +62,6 @@ jaegertracing-docker:
 otel-collector-contrib:
 	docker run \
 		--rm \
-		-d \
 		--name otel-collector-contrib \
 		-p 55680:55680 \
 		-p 55681:55681 \
