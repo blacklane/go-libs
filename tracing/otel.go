@@ -85,8 +85,11 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 	}
 	log.Debug().Str("cfg", string(bs)).Msg("otel configuration")
 
-	// TODO(Anderson): add a WithErrHandler config
-	otel.SetErrorHandler(errHandler{l: log})
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		log.Err(err).
+			Str("err_type", fmt.Sprintf("%T", err)).
+			Msg("[otel error] something went wrong")
+	}))
 
 	otlpClient := otlptracegrpc.NewClient(
 		otlptracegrpc.WithInsecure(),

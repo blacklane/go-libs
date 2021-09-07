@@ -9,6 +9,7 @@ import (
 
 	"github.com/blacklane/go-libs/tracking"
 	trackingMiddleware "github.com/blacklane/go-libs/tracking/middleware"
+	"github.com/rs/zerolog"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -86,9 +87,12 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 					}
 				}
 
-				zerologEvent := log.Info()
-				if ww.StatusCode() >= 400 && ww.StatusCode() < 500 {
-					zerologEvent = log.Warn().Err(fmt.Errorf("request finished with http status "))
+				zerologEvent := getLogLevel(log, ww)
+
+				if ww.StatusCode() >= 400 {
+					zerologEvent = zerologEvent.Err(fmt.Errorf(
+						"request finished with HTTP status %d",
+						ww.StatusCode()))
 				}
 				zerologEvent.
 					Int(internal.FieldHTTPStatus, ww.statusCode).
@@ -99,6 +103,17 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(&ww, r)
 		})
 	}
+}
+
+// getLogLevel decides which log level to use, Info, Warn or Error.
+func getLogLevel(log logger.Logger, ww responseWriter) *zerolog.Event {
+	if ww.StatusCode() >= 400 && ww.StatusCode() < 500 {
+		return log.Warn()
+	}
+	if ww.StatusCode() >= 500 {
+		return log.Error()
+	}
+	return log.Info()
 }
 
 // RequestLogger use HTTPRequestLogger instead.

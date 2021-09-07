@@ -19,7 +19,7 @@ import (
 // OpenTelemetry attribute Keys
 const (
 	OTelKeyEventName  = attribute.Key("event.name")
-	OTelKeyTrackingID = attribute.Key("tracking_id")
+	OTelKeyTrackingID = attribute.Key("tracking.id")
 )
 
 // EventsAddDefault returns the composition of EventsGenericMiddleware and

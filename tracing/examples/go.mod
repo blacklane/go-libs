@@ -9,10 +9,10 @@ require (
 	github.com/blacklane/go-libs/x/events v0.1.0
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/confluentinc/confluent-kafka-go v1.7.0
-	github.com/google/uuid v1.2.0
-	github.com/rs/zerolog v1.22.0
-	go.opentelemetry.io/otel v1.0.0-RC2
-	go.opentelemetry.io/otel/trace v1.0.0-RC2
+	github.com/google/uuid v1.3.0
+	github.com/rs/zerolog v1.24.0
+	go.opentelemetry.io/otel v1.0.0-RC3
+	go.opentelemetry.io/otel/trace v1.0.0-RC3
 )
 
 replace github.com/blacklane/go-libs/tracing => ../
