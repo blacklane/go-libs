@@ -1,4 +1,4 @@
-package tracing
+package otel
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/x/events"
 
-	"github.com/blacklane/go-libs/tracing/internal/constants"
+	"github.com/blacklane/go-libs/otel/internal/constants"
 )
 
 func ExampleEventsAddDefault() {

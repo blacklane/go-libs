@@ -1,4 +1,4 @@
-package tracing
+package otel
 
 //
 // func TestEventsAddOpentracing_noSpan(t *testing.T) {

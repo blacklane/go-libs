@@ -1,4 +1,4 @@
-package tracing
+package otel
 
 import (
 	"context"
@@ -13,13 +13,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/blacklane/go-libs/tracing/internal/constants"
+	"github.com/blacklane/go-libs/otel/internal/constants"
 )
 
-// OpenTelemetry attribute Keys
+// OpenTelemetry attribute keys.
 const (
-	OTelKeyEventName  = attribute.Key("event.name")
-	OTelKeyTrackingID = attribute.Key("tracking.id")
+	AttrKeyEventName  = attribute.Key("event.name")
+	AttrKeyTrackingID = attribute.Key("tracking.id")
 )
 
 // EventsAddDefault returns the composition of EventsGenericMiddleware and
@@ -92,8 +92,8 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 				eventName,
 				trace.WithSpanKind(trace.SpanKindConsumer),
 				trace.WithAttributes(
-					OTelKeyTrackingID.String(trackingID),
-					OTelKeyEventName.String(eventName)),
+					AttrKeyTrackingID.String(trackingID),
+					AttrKeyEventName.String(eventName)),
 			)
 			defer sp.End()
 

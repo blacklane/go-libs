@@ -1,4 +1,4 @@
-module github.com/blacklane/go-libs/tracing
+module github.com/blacklane/go-libs/otel
 
 go 1.16
 

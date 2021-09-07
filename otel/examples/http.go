@@ -12,12 +12,13 @@ import (
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/tracking"
+	"github.com/blacklane/go-libs/uhttp"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/blacklane/go-libs/tracing"
+	"github.com/blacklane/go-libs/otel"
 )
 
 // StartHTTPServer creates and starts a http.Server listening on port 4242, with no router
@@ -29,7 +30,7 @@ func StartHTTPServer(serviceName string, producer events.Producer, topic string,
 	path := "/tracing/example/path"
 
 	// Using HTTPAllMiddleware as it's been applied directly to the handler.
-	applyMiddleware := tracing.HTTPAllMiddleware(
+	applyMiddleware := uhttp.HTTPAllMiddleware(
 		serviceName,
 		"my-awesome-handler",
 		path,
@@ -66,7 +67,7 @@ func newHandler(producer events.Producer, topic string, eventName string) http.H
 		if rand.Int()%2 == 0 {
 			err := errors.New(http.StatusText(http.StatusTeapot))
 
-			tracing.SpanAddErr(sp, err)
+			otel.SpanAddErr(sp, err)
 			logger.FromContext(ctx).Err(err).Msg("handler failed: bad luck")
 
 			w.WriteHeader(http.StatusTeapot)
@@ -81,7 +82,7 @@ func newHandler(producer events.Producer, topic string, eventName string) http.H
 		if err != nil {
 			err := fmt.Errorf("could not send event: %w", err)
 
-			tracing.SpanAddErr(sp, err)
+			otel.SpanAddErr(sp, err)
 			logger.FromContext(ctx).Err(err).
 				Str("event", eventName).
 				Msg("handler failed to produce event")

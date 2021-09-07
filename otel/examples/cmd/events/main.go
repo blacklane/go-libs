@@ -8,9 +8,9 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/rs/zerolog/log"
 
-	"github.com/blacklane/go-libs/tracing"
+	"github.com/blacklane/go-libs/otel"
 
-	"github.com/blacklane/go-libs/tracing/examples"
+	"github.com/blacklane/go-libs/otel/examples"
 )
 
 const eventName = "event-tracing-example"
@@ -25,7 +25,7 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// OpenTelemetry (OTel) Jaeger tracer
-	tracing.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log, tracing.WithServiceVersion(serviceVersion))
+	otel.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log, otel.WithServiceVersion(serviceVersion))
 
 	kafkaCfg := &kafka.ConfigMap{
 		"group.id":           cfg.KafkaGroupID,

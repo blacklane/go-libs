@@ -1,4 +1,4 @@
-package tracing
+package uhttp
 
 //
 // func ExampleHTTPDefaultMiddleware() {
