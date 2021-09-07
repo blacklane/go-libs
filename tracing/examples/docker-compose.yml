@@ -70,7 +70,7 @@ services:
     environment:
       SPAN_STORAGE_TYPE: elasticsearch
     ports:
-#      - "55680:55680"
+      - "55680:55680"
       - "13133:13133"
       - "16686:16686"
       - "14268:14268"

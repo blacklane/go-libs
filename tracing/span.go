@@ -16,6 +16,7 @@ const (
 // SpanAddErr adds an error to span with SpanErrorMessageKey and SpanErrorTypeKey
 // attributes.
 func SpanAddErr(span trace.Span, err error) {
+	// TODO(Anderson): Use/test span.RecordError() instead of adding it manually
 	span.AddEvent("error", trace.WithAttributes(
 		SpanErrorMessageKey.String(err.Error()),
 		SpanErrorTypeKey.String(fmt.Sprintf("%T", err)),

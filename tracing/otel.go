@@ -38,6 +38,14 @@ var cfg = &Config{
 	serviceVersion:   "version not set",
 }
 
+type errHandler struct {
+	l logger.Logger
+}
+
+func (e errHandler) Handle(err error) {
+	e.l.Err(err).Str("err_type", fmt.Sprintf("%T", err)).Msg("[otel error] something went wrong")
+}
+
 func WithServiceVersion(version string) Option {
 	// validations...
 	return func(cfg *Config) {
@@ -77,6 +85,9 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 	}
 	log.Debug().Str("cfg", string(bs)).Msg("otel configuration")
 
+	// TODO(Anderson): add a WithErrHandler config
+	otel.SetErrorHandler(errHandler{l: log})
+
 	otlpClient := otlptracegrpc.NewClient(
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(exporterEndpoint))
@@ -102,7 +113,7 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithSampler(trace.AlwaysSample()),
 		trace.WithResource(res),
-		trace.WithBatcher(otlpExporter),
+		trace.WithSyncer(otlpExporter),
 	)
 	if cfg.debug {
 		log.Debug().Msg("adding stdout span processor")
