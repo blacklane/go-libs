@@ -1,4 +1,4 @@
-# Tracing example
+# OpenTelemetry (OTel) tracing example
 
 It shows the basic usage of our tracing package which provides [OpenTelemetry](https://opentelemetry.io/)
 middleware for [HTTP](https://golang.org/pkg/net/http/#Handler)
@@ -46,7 +46,7 @@ query {
 
  - Open [Jaeger UI](http://localhost:16686/search) and see the traces.
 
- - [Look at the code](https://github.com/blacklane/go-libs/blob/all/opentracing/tracking/examples/main.go#L59)
+ - [Look at the code](https://github.com/blacklane/go-libs/tree/opentelemetry/otel/examples/cmd)
 
  - Have fun :)
 
@@ -61,12 +61,9 @@ the different services. There is also an automatically generated [service map](h
 
 Optionally the `teacing` graphql query can call the HTTP server.
 
-// TODO(Anderson): Update links to OpenTelemetry
 ## More on OpenTracing:
 ### Go:
-- https://github.com/opentracing/opentracing-go
-- https://github.com/jaegertracing/jaeger-client-go will be replaced by Datadog Go tracer
+- https://github.com/open-telemetry/opentelemetry-go
 
 ### JS/TS/NodeJS:
-- https://github.com/opentracing/opentracing-javascript
-- https://github.com/jaegertracing/jaeger-client-node will be replaced by Datadog JS/TS tracer
+- https://github.com/open-telemetry/opentelemetry-js
