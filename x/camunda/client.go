@@ -22,14 +22,14 @@ type (
 	}
 	camundaClient struct {
 		camundaURL  string
-		credentials BasicAuthCredentials
+		credentials *BasicAuthCredentials
 		processKey  string
 		httpClient  HttpClient
 		log         logger.Logger
 	}
 )
 
-func NewClient(log logger.Logger, url string, processKey string, credentials BasicAuthCredentials) Client {
+func NewClient(log logger.Logger, url string, processKey string, credentials *BasicAuthCredentials) Client {
 	return &camundaClient{
 		camundaURL:  url,
 		credentials: credentials,
@@ -98,7 +98,10 @@ func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer,
 		return nil, err
 	}
 	req.Header.Add(internal.HeaderContentType, "application/json")
-	req.SetBasicAuth(c.credentials.User, c.credentials.Password)
+
+	if c.credentials != nil {
+		req.SetBasicAuth(c.credentials.User, c.credentials.Password)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

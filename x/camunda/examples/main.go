@@ -1,9 +1,12 @@
 package main
 
 import (
-	"log"
+	"context"
 	"os"
 	"os/signal"
+
+	"github.com/blacklane/go-libs/logger"
+	"github.com/google/uuid"
 
 	"github.com/blacklane/go-libs/x/camunda"
 )
@@ -16,8 +19,20 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt) // a.k.a ctrl+C
 
+	log := logger.New(
+		os.Stdout,
+		"camunda-sample-client",
+		logger.WithLevel("debug"))
+
 	// camunda stuff
-	client := camunda.NewClient(nil, url, processKey, nil)
+	client := camunda.NewClient(log, url, processKey, nil)
+
+	businessKey := uuid.New().String()
+	variables := map[string]camunda.CamundaVariable{}
+	err := client.StartProcess(context.Background(), businessKey, variables)
+	if err != nil {
+		log.Err(err).Msg("Failed to start process")
+	}
 
 	<-signalChan
 	log.Printf("Shutting down")
