@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/google/uuid"
@@ -34,6 +35,16 @@ func main() {
 		log.Err(err).Msg("Failed to start process")
 	}
 
+	subscription := client.Subscribe("test-topic", func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+		log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
+
+		err := completeFunc(ctx, t.ID)
+		if err != nil {
+			log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
+		}
+	}, time.Second*10)
+
 	<-signalChan
 	log.Printf("Shutting down")
+	subscription.Stop()
 }

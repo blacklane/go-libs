@@ -2,6 +2,12 @@ package camunda
 
 import "context"
 
+const (
+	VarTypeString  = "string"
+	VarTypeDouble  = "double"
+	VarTypeInteger = "integer"
+)
+
 type CamundaVariable struct {
 	Type  string      `json:"type"`
 	Value interface{} `json:"value"`
@@ -44,7 +50,6 @@ type (
 	TaskCompleteFunc func(ctx context.Context, taskID string) error
 	TaskHandlerFunc  func(ctx context.Context, completeFunc TaskCompleteFunc, t Task)
 	Subscription     interface {
-		Complete(ctx context.Context, taskID string) error
 		Stop()
 	}
 )

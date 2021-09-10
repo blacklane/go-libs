@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/blacklane/go-libs/logger"
 
@@ -18,7 +19,7 @@ type (
 	Client interface {
 		StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable)
-		//Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription
+		Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription
 	}
 	camundaClient struct {
 		camundaURL  string
@@ -89,6 +90,23 @@ func (c *camundaClient) SendMessage(ctx context.Context, messageType string, bus
 		Msgf("%s message has been sent to camunda for business key '%s'", newMessage.MessageName, newMessage.BusinessKey)
 }
 
+func (c *camundaClient) Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription {
+	c.log.Info().Msgf("Subscribing to: %s", topicName)
+	sub := &subscription{
+		client:    c,
+		topic:     topicName,
+		isRunning: false,
+		interval:  interval,
+		log:       c.log,
+	}
+	sub.handler(handler)
+
+	// run async fetch loop
+	go sub.schedule()
+
+	return sub
+}
+
 func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("%s/%s", c.camundaURL, endpoint)
 
@@ -117,4 +135,49 @@ func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer,
 	}
 
 	return body, nil
+}
+
+func (c *camundaClient) complete(ctx context.Context, taskId string, params taskCompletionParams) error {
+	log := logger.FromContext(ctx)
+	buf := new(bytes.Buffer)
+	err := json.NewEncoder(buf).Encode(params)
+	if err != nil {
+		log.Err(err).Msg("failed to complete camunda task due to json error")
+		return err
+	}
+
+	url := fmt.Sprintf("external-task/%s/complete", taskId)
+	_, err = c.doPostRequest(context.Background(), buf, url)
+	if err != nil {
+		return err
+	}
+
+	log.Info().Msgf("Completed task: %v", params.Variables)
+
+	return nil
+}
+
+func (c *camundaClient) fetchAndLock(log logger.Logger, param *fetchAndLock) ([]Task, error) {
+	buf := new(bytes.Buffer)
+	err := json.NewEncoder(buf).Encode(param)
+	var tasks []Task
+	if err != nil {
+		log.Err(err).Msg("failed to fetch camunda tasks due to json error")
+		return tasks, err
+	}
+
+	url := "external-task/fetchAndLock"
+	body, err := c.doPostRequest(context.Background(), buf, url)
+	if err != nil {
+		return tasks, err
+	}
+
+	err = json.Unmarshal(body, &tasks)
+	if err != nil {
+		log.Err(err).Msgf("Could not unmarshal task")
+		return tasks, err
+	}
+
+	log.Debug().Msgf("Fetched %d Tasks from %s", len(tasks), c.camundaURL)
+	return tasks, nil
 }
