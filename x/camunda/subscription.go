@@ -3,12 +3,13 @@ package camunda
 import (
 	"context"
 	"fmt"
-	"github.com/blacklane/go-libs/x/camunda/internal"
 	"time"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/rs/zerolog"
+
+	"github.com/blacklane/go-libs/x/camunda/internal"
 )
 
 type (
@@ -23,9 +24,10 @@ type (
 )
 
 const (
-	workerID         = "ride-bundler-worker"
-	maxTasksFetch    = 100
-	taskLockDuration = 10000 // 10s
+	workerID          = "ride-bundler-worker"
+	maxTasksFetch     = 100
+	taskLockDuration  = 10000 // 10s
+	businessKeyVarKey = "BusinessKey"
 )
 
 func (s *subscription) complete(ctx context.Context, taskID string) error {
@@ -49,6 +51,7 @@ func (s *subscription) fetch(fal fetchAndLock) {
 	for _, task := range tasks {
 		for _, handler := range s.handlers {
 			ctx := s.getContextForTask(task)
+			task.BusinessKey = extractBusinessKey(task)
 			handler(ctx, s.complete, task)
 		}
 	}
@@ -58,11 +61,20 @@ func (s *subscription) fetch(fal fetchAndLock) {
 func (s *subscription) getContextForTask(task Task) context.Context {
 	trackingID := fmt.Sprintf("camunda-task-%s-%s", s.topic, task.ID)
 	ctx := tracking.SetContextID(context.Background(), trackingID)
+
 	newLogger := s.log.With().Logger()
 	newLogger.UpdateContext(func(c zerolog.Context) zerolog.Context {
-		return c.Str(internal.LogFieldCamundaTaskID, task.ID).Str(internal.LogFieldBusinessKey, task.Variables["business_key"].Value.(string))
+		return c.Str(internal.LogFieldCamundaTaskID, task.ID).Str(internal.LogFieldBusinessKey, task.BusinessKey)
 	})
 	return newLogger.WithContext(ctx)
+}
+
+func extractBusinessKey(task Task) string {
+	var empty CamundaVariable
+	if task.Variables[businessKeyVarKey] == empty {
+		return ""
+	}
+	return task.Variables[businessKeyVarKey].Value.(string)
 }
 
 func (s *subscription) schedule() {

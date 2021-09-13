@@ -41,9 +41,10 @@ type taskCompletionParams struct {
 }
 
 type Task struct {
-	ID        string                     `json:"id"`
-	TopicName string                     `json:"topicName"`
-	Variables map[string]CamundaVariable `json:"variables"`
+	BusinessKey string                     `json:"business_key"`
+	ID          string                     `json:"id"`
+	TopicName   string                     `json:"topicName"`
+	Variables   map[string]CamundaVariable `json:"variables"`
 }
 
 type (

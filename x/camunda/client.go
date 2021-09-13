@@ -41,6 +41,7 @@ func NewClient(log logger.Logger, url string, processKey string, credentials *Ba
 }
 
 func (c *camundaClient) StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error {
+	variables[businessKeyVarKey] = NewVariable(VarTypeString, businessKey)
 	params := processStartParams{
 		BusinessKey: businessKey,
 		Variables:   variables,
