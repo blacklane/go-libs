@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -135,10 +134,20 @@ func (c *camundaClient) Subscribe(
 	return sub
 }
 
+type ErrPost struct {
+	Err        error
+	Body       string
+	HTTPStatus int
+}
+
+func (e ErrPost) Error() string {
+	return e.Err.Error()
+}
+
 func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("%s/%s", c.camundaURL, endpoint)
 
-	req, err := http.NewRequest(http.MethodPost, url, params)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, params)
 	if err != nil {
 		return nil, fmt.Errorf("could not create POST request to camunda engine: %w", err)
 	}
@@ -156,18 +165,27 @@ func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer,
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read reponse body: %w", err)
+	}
 	if resp.StatusCode >= 400 {
+		// TODO: create a custom error type which carries the body so the user
+		// can decide to inspect or log it.
 		c.log.Error().
 			Str(internal.LogFieldURL, url).
 			Str("response_body", string(body)).
 			Msgf("post request to camunda failed with status: %d", resp.StatusCode)
-		return nil, errors.New(fmt.Sprintf("camunda API returned HTTP Status %v", resp.StatusCode))
+		return nil, ErrPost{
+			Err:        fmt.Errorf("camunda API returned HTTP Status %d", resp.StatusCode),
+			Body:       string(body),
+			HTTPStatus: resp.StatusCode,
+		}
 	}
 
 	return body, nil
 }
 
-func (c *camundaClient) complete(ctx context.Context, taskId string, params taskCompletionParams) error {
+func (c *camundaClient) complete(ctx context.Context, taskID string, params taskCompletionParams) error {
 	log := logger.FromContext(ctx)
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(params)
@@ -176,28 +194,31 @@ func (c *camundaClient) complete(ctx context.Context, taskId string, params task
 		return err
 	}
 
-	url := fmt.Sprintf("external-task/%s/complete", taskId)
+	url := fmt.Sprintf("external-task/%s/complete", taskID)
 	_, err = c.doPostRequest(context.Background(), buf, url)
 	if err != nil {
 		return err
 	}
 
-	log.Info().Msgf("Completed task: %v", params.Variables)
+	log.Debug().
+		Str("task_id", taskID).
+		Str("task_completion_params", fmt.Sprintf("%v", params)).
+		Msgf("Completed task %s")
 
 	return nil
 }
 
-func (c *camundaClient) fetchAndLock(log logger.Logger, param *fetchAndLock) ([]Task, error) {
-	buf := new(bytes.Buffer)
+func (c *camundaClient) fetchAndLock(ctx context.Context, log logger.Logger, param fetchAndLock) ([]Task, error) {
+	url := "external-task/fetchAndLock"
+
+	buf := &bytes.Buffer{}
 	err := json.NewEncoder(buf).Encode(param)
 	var tasks []Task
 	if err != nil {
-		log.Err(err).Msg("failed to fetch camunda tasks due to json error")
-		return tasks, err
+		return tasks, fmt.Errorf("failed to fetch camunda tasks: could not encode params: %w", err)
 	}
 
-	url := "external-task/fetchAndLock"
-	body, err := c.doPostRequest(context.Background(), buf, url)
+	body, err := c.doPostRequest(ctx, buf, url)
 	if err != nil {
 		return tasks, err
 	}

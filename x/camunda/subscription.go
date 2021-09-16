@@ -24,6 +24,7 @@ type (
 )
 
 const (
+	// TODO: receive it as configuration when creating the client
 	workerID          = "ride-bundler-worker"
 	maxTasksFetch     = 100
 	taskLockDuration  = 10000 // 10s
@@ -39,26 +40,26 @@ func (s *subscription) complete(ctx context.Context, taskID string) error {
 	return s.client.complete(ctx, taskID, completeParams)
 }
 
-// Handler is attaching handlers to the Subscription
+// handler attaches handlers to the Subscription
 func (s *subscription) handler(handler TaskHandlerFunc) {
 	s.handlers = append(s.handlers, handler)
 }
 
-// Open connects to camunda and start polling the external tasks
+// fetch open connects to camunda and start polling the external tasks
 // It will call each handler if there is a new task on the topic
 func (s *subscription) fetch(fal fetchAndLock) {
-	tasks, _ := s.client.fetchAndLock(s.log, &fal)
+	tasks, _ := s.client.fetchAndLock(context.TODO(), s.log, fal)
 	for _, task := range tasks {
 		for _, handler := range s.handlers {
-			ctx := s.getContextForTask(task)
+			ctx := s.contextForTask(task)
 			task.BusinessKey = extractBusinessKey(task)
 			handler(ctx, s.complete, task)
 		}
 	}
 }
 
-// create context with logger & tracking ID
-func (s *subscription) getContextForTask(task Task) context.Context {
+// contextForTask creates a context with logger and tracking ID.
+func (s *subscription) contextForTask(task Task) context.Context {
 	trackingID := fmt.Sprintf("camunda-task-%s-%s", s.topic, task.ID)
 	ctx := tracking.SetContextID(context.Background(), trackingID)
 
