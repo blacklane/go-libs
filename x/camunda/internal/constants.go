@@ -1,10 +1,12 @@
 package internal
 
+// HTTP Header constants
 const (
-	//Header
 	HeaderContentType = "Content-Type"
+)
 
-	//Logging
+// Logging
+const (
 	LogFieldURL           = "url"
 	LogFieldBusinessKey   = "business_key"
 	LogFieldCamundaTaskID = "task_id"

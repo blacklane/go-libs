@@ -17,15 +17,16 @@ import (
 
 type (
 	Client interface {
-		StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error
-		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable)
+		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
+		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable)
 		Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription
 	}
+
 	camundaClient struct {
 		camundaURL  string
 		credentials *BasicAuthCredentials
 		processKey  string
-		httpClient  HttpClient
+		httpClient  http.Client
 		log         logger.Logger
 	}
 )
@@ -35,40 +36,63 @@ func NewClient(log logger.Logger, url string, processKey string, credentials *Ba
 		camundaURL:  url,
 		credentials: credentials,
 		processKey:  processKey,
-		httpClient:  &http.Client{},
+		httpClient:  http.Client{},
 		log:         log,
 	}
 }
 
-func (c *camundaClient) StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error {
-	variables[businessKeyVarKey] = NewVariable(VarTypeString, businessKey)
+func (c *camundaClient) StartProcess(
+	ctx context.Context,
+	businessKey string,
+	variables map[string]Variable) error {
+	if variables == nil {
+		variables = map[string]Variable{}
+	}
+
+	variables[businessKeyVarKey] = Variable{
+		Type:  VarTypeString,
+		Value: businessKey,
+	}
 	params := processStartParams{
 		BusinessKey: businessKey,
 		Variables:   variables,
 	}
 
-	buf := new(bytes.Buffer)
+	buf := &bytes.Buffer{}
 	err := json.NewEncoder(buf).Encode(params)
 	if err != nil {
-		c.log.Err(err).Msg("failed to send camunda message due to json error")
-		return err
+		return fmt.Errorf("failed to send camunda message: could not encode parameters to json: %w",
+			err)
 	}
 
 	url := fmt.Sprintf("process-definition/key/%s/start", c.processKey)
 	_, err = c.doPostRequest(ctx, buf, url)
 	if err != nil {
 		c.log.Err(err).
+			Str("business_key", params.BusinessKey).
 			Msgf("failed to start process for business key - %s", params.BusinessKey)
 		return err
 	}
-	c.log.Info().Msgf("process has been started with business key '%s'", params.BusinessKey)
+	c.log.Info().
+		Str("business_key", params.BusinessKey).
+		Msgf("process has been started with business key '%s'", params.BusinessKey)
 	return nil
 }
 
-func (c *camundaClient) SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) {
+func (c *camundaClient) SendMessage(
+	ctx context.Context,
+	messageType string,
+	businessKey string,
+	updatedVariables map[string]Variable) {
+
 	buf := new(bytes.Buffer)
 	url := "message"
-	newMessage := newMessage(messageType, businessKey, updatedVariables)
+	newMessage := message{
+		MessageName:      messageType,
+		BusinessKey:      businessKey,
+		ProcessVariables: updatedVariables,
+	}
+
 	err := json.NewEncoder(buf).Encode(newMessage)
 	if err != nil {
 		c.log.Err(err).
@@ -91,8 +115,11 @@ func (c *camundaClient) SendMessage(ctx context.Context, messageType string, bus
 		Msgf("%s message has been sent to camunda for business key '%s'", newMessage.MessageName, newMessage.BusinessKey)
 }
 
-func (c *camundaClient) Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription {
-	c.log.Info().Msgf("Subscribing to: %s", topicName)
+func (c *camundaClient) Subscribe(
+	topicName string,
+	handler TaskHandlerFunc,
+	interval time.Duration) Subscription {
+
 	sub := &subscription{
 		client:    c,
 		topic:     topicName,
@@ -111,10 +138,9 @@ func (c *camundaClient) Subscribe(topicName string, handler TaskHandlerFunc, int
 func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("%s/%s", c.camundaURL, endpoint)
 
-	req, err := http.NewRequest("POST", url, params)
+	req, err := http.NewRequest(http.MethodPost, url, params)
 	if err != nil {
-		c.log.Err(err).Msgf("Could not create POST request")
-		return nil, err
+		return nil, fmt.Errorf("could not create POST request to camunda engine: %w", err)
 	}
 	req.Header.Add(internal.HeaderContentType, "application/json")
 
@@ -131,8 +157,11 @@ func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer,
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
-		c.log.Error().Str(internal.LogFieldURL, url).Msgf("Status: %v, Body: %v", resp.StatusCode, string(body))
-		return nil, errors.New(fmt.Sprintf("Camunda API returned Status %v", resp.StatusCode))
+		c.log.Error().
+			Str(internal.LogFieldURL, url).
+			Str("response_body", string(body)).
+			Msgf("post request to camunda failed with status: %d", resp.StatusCode)
+		return nil, errors.New(fmt.Sprintf("camunda API returned HTTP Status %v", resp.StatusCode))
 	}
 
 	return body, nil

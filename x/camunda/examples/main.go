@@ -29,20 +29,22 @@ func main() {
 	client := camunda.NewClient(log, url, processKey, nil)
 
 	businessKey := uuid.New().String()
-	variables := map[string]camunda.CamundaVariable{}
+	variables := map[string]camunda.Variable{}
 	err := client.StartProcess(context.Background(), businessKey, variables)
 	if err != nil {
 		log.Err(err).Msg("Failed to start process")
 	}
 
-	subscription := client.Subscribe("test-topic", func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
-		log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
+	subscription := client.Subscribe(
+		"auction",
+		func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+			log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
-		err := completeFunc(ctx, t.ID)
-		if err != nil {
-			log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
-		}
-	}, time.Second*10)
+			err := completeFunc(ctx, t.ID)
+			if err != nil {
+				log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
+			}
+		}, time.Second*10)
 
 	<-signalChan
 	log.Printf("Shutting down")

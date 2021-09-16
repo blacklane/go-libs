@@ -33,7 +33,7 @@ const (
 func (s *subscription) complete(ctx context.Context, taskID string) error {
 	completeParams := taskCompletionParams{
 		WorkerID:  workerID,
-		Variables: map[string]CamundaVariable{}, // we don't need to update any variables for now
+		Variables: map[string]Variable{}, // we don't need to update any variables for now
 	}
 
 	return s.client.complete(ctx, taskID, completeParams)
@@ -70,7 +70,7 @@ func (s *subscription) getContextForTask(task Task) context.Context {
 }
 
 func extractBusinessKey(task Task) string {
-	var empty CamundaVariable
+	var empty Variable
 	if task.Variables[businessKeyVarKey] == empty {
 		return ""
 	}
