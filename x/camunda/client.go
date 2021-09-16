@@ -203,7 +203,7 @@ func (c *camundaClient) complete(ctx context.Context, taskID string, params task
 	log.Debug().
 		Str("task_id", taskID).
 		Str("task_completion_params", fmt.Sprintf("%v", params)).
-		Msgf("Completed task %s")
+		Msgf("Completed task id %s", taskID)
 
 	return nil
 }
