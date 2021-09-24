@@ -23,7 +23,7 @@ const (
 )
 
 // EventsAddDefault returns the composition of EventsGenericMiddleware and
-// EventsHandlerMiddleware. Therefore it should be applied to each events.Handler
+// EventsHandlerMiddleware. Therefore, it should be applied to each events.Handler
 // individually.
 func EventsAddDefault(handler events.Handler, log logger.Logger, eventName string) events.Handler {
 	hb := events.HandlerBuilder{}
