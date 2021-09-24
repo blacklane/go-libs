@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/blacklane/go-libs/logger"
+	"github.com/blacklane/go-libs/middleware"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-
-	"github.com/blacklane/go-libs/otel"
 )
 
 func eventsHandler() events.HandlerFunc {
@@ -35,7 +34,7 @@ func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string,
 
 	// Add the opentracing middleware which parses a span from the headers and
 	// injects it on the context. If not span is found, it creates one.
-	handler := otel.EventsAddDefault(eventsHandler(), log, eventName)
+	handler := middleware.Events(eventsHandler(), log, eventName)
 
 	c, err := events.NewKafkaConsumer(
 		events.NewKafkaConsumerConfig(conf),

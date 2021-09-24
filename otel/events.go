@@ -4,10 +4,8 @@ import (
 	"context"
 
 	"github.com/blacklane/go-libs/logger"
-	logmiddleware "github.com/blacklane/go-libs/logger/middleware"
-	trackmiddleware "github.com/blacklane/go-libs/tracking/middleware"
+	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
-	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -22,54 +20,6 @@ const (
 	AttrKeyTrackingID = attribute.Key("tracking.id")
 )
 
-// EventsAddDefault returns the composition of EventsGenericMiddleware and
-// EventsHandlerMiddleware. Therefore, it should be applied to each events.Handler
-// individually.
-func EventsAddDefault(handler events.Handler, log logger.Logger, eventName string) events.Handler {
-	hb := events.HandlerBuilder{}
-	hb.AddHandler(handler)
-	hb.UseMiddleware(
-		EventsGenericMiddleware(log),
-		EventsHandlerMiddleware(eventName),
-	)
-
-	return hb.Build()[0]
-}
-
-// EventsGenericMiddleware adds all middlewares which aren't specific to a handler.
-// They are:
-// - github.com/blacklane/go-libs/tracking/middleware.EventsAddTrackingID
-// - github.com/blacklane/go-libs/logger/middleware.EventsAddLogger
-// It adds log as the logger and will not log any route in skipRoutes.
-func EventsGenericMiddleware(log logger.Logger) events.Middleware {
-	return func(handler events.Handler) events.Handler {
-		hb := events.HandlerBuilder{}
-		hb.AddHandler(handler)
-		hb.UseMiddleware(
-			trackmiddleware.EventsAddTrackingID,
-			logmiddleware.EventsAddLogger(log),
-		)
-
-		return hb.Build()[0]
-	}
-}
-
-// EventsHandlerMiddleware are event specific middleware. It adds:
-// - EventsAddOpenTelemetry
-// - github.com/blacklane/go-libs/logger/middleware.EventsHandlerStatusLogger
-func EventsHandlerMiddleware(eventName string) events.Middleware {
-	return func(handler events.Handler) events.Handler {
-		hb := events.HandlerBuilder{}
-		hb.AddHandler(handler)
-		hb.UseMiddleware(
-			EventsAddOpenTelemetry(eventName),
-			logmiddleware.EventsHandlerStatusLogger(eventName),
-		)
-
-		return hb.Build()[0]
-	}
-}
-
 // EventsAddOpenTelemetry adds an opentracing span to the context and finishes the span
 // when the handler returns.
 // Use tracking.SpanFromContext to get the span from the context. It is
@@ -83,7 +33,7 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 			// Get the global TracerProvider. // TODO:make it a constant and have one for http
 			tr := otel.Tracer(constants.TracerName)
 
-			trackingID := eventsExtractTrackingID(ctx, e)
+			trackingID := tracking.IDFromContext(ctx)
 
 			ctx = propagator.Extract(ctx, e.Headers)
 
@@ -104,21 +54,4 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 			return handler.Handle(ctx, e)
 		})
 	}
-}
-
-func eventsExtractTrackingID(ctx context.Context, e events.Event) string {
-	trackingID := e.Headers[constants.HeaderTrackingID]
-	if trackingID == "" {
-		trackingID = e.Headers[constants.HeaderRequestID]
-		if trackingID == "" {
-			uuid, err := uuid.NewUUID()
-			if err != nil {
-				logger.FromContext(ctx).Err(err).Msg("failed to generate trackingID")
-				return ""
-			}
-			trackingID = uuid.String()
-		}
-	}
-
-	return trackingID
 }

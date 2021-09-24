@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// prettyJSONWriter takes a JSON string as []byte an ident it before writing to os.Stdout..
+// prettyJSONWriter takes a JSON string as []byte, ident it then writes to os.Stdout.
 type prettyJSONWriter struct{}
 
 func (pw prettyJSONWriter) Write(p []byte) (int, error) {

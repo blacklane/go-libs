@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/blacklane/go-libs/logger"
+	"github.com/blacklane/go-libs/middleware"
 	"github.com/blacklane/go-libs/tracking"
-	"github.com/blacklane/go-libs/uhttp"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
