@@ -19,7 +19,7 @@ import (
 //   - have tracking id in the context (read from the headers or a new one),
 //   - have a logger.Logger with tracking id and all required fields in the context,
 //   - log, at the end of handler, if it succeeded or failed and how log it took.
-// - github.com/blacklane/go-libs/tracking/middleware.TrackingID
+// - github.com/blacklane/go-libs/tracking/middleware.HTTPTrackingID
 // - middleware.HTTPAddLogger
 // - middleware.HTTPRequestLogger
 func HTTPAddDefault(log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
@@ -63,16 +63,15 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			trackingID := tracking.IDFromContext(ctx)
 
 			logFields := map[string]interface{}{
-				internal.FieldTrackingID: trackingID,
-				internal.FieldRequestID:  trackingID,
-				internal.FieldParams:     r.URL.RawQuery,
-				internal.FieldIP:         ipAddress(r),
-				internal.FieldUserAgent:  r.UserAgent(),
 				internal.FieldHost:       r.Host,
-				internal.FieldVerb:       r.Method,
+				internal.FieldIP:         ipAddress(r),
+				internal.FieldParams:     r.URL.RawQuery,
 				internal.FieldPath:       r.URL.Path,
+				internal.FieldRequestID:  trackingID,
+				internal.FieldTrackingID: trackingID,
+				internal.FieldUserAgent:  r.UserAgent(),
+				internal.FieldVerb:       r.Method,
 			}
-
 			log = log.With().Fields(logFields).Logger()
 			ctx = log.WithContext(ctx)
 			r = r.WithContext(ctx)
@@ -87,14 +86,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 					}
 				}
 
-				zerologEvent := getLogLevel(log, ww)
-
-				if ww.StatusCode() >= 400 {
-					zerologEvent = zerologEvent.Err(fmt.Errorf(
-						"request finished with HTTP status %d",
-						ww.StatusCode()))
-				}
-				zerologEvent.
+				getLogLevel(log, ww).
 					Int(internal.FieldHTTPStatus, ww.statusCode).
 					Dur(internal.FieldRequestDuration, logger.Now().Sub(startTime)).
 					Msgf("%s %s", r.Method, urlPath)
@@ -111,7 +103,8 @@ func getLogLevel(log logger.Logger, ww responseWriter) *zerolog.Event {
 		return log.Warn()
 	}
 	if ww.StatusCode() >= 500 {
-		return log.Error()
+		return log.Err(
+			fmt.Errorf("request finished with HTTP status %d", ww.StatusCode()))
 	}
 	return log.Info()
 }

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/blacklane/go-libs/logger"
+	"github.com/blacklane/go-libs/logger/internal"
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
-
-	"github.com/blacklane/go-libs/logger"
 )
 
 func ExampleEventsAddDefault() {
@@ -32,11 +32,11 @@ func ExampleEventsAddDefault() {
 	hh := EventsAddDefault(h, log, eventNameToLog)
 
 	eventToLog := events.Event{
-		Headers: map[string]string{"X-Tracking-Id": trackingID},
+		Headers: map[string]string{internal.HeaderTrackingID: trackingID},
 		Payload: []byte(`{"event":"` + eventNameToLog + `"}`),
 	}
 	eventToNotLog := events.Event{
-		Headers: map[string]string{"X-Tracking-Id": trackingID},
+		Headers: map[string]string{internal.HeaderTrackingID: trackingID},
 		Payload: []byte(`{"event":"event_to_not_log"}`),
 	}
 
