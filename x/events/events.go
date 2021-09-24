@@ -1,6 +1,10 @@
 package events
 
-import "context"
+import (
+	"context"
+
+	"go.opentelemetry.io/otel/propagation"
+)
 
 type Header map[string]string
 type Event struct {
@@ -21,6 +25,9 @@ type HandlerBuilder struct {
 	middleware  []Middleware
 	rawHandlers []Handler
 }
+
+// Ensure Handler implements OTel propagation.TextMapCarrier
+var _ = propagation.TextMapCarrier(Header{})
 
 func (h Header) Get(key string) string {
 	return h[key]
