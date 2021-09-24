@@ -155,7 +155,7 @@ func (p *kafkaProducer) refreshToken() {
 // has the tracking ID header set, it does nothing.
 func (p *kafkaProducer) SendCtx(ctx context.Context, eventName string, event Event, topic string) error {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("could not send event: %w", err)
+		return fmt.Errorf("will not send event: %w", err)
 	}
 
 	ctx, sp := otel.Tracer(OTelTracerName).

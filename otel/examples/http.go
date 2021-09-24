@@ -24,13 +24,14 @@ import (
 // StartHTTPServer creates and starts a http.Server listening on port 4242, with no router
 // and a single handler. See newHandler for details about the handler.
 func StartHTTPServer(serviceName string, producer events.Producer, topic string, eventName string) {
-	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName).With().
+	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName).
+		With().
 		Str("environment", "otel").Logger()
 
 	path := "/tracing/example/path"
 
 	// Using HTTPAllMiddleware as it's been applied directly to the handler.
-	applyMiddleware := uhttp.HTTPAllMiddleware(
+	applyMiddleware := middleware.HTTP(
 		serviceName,
 		"my-awesome-handler",
 		path,
