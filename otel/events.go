@@ -28,14 +28,13 @@ const (
 // safer as it'll return a disabled span if none is found in the context.
 func EventsAddOpenTelemetry(eventName string) events.Middleware {
 	return func(handler events.Handler) events.Handler {
-		propagator := otel.GetTextMapPropagator()
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
 			// Get the global TracerProvider. // TODO:make it a constant and have one for http
 			tr := otel.Tracer(constants.TracerName)
 
 			trackingID := tracking.IDFromContext(ctx)
 
-			ctx = propagator.Extract(ctx, e.Headers)
+			ctx = otel.GetTextMapPropagator().Extract(ctx, e.Headers)
 
 			ctx, sp := tr.Start(
 				ctx,
