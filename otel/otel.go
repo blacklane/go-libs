@@ -3,6 +3,7 @@ package otel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/blacklane/go-libs/logger"
@@ -24,30 +25,19 @@ type Config struct {
 	exporterEndpoint string
 	serviceName      string
 	serviceVersion   string
+	errHandler       otel.ErrorHandler
 }
 
 func (c Config) String() string {
-	return fmt.Sprintf(`{"debug": %t, }`, cfg.debug)
-}
+	bs, err := json.Marshal(c)
+	if err != nil {
+		return fmt.Sprintf("could not marshal otel config to print it: %v", err)
+	}
 
-var cfg = &Config{
-	debug:            false,
-	env:              "env not set",
-	exporterEndpoint: "",
-	serviceName:      "name not set",
-	serviceVersion:   "version not set",
-}
-
-type errHandler struct {
-	l logger.Logger
-}
-
-func (e errHandler) Handle(err error) {
-	e.l.Err(err).Str("err_type", fmt.Sprintf("%T", err)).Msg("[otel error] something went wrong")
+	return fmt.Sprintf(`%s`, bs)
 }
 
 func WithServiceVersion(version string) Option {
-	// validations...
 	return func(cfg *Config) {
 		cfg.serviceVersion = version
 	}
@@ -66,9 +56,25 @@ func WithDebug() Option {
 	}
 }
 
-func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...Option) {
-	cfg.serviceName = serviceName
-	cfg.exporterEndpoint = exporterEndpoint
+// WithErrorHandler registers h as OTel's global error handler.
+// See go.opentelemetry.io/otel.ErrorHandler for more details on the error handler.
+func WithErrorHandler(h func(error)) Option {
+	return func(c *Config) {
+		c.errHandler = otel.ErrorHandlerFunc(h)
+	}
+}
+
+func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...Option) error {
+	cfg := &Config{
+		debug:            false,
+		env:              "env not set",
+		exporterEndpoint: exporterEndpoint,
+		serviceName:      serviceName,
+		serviceVersion:   "version not set",
+	}
+	if cfg.serviceName == "" {
+		return errors.New("serviceName cannot be empty")
+	}
 
 	for _, opt := range opts {
 		opt(cfg)
@@ -76,28 +82,23 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 
 	if cfg.exporterEndpoint == "" {
 		log.Info().Msg("otel is disabled as OTEL exporter endpoint is empty")
-		return
+		return nil
 	}
 
-	bs, err := json.Marshal(cfg)
-	if err != nil {
-		log.Warn().Err(err).Msg("could not marshal otel config")
-	}
-	log.Debug().Str("cfg", string(bs)).Msg("otel configuration")
+	log.Debug().Str("configuration", cfg.String()).Msg("otel configuration")
 
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		log.Err(err).
-			Str("err_type", fmt.Sprintf("%T", err)).
-			Msg("[otel error] something went wrong")
-	}))
+	if cfg.errHandler != nil {
+		otel.SetErrorHandler(cfg.errHandler)
+	}
 
 	otlpClient := otlptracegrpc.NewClient(
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(exporterEndpoint))
+
 	otlpExporter, err := otlptrace.New(context.TODO(), otlpClient)
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to create OTel exporter, disabling OTel")
-		return
+		return nil
 	}
 
 	// Create a sdk/resource to decorate the app
@@ -141,5 +142,5 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 		),
 	)
 
-	return
+	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -24,8 +25,15 @@ func main() {
 
 	cfg := examples.ParseConfig(serviceName)
 
-	// OpenTelemetry (OTel) Jaeger tracer
-	otel.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log, otel.WithServiceVersion(serviceVersion))
+	// Set up OpenTelemetry (OTel) with a Jaeger tracer.
+	otel.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log,
+		otel.WithDebug(),
+		otel.WithServiceVersion(serviceVersion),
+		otel.WithErrorHandler(func(err error) {
+			cfg.Log.Err(err).
+				Str("error_type", fmt.Sprintf("%T", err)).
+				Msg("an otel irremediable error happened")
+		}))
 
 	kafkaCfg := &kafka.ConfigMap{
 		"group.id":           cfg.KafkaGroupID,

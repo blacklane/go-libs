@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -25,12 +26,20 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// OpenTelemetry (OTel) tracer for service A.
-	otel.SetUpOTel(
+	err := otel.SetUpOTel(
 		serviceName,
 		cfg.OTelExporterEndpoint,
 		cfg.Log,
 		otel.WithServiceVersion(serviceVersion),
-		otel.WithDebug())
+		otel.WithDebug(),
+		otel.WithErrorHandler(func(err error) {
+			cfg.Log.Err(err).
+				Str("error_type", fmt.Sprintf("%T", err)).
+				Msg("an otel irremediable error happened")
+		}))
+	if err != nil {
+		cfg.Log.Panic().Err(err).Msg("SetUpOTel returned and error")
+	}
 
 	p := examples.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers":  cfg.KafkaServer,
