@@ -62,7 +62,7 @@ type kafkaProducer struct {
 	shutdown bool
 }
 
-// NewKafkaProducerConfig returns a initialised *KafkaProducerConfig
+// NewKafkaProducerConfig returns an initialised *KafkaProducerConfig
 func NewKafkaProducerConfig(config *kafka.ConfigMap) *KafkaProducerConfig {
 	return &KafkaProducerConfig{
 		kafkaConfig: &kafkaConfig{
@@ -87,7 +87,7 @@ func (pc *KafkaProducerConfig) WithFlushTimeout(timeout int) {
 
 // NewKafkaProducer returns new a producer.
 // To handle errors, either `kafka.Error` messages or any other error while
-// interacting with Kafka, register a Error function on *KafkaConsumerConfig.
+// interacting with Kafka, register an Error function on *KafkaConsumerConfig.
 func NewKafkaProducer(c *KafkaProducerConfig) (Producer, error) {
 	kp := &kafkaProducer{
 		kafkaCommon: &kafkaCommon{
