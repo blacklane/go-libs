@@ -49,7 +49,7 @@ func (c *client) StartProcess(ctx context.Context, businessKey string, variables
 	}
 
 	url := fmt.Sprintf("process-definition/key/%s/start", c.processKey)
-	_, err = c.doPostRequest(&buf, url)
+	_, err = c.doPostRequest(ctx, &buf, url)
 	if err != nil {
 		return fmt.Errorf("failed to start process for business key [%s] due to: %w", params.BusinessKey, err)
 	}
@@ -66,7 +66,7 @@ func (c *client) SendMessage(ctx context.Context, messageType string, businessKe
 		return fmt.Errorf("failed to send camunda message due to json error: %w", err)
 	}
 
-	_, err = c.doPostRequest(&buf, url)
+	_, err = c.doPostRequest(ctx, &buf, url)
 	if err != nil {
 		return fmt.Errorf("failed to send message for business key [%s] due to: %w", newMessage.BusinessKey, err)
 	}
@@ -89,10 +89,48 @@ func (c *client) Subscribe(topicName string, handler TaskHandlerFunc, interval t
 	return sub
 }
 
-func (c *client) doPostRequest(params *bytes.Buffer, endpoint string) ([]byte, error) {
+func (c *client) complete(ctx context.Context, taskId string, params taskCompletionParams) error {
+	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(params)
+	if err != nil {
+		return fmt.Errorf("failed to complete camunda task due to json error: %w", err)
+	}
+
+	url := fmt.Sprintf("external-task/%s/complete", taskId)
+	_, err = c.doPostRequest(ctx, &buf, url)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) fetchAndLock(param *fetchAndLock) ([]Task, error) {
+	var tasks []Task
+	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(param)
+	if err != nil {
+		return tasks, fmt.Errorf("failed to fetch camunda tasks due to json error: %w", err)
+	}
+
+	url := "external-task/fetchAndLock"
+	body, err := c.doPostRequest(context.Background(), &buf, url)
+	if err != nil {
+		return tasks, err
+	}
+
+	err = json.Unmarshal(body, &tasks)
+	if err != nil {
+		return tasks, fmt.Errorf("could not unmarshal task due to: %w", err)
+	}
+
+	return tasks, nil
+}
+
+func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("%s/%s", c.camundaURL, endpoint)
 
-	req, err := http.NewRequest("POST", url, params)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, params)
 	if err != nil {
 		return nil, fmt.Errorf("could not create POST request due to: %w", err)
 	}
@@ -114,42 +152,4 @@ func (c *client) doPostRequest(params *bytes.Buffer, endpoint string) ([]byte, e
 	}
 
 	return body, nil
-}
-
-func (c *client) complete(taskId string, params taskCompletionParams) error {
-	buf := bytes.Buffer{}
-	err := json.NewEncoder(&buf).Encode(params)
-	if err != nil {
-		return fmt.Errorf("failed to complete camunda task due to json error: %w", err)
-	}
-
-	url := fmt.Sprintf("external-task/%s/complete", taskId)
-	_, err = c.doPostRequest(&buf, url)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *client) fetchAndLock(param *fetchAndLock) ([]Task, error) {
-	buf := bytes.Buffer{}
-	err := json.NewEncoder(&buf).Encode(param)
-	var tasks []Task
-	if err != nil {
-		return tasks, fmt.Errorf("failed to fetch camunda tasks due to json error: %w", err)
-	}
-
-	url := "external-task/fetchAndLock"
-	body, err := c.doPostRequest(&buf, url)
-	if err != nil {
-		return tasks, err
-	}
-
-	err = json.Unmarshal(body, &tasks)
-	if err != nil {
-		return tasks, fmt.Errorf("could not unmarshal task due to: %w", err)
-	}
-
-	return tasks, nil
 }

@@ -1,6 +1,7 @@
 package camunda
 
 import (
+	"context"
 	"time"
 )
 
@@ -21,13 +22,17 @@ const (
 	businessKeyVarKey = "BusinessKey"
 )
 
-func (s *subscription) complete(taskID string) error {
+func (s *subscription) Stop() {
+	s.isRunning = false
+}
+
+func (s *subscription) complete(ctx context.Context, taskID string) error {
 	completeParams := taskCompletionParams{
 		WorkerID:  workerID,
 		Variables: map[string]CamundaVariable{}, // we don't need to update any variables for now
 	}
 
-	return s.client.complete(taskID, completeParams)
+	return s.client.complete(ctx, taskID, completeParams)
 }
 
 // addHandler is attaching handlers to the Subscription
@@ -48,11 +53,11 @@ func (s *subscription) fetch(fal fetchAndLock) {
 }
 
 func extractBusinessKey(task Task) string {
-	var empty CamundaVariable
-	if task.Variables[businessKeyVarKey] == empty {
+	value, ok := task.Variables[businessKeyVarKey]
+	if !ok {
 		return ""
 	}
-	return task.Variables[businessKeyVarKey].Value.(string)
+	return value.Value.(string)
 }
 
 func (s *subscription) schedule() {
@@ -74,6 +79,3 @@ func (s *subscription) schedule() {
 	}
 }
 
-func (s *subscription) Stop() {
-	s.isRunning = false
-}

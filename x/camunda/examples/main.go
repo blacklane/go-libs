@@ -38,7 +38,7 @@ func main() {
 	subscription := client.Subscribe("test-topic", func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 		log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
-		err := completeFunc(t.ID)
+		err := completeFunc(context.Background(), t.ID)
 		if err != nil {
 			log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
 		}
