@@ -81,7 +81,7 @@ func (c *client) Subscribe(topicName string, handler TaskHandlerFunc, interval t
 		isRunning: false,
 		interval:  interval,
 	}
-	sub.handler(handler)
+	sub.addHandler(handler)
 
 	// run async fetch loop
 	go sub.schedule()

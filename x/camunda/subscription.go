@@ -30,13 +30,13 @@ func (s *subscription) complete(taskID string) error {
 	return s.client.complete(taskID, completeParams)
 }
 
-// Handler is attaching handlers to the Subscription
-func (s *subscription) handler(handler TaskHandlerFunc) {
+// addHandler is attaching handlers to the Subscription
+func (s *subscription) addHandler(handler TaskHandlerFunc) {
 	s.handlers = append(s.handlers, handler)
 }
 
 // Open connects to camunda and start polling the external tasks
-// It will call each handler if there is a new task on the topic
+// It will call each addHandler if there is a new task on the topic
 func (s *subscription) fetch(fal fetchAndLock) {
 	tasks, _ := s.client.fetchAndLock(&fal)
 	for _, task := range tasks {
