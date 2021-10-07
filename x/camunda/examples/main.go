@@ -26,7 +26,7 @@ func main() {
 		logger.WithLevel("debug"))
 
 	// camunda stuff
-	client := camunda.NewClient(log, url, processKey, nil)
+	client := camunda.NewClient(url, processKey, nil)
 
 	businessKey := uuid.New().String()
 	variables := map[string]camunda.CamundaVariable{}
@@ -35,10 +35,10 @@ func main() {
 		log.Err(err).Msg("Failed to start process")
 	}
 
-	subscription := client.Subscribe("test-topic", func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+	subscription := client.Subscribe("test-topic", func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 		log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
-		err := completeFunc(ctx, t.ID)
+		err := completeFunc(t.ID)
 		if err != nil {
 			log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
 		}

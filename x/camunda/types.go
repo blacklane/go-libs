@@ -1,7 +1,5 @@
 package camunda
 
-import "context"
-
 const (
 	VarTypeString  = "string"
 	VarTypeDouble  = "double"
@@ -48,8 +46,8 @@ type Task struct {
 }
 
 type (
-	TaskCompleteFunc func(ctx context.Context, taskID string) error
-	TaskHandlerFunc  func(ctx context.Context, completeFunc TaskCompleteFunc, t Task)
+	TaskCompleteFunc func(taskID string) error
+	TaskHandlerFunc  func(completeFunc TaskCompleteFunc, t Task)
 	Subscription     interface {
 		Stop()
 	}

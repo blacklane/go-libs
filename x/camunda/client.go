@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
-
-	"github.com/blacklane/go-libs/logger"
 
 	"github.com/blacklane/go-libs/x/camunda/internal"
 )
@@ -18,29 +15,27 @@ import (
 type (
 	Client interface {
 		StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error
-		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable)
+		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error
 		Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription
 	}
-	camundaClient struct {
+	client struct {
 		camundaURL  string
 		credentials *BasicAuthCredentials
 		processKey  string
 		httpClient  HttpClient
-		log         logger.Logger
 	}
 )
 
-func NewClient(log logger.Logger, url string, processKey string, credentials *BasicAuthCredentials) Client {
-	return &camundaClient{
+func NewClient(url string, processKey string, credentials *BasicAuthCredentials) Client {
+	return &client{
 		camundaURL:  url,
 		credentials: credentials,
 		processKey:  processKey,
 		httpClient:  &http.Client{},
-		log:         log,
 	}
 }
 
-func (c *camundaClient) StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error {
+func (c *client) StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error {
 	variables[businessKeyVarKey] = NewVariable(VarTypeString, businessKey)
 	params := processStartParams{
 		BusinessKey: businessKey,
@@ -50,55 +45,41 @@ func (c *camundaClient) StartProcess(ctx context.Context, businessKey string, va
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(params)
 	if err != nil {
-		c.log.Err(err).Msg("failed to send camunda message due to json error")
-		return err
+		return fmt.Errorf("failed to send camunda message due to json error: %w", err)
 	}
 
 	url := fmt.Sprintf("process-definition/key/%s/start", c.processKey)
-	_, err = c.doPostRequest(ctx, buf, url)
+	_, err = c.doPostRequest(buf, url)
 	if err != nil {
-		c.log.Err(err).
-			Msgf("failed to start process for business key - %s", params.BusinessKey)
-		return err
+		return fmt.Errorf("failed to start process for business key [%s] due to: %w", params.BusinessKey, err)
 	}
-	c.log.Info().Msgf("process has been started with business key '%s'", params.BusinessKey)
+
 	return nil
 }
 
-func (c *camundaClient) SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) {
+func (c *client) SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error {
 	buf := new(bytes.Buffer)
 	url := "message"
 	newMessage := newMessage(messageType, businessKey, updatedVariables)
 	err := json.NewEncoder(buf).Encode(newMessage)
 	if err != nil {
-		c.log.Err(err).
-			Str(internal.LogFieldBusinessKey, businessKey).
-			Msg("failed to send camunda message due to json error")
-		return
+		return fmt.Errorf("failed to send camunda message due to json error: %w", err)
 	}
 
-	_, err = c.doPostRequest(ctx, buf, url)
+	_, err = c.doPostRequest(buf, url)
 	if err != nil {
-		c.log.Err(err).
-			Str(internal.LogFieldBusinessKey, businessKey).
-			Msgf("failed to send message for business key - %s", newMessage.BusinessKey)
-
-		return
+		return fmt.Errorf("failed to send message for business key [%s] due to: %w", newMessage.BusinessKey, err)
 	}
 
-	c.log.Info().
-		Str(internal.LogFieldBusinessKey, businessKey).
-		Msgf("%s message has been sent to camunda for business key '%s'", newMessage.MessageName, newMessage.BusinessKey)
+	return nil
 }
 
-func (c *camundaClient) Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription {
-	c.log.Info().Msgf("Subscribing to: %s", topicName)
+func (c *client) Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription {
 	sub := &subscription{
 		client:    c,
 		topic:     topicName,
 		isRunning: false,
 		interval:  interval,
-		log:       c.log,
 	}
 	sub.handler(handler)
 
@@ -108,13 +89,12 @@ func (c *camundaClient) Subscribe(topicName string, handler TaskHandlerFunc, int
 	return sub
 }
 
-func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoint string) ([]byte, error) {
+func (c *client) doPostRequest(params *bytes.Buffer, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("%s/%s", c.camundaURL, endpoint)
 
 	req, err := http.NewRequest("POST", url, params)
 	if err != nil {
-		c.log.Err(err).Msgf("Could not create POST request")
-		return nil, err
+		return nil, fmt.Errorf("could not create POST request due to: %w", err)
 	}
 	req.Header.Add(internal.HeaderContentType, "application/json")
 
@@ -124,61 +104,52 @@ func (c *camundaClient) doPostRequest(ctx context.Context, params *bytes.Buffer,
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.log.Err(err).Msgf("Could not send POST request")
-		return nil, err
+		return nil, fmt.Errorf("could not send POST request due to: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
-		c.log.Error().Str(internal.LogFieldURL, url).Msgf("Status: %v, Body: %v", resp.StatusCode, string(body))
-		return nil, errors.New(fmt.Sprintf("Camunda API returned Status %v", resp.StatusCode))
+		return nil, fmt.Errorf("camunda API returned Status %d with body: %v", resp.StatusCode, string(body))
 	}
 
 	return body, nil
 }
 
-func (c *camundaClient) complete(ctx context.Context, taskId string, params taskCompletionParams) error {
-	log := logger.FromContext(ctx)
+func (c *client) complete(taskId string, params taskCompletionParams) error {
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(params)
 	if err != nil {
-		log.Err(err).Msg("failed to complete camunda task due to json error")
-		return err
+		return fmt.Errorf("failed to complete camunda task due to json error: %w", err)
 	}
 
 	url := fmt.Sprintf("external-task/%s/complete", taskId)
-	_, err = c.doPostRequest(context.Background(), buf, url)
+	_, err = c.doPostRequest(buf, url)
 	if err != nil {
 		return err
 	}
-
-	log.Info().Msgf("Completed task: %v", params.Variables)
 
 	return nil
 }
 
-func (c *camundaClient) fetchAndLock(log logger.Logger, param *fetchAndLock) ([]Task, error) {
+func (c *client) fetchAndLock(param *fetchAndLock) ([]Task, error) {
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(param)
 	var tasks []Task
 	if err != nil {
-		log.Err(err).Msg("failed to fetch camunda tasks due to json error")
-		return tasks, err
+		return tasks, fmt.Errorf("failed to fetch camunda tasks due to json error: %w", err)
 	}
 
 	url := "external-task/fetchAndLock"
-	body, err := c.doPostRequest(context.Background(), buf, url)
+	body, err := c.doPostRequest(buf, url)
 	if err != nil {
 		return tasks, err
 	}
 
 	err = json.Unmarshal(body, &tasks)
 	if err != nil {
-		log.Err(err).Msgf("Could not unmarshal task")
-		return tasks, err
+		return tasks, fmt.Errorf("could not unmarshal task due to: %w", err)
 	}
 
-	log.Debug().Msgf("Fetched %d Tasks from %s", len(tasks), c.camundaURL)
 	return tasks, nil
 }
