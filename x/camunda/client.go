@@ -42,14 +42,14 @@ func (c *client) StartProcess(ctx context.Context, businessKey string, variables
 		Variables:   variables,
 	}
 
-	buf := new(bytes.Buffer)
-	err := json.NewEncoder(buf).Encode(params)
+	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(params)
 	if err != nil {
 		return fmt.Errorf("failed to send camunda message due to json error: %w", err)
 	}
 
 	url := fmt.Sprintf("process-definition/key/%s/start", c.processKey)
-	_, err = c.doPostRequest(buf, url)
+	_, err = c.doPostRequest(&buf, url)
 	if err != nil {
 		return fmt.Errorf("failed to start process for business key [%s] due to: %w", params.BusinessKey, err)
 	}
@@ -58,15 +58,15 @@ func (c *client) StartProcess(ctx context.Context, businessKey string, variables
 }
 
 func (c *client) SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error {
-	buf := new(bytes.Buffer)
+	buf := bytes.Buffer{}
 	url := "message"
 	newMessage := newMessage(messageType, businessKey, updatedVariables)
-	err := json.NewEncoder(buf).Encode(newMessage)
+	err := json.NewEncoder(&buf).Encode(newMessage)
 	if err != nil {
 		return fmt.Errorf("failed to send camunda message due to json error: %w", err)
 	}
 
-	_, err = c.doPostRequest(buf, url)
+	_, err = c.doPostRequest(&buf, url)
 	if err != nil {
 		return fmt.Errorf("failed to send message for business key [%s] due to: %w", newMessage.BusinessKey, err)
 	}
@@ -117,14 +117,14 @@ func (c *client) doPostRequest(params *bytes.Buffer, endpoint string) ([]byte, e
 }
 
 func (c *client) complete(taskId string, params taskCompletionParams) error {
-	buf := new(bytes.Buffer)
-	err := json.NewEncoder(buf).Encode(params)
+	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(params)
 	if err != nil {
 		return fmt.Errorf("failed to complete camunda task due to json error: %w", err)
 	}
 
 	url := fmt.Sprintf("external-task/%s/complete", taskId)
-	_, err = c.doPostRequest(buf, url)
+	_, err = c.doPostRequest(&buf, url)
 	if err != nil {
 		return err
 	}
@@ -133,15 +133,15 @@ func (c *client) complete(taskId string, params taskCompletionParams) error {
 }
 
 func (c *client) fetchAndLock(param *fetchAndLock) ([]Task, error) {
-	buf := new(bytes.Buffer)
-	err := json.NewEncoder(buf).Encode(param)
+	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(param)
 	var tasks []Task
 	if err != nil {
 		return tasks, fmt.Errorf("failed to fetch camunda tasks due to json error: %w", err)
 	}
 
 	url := "external-task/fetchAndLock"
-	body, err := c.doPostRequest(buf, url)
+	body, err := c.doPostRequest(&buf, url)
 	if err != nil {
 		return tasks, err
 	}
