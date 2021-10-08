@@ -75,12 +75,7 @@ func (c *client) SendMessage(ctx context.Context, messageType string, businessKe
 }
 
 func (c *client) Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription {
-	sub := &subscription{
-		client:    c,
-		topic:     topicName,
-		isRunning: false,
-		interval:  interval,
-	}
+	sub := newSubscription(c, topicName, interval)
 	sub.addHandler(handler)
 
 	// run async fetch loop

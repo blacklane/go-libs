@@ -2,6 +2,7 @@ package camunda
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 )
 
@@ -10,8 +11,8 @@ type (
 		client    *client
 		topic     string
 		handlers  []TaskHandlerFunc
-		isRunning bool
 		interval  time.Duration
+		isRunning int32 // we need to use atomic int operations to make this thread safe
 	}
 )
 
@@ -23,7 +24,16 @@ const (
 )
 
 func (s *subscription) Stop() {
-	s.isRunning = false
+	atomic.AddInt32(&s.isRunning, -1)
+}
+
+func newSubscription(client *client, topic string, interval time.Duration) *subscription {
+	return &subscription{
+		client:    client,
+		topic:     topic,
+		interval:  interval,
+		isRunning: 0,
+	}
 }
 
 func (s *subscription) complete(ctx context.Context, taskID string) error {
@@ -61,7 +71,7 @@ func extractBusinessKey(task Task) string {
 }
 
 func (s *subscription) schedule() {
-	s.isRunning = true
+	atomic.AddInt32(&s.isRunning, 1)
 	lockParam := fetchAndLock{
 		WorkerID: workerID,
 		MaxTasks: maxTasksFetch,
@@ -73,9 +83,8 @@ func (s *subscription) schedule() {
 		},
 	}
 
-	for s.isRunning {
+	for s.isRunning > 0 {
 		<-time.After(s.interval) // fetch every x seconds
 		go s.fetch(lockParam)
 	}
 }
-
