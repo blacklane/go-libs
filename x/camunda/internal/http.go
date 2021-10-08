@@ -1,4 +1,4 @@
-package camunda
+package internal
 
 import (
 	"net/http"

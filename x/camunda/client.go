@@ -20,13 +20,13 @@ type (
 	}
 	client struct {
 		camundaURL  string
-		credentials *BasicAuthCredentials
+		credentials *internal.BasicAuthCredentials
 		processKey  string
-		httpClient  HttpClient
+		httpClient  internal.HttpClient
 	}
 )
 
-func NewClient(url string, processKey string, credentials *BasicAuthCredentials) Client {
+func NewClient(url string, processKey string, credentials *internal.BasicAuthCredentials) Client {
 	return &client{
 		camundaURL:  url,
 		credentials: credentials,
