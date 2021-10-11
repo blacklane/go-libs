@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/x/camunda"
 )
@@ -17,6 +19,8 @@ const (
 	workerID   = "worker-id"
 	topic      = "test-topic"
 )
+
+type taskHandler struct{}
 
 func main() {
 	// catch the signals as soon as possible
@@ -31,15 +35,8 @@ func main() {
 	// camunda stuff
 	client := camunda.NewClient(url, processKey, http.Client{}, camunda.BasicAuthCredentials{})
 
-	subscription := client.Subscribe(topic, workerID,
-		func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
-			log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
-
-			err := completeFunc(context.Background(), t.ID)
-			if err != nil {
-				log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
-			}
-		},
+	handler := taskHandler{}
+	subscription := client.Subscribe(topic, workerID, &handler,
 		camunda.FetchInterval(time.Second*2),
 		camunda.MaxTasksFetch(10),
 		camunda.LockDuration(2000),
@@ -48,4 +45,13 @@ func main() {
 	<-signalChan
 	log.Printf("Shutting down")
 	subscription.Stop()
+}
+
+func (th *taskHandler) Handle(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+	log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
+
+	err := completeFunc(context.Background(), t.ID)
+	if err != nil {
+		log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
+	}
 }

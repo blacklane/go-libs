@@ -13,9 +13,9 @@ import (
 
 type (
 	Client interface {
-		StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error
-		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error
-		Subscribe(topicName string, workerID string, handler TaskHandlerFunc, options ...func(*Subscription)) *Subscription
+		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
+		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error
+		Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -38,7 +38,7 @@ func NewClient(url string, processKey string, httpClient http.Client, credential
 	}
 }
 
-func (c *client) StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error {
+func (c *client) StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error {
 	variables[businessKeyJSONKey] = NewVariable(VarTypeString, businessKey)
 	params := processStartParams{
 		BusinessKey: businessKey,
@@ -60,7 +60,7 @@ func (c *client) StartProcess(ctx context.Context, businessKey string, variables
 	return nil
 }
 
-func (c *client) SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error {
+func (c *client) SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error {
 	buf := bytes.Buffer{}
 	url := "message"
 	newMessage := newMessage(messageType, businessKey, updatedVariables)
@@ -77,7 +77,7 @@ func (c *client) SendMessage(ctx context.Context, messageType string, businessKe
 	return nil
 }
 
-func (c *client) Subscribe(topicName string, workerID string, handler TaskHandlerFunc, options ...func(*Subscription)) *Subscription {
+func (c *client) Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription {
 	sub := newSubscription(c, topicName, workerID)
 	sub.addHandler(handler)
 

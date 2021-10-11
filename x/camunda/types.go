@@ -8,20 +8,40 @@ const (
 	VarTypeInteger = "integer"
 )
 
-type CamundaVariable struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
+type (
+	Variable struct {
+		Type  string      `json:"type"`
+		Value interface{} `json:"value"`
+	}
+	Task struct {
+		BusinessKey string              `json:"business_key"`
+		ID          string              `json:"id"`
+		TopicName   string              `json:"topicName"`
+		Variables   map[string]Variable `json:"variables"`
+	}
+	TaskHandler interface {
+		Handle(completeFunc TaskCompleteFunc, t Task)
+	}
+	TaskCompleteFunc func(ctx context.Context, taskID string) error
+	TaskHandlerFunc  func(completeFunc TaskCompleteFunc, t Task)
+)
+
+func NewVariable(varType string, value interface{}) Variable {
+	return Variable{
+		Type:  varType,
+		Value: value,
+	}
 }
 
 type processStartParams struct {
-	BusinessKey string                     `json:"businessKey"`
-	Variables   map[string]CamundaVariable `json:"variables"`
+	BusinessKey string              `json:"businessKey"`
+	Variables   map[string]Variable `json:"variables"`
 }
 
 type message struct {
-	MessageName      string                     `json:"messageName"`
-	BusinessKey      string                     `json:"businessKey"`
-	ProcessVariables map[string]CamundaVariable `json:"processVariables"`
+	MessageName      string              `json:"messageName"`
+	BusinessKey      string              `json:"businessKey"`
+	ProcessVariables map[string]Variable `json:"processVariables"`
 }
 
 type topic struct {
@@ -36,30 +56,11 @@ type fetchAndLock struct {
 }
 
 type taskCompletionParams struct {
-	WorkerID  string                     `json:"workerId"`
-	Variables map[string]CamundaVariable `json:"variables"`
+	WorkerID  string              `json:"workerId"`
+	Variables map[string]Variable `json:"variables"`
 }
 
-type Task struct {
-	BusinessKey string                     `json:"business_key"`
-	ID          string                     `json:"id"`
-	TopicName   string                     `json:"topicName"`
-	Variables   map[string]CamundaVariable `json:"variables"`
-}
-
-type (
-	TaskCompleteFunc func(ctx context.Context, taskID string) error
-	TaskHandlerFunc  func(completeFunc TaskCompleteFunc, t Task)
-)
-
-func NewVariable(varType string, value interface{}) CamundaVariable {
-	return CamundaVariable{
-		Type:  varType,
-		Value: value,
-	}
-}
-
-func newMessage(messageName string, businessKey string, variables map[string]CamundaVariable) message {
+func newMessage(messageName string, businessKey string, variables map[string]Variable) message {
 	return message{
 		MessageName:      messageName,
 		BusinessKey:      businessKey,

@@ -22,7 +22,7 @@ const testWorkerID = "test-worker"
 func TestClient_StartProcess(t *testing.T) {
 	client, mockHttpClient := newTestClient()
 	businessKey := uuid.New().String()
-	variables := map[string]CamundaVariable{
+	variables := map[string]Variable{
 		"test-var": {Type: VarTypeInteger, Value: 42},
 	}
 
@@ -51,7 +51,7 @@ func TestClient_StartProcess(t *testing.T) {
 func TestClient_StartProcess_UsesBasicAuth(t *testing.T) {
 	client, mockHttpClient := newTestClient()
 	businessKey := uuid.New().String()
-	variables := map[string]CamundaVariable{}
+	variables := map[string]Variable{}
 
 	url := fmt.Sprintf("/process-definition/key/%s/start", client.processKey)
 	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
@@ -80,7 +80,7 @@ func TestClient_SendMessage(t *testing.T) {
 
 	messageType := "some-message"
 	businessKey := uuid.New().String()
-	variables := map[string]CamundaVariable{
+	variables := map[string]Variable{
 		"test-var": {Type: VarTypeString, Value: "Zweiundvierzig"},
 	}
 
@@ -119,7 +119,7 @@ func TestCamundaClient_SendMessage_HandlesRequestError(t *testing.T) {
 
 	messageType := "some-message"
 	businessKey := uuid.New().String()
-	variables := map[string]CamundaVariable{}
+	variables := map[string]Variable{}
 
 	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Return(&http.Response{

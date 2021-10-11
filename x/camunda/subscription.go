@@ -63,15 +63,15 @@ func newSubscription(client *client, topic string, workerID string) *Subscriptio
 func (s *Subscription) complete(ctx context.Context, taskID string) error {
 	completeParams := taskCompletionParams{
 		WorkerID:  s.workerID,
-		Variables: map[string]CamundaVariable{}, // we don't need to update any variables for now
+		Variables: map[string]Variable{}, // we don't need to update any variables for now
 	}
 
 	return s.client.complete(ctx, taskID, completeParams)
 }
 
 // addHandler is attaching handlers to the Subscription
-func (s *Subscription) addHandler(handler TaskHandlerFunc) {
-	s.handlers = append(s.handlers, handler)
+func (s *Subscription) addHandler(handler TaskHandler) {
+	s.handlers = append(s.handlers, handler.Handle)
 }
 
 // Open connects to camunda and start polling the external tasks
