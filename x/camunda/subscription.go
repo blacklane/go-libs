@@ -22,8 +22,8 @@ type (
 const (
 	defaultFetchInterval    = time.Second * 5
 	defaultMaxTasksFetch    = 100
-	defaultTaskLockDuration = 10000 // 10s
-	businessKeyVarKey       = "BusinessKey"
+	defaultTaskLockDuration = 5100 // ~5s, this needs to be aligned with the fetch interval
+	businessKeyJSONKey      = "BusinessKey"
 )
 
 func (s *Subscription) Stop() {
@@ -87,7 +87,7 @@ func (s *Subscription) fetch(fal fetchAndLock) {
 }
 
 func extractBusinessKey(task Task) string {
-	value, ok := task.Variables[businessKeyVarKey]
+	value, ok := task.Variables[businessKeyJSONKey]
 	if !ok {
 		return ""
 	}
@@ -98,11 +98,11 @@ func (s *Subscription) schedule() {
 	atomic.AddInt32(&s.isRunning, 1)
 	lockParam := fetchAndLock{
 		WorkerID: s.workerID,
-		MaxTasks: defaultMaxTasksFetch,
+		MaxTasks: s.maxTasksFetch,
 		Topics: []topic{
 			{
 				Name:         s.topic,
-				LockDuration: defaultTaskLockDuration,
+				LockDuration: s.taskLockDuration,
 			},
 		},
 	}

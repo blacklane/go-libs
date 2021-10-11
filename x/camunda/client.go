@@ -39,7 +39,7 @@ func NewClient(url string, processKey string, httpClient http.Client, credential
 }
 
 func (c *client) StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error {
-	variables[businessKeyVarKey] = NewVariable(VarTypeString, businessKey)
+	variables[businessKeyJSONKey] = NewVariable(VarTypeString, businessKey)
 	params := processStartParams{
 		BusinessKey: businessKey,
 		Variables:   variables,
