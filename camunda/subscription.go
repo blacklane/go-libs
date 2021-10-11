@@ -22,7 +22,7 @@ type (
 const (
 	defaultFetchInterval    = time.Second * 5
 	defaultMaxTasksFetch    = 100
-	defaultTaskLockDuration = 5100 // ~5s, this needs to be aligned with the fetch interval
+	defaultTaskLockDuration = 2000 // 2seconds
 	businessKeyJSONKey      = "BusinessKey"
 )
 
