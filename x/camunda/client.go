@@ -16,22 +16,26 @@ type (
 	Client interface {
 		StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error
-		Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription
+		Subscribe(topicName string, workerID string, handler TaskHandlerFunc, interval time.Duration) Subscription
+	}
+	BasicAuthCredentials struct {
+		User     string
+		Password string
 	}
 	client struct {
 		camundaURL  string
-		credentials *internal.BasicAuthCredentials
+		credentials BasicAuthCredentials
 		processKey  string
 		httpClient  internal.HttpClient
 	}
 )
 
-func NewClient(url string, processKey string, credentials *internal.BasicAuthCredentials) Client {
+func NewClient(url string, processKey string, httpClient http.Client, credentials BasicAuthCredentials) Client {
 	return &client{
 		camundaURL:  url,
 		credentials: credentials,
 		processKey:  processKey,
-		httpClient:  &http.Client{},
+		httpClient:  &httpClient,
 	}
 }
 
@@ -74,8 +78,8 @@ func (c *client) SendMessage(ctx context.Context, messageType string, businessKe
 	return nil
 }
 
-func (c *client) Subscribe(topicName string, handler TaskHandlerFunc, interval time.Duration) Subscription {
-	sub := newSubscription(c, topicName, interval)
+func (c *client) Subscribe(topicName string, workerID string, handler TaskHandlerFunc, interval time.Duration) Subscription {
+	sub := newSubscription(c, topicName, workerID, interval)
 	sub.addHandler(handler)
 
 	// run async fetch loop
@@ -131,9 +135,7 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 	}
 	req.Header.Add(internal.HeaderContentType, "application/json")
 
-	if c.credentials != nil {
-		req.SetBasicAuth(c.credentials.User, c.credentials.Password)
-	}
+	req.SetBasicAuth(c.credentials.User, c.credentials.Password)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

@@ -13,11 +13,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"github.com/blacklane/go-libs/x/camunda/internal"
 )
 
-var basicAuth = internal.BasicAuthCredentials{User: "Bernd", Password: "BerndsPassword"}
+var basicAuth = BasicAuthCredentials{User: "Bernd", Password: "BerndsPassword"}
+
+const testWorkerID = "test-worker"
 
 func TestClient_StartProcess(t *testing.T) {
 	client, mockHttpClient := newTestClient()
@@ -92,11 +92,11 @@ func TestClient_SendMessage(t *testing.T) {
 		requestBody := &message{}
 		byteBody, err := ioutil.ReadAll(request.Body)
 		if err != nil {
-			t.Fatalf("failed to pare reqeuest body due to %s", err)
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
 		err = json.Unmarshal(byteBody, requestBody)
 		if err != nil {
-			t.Fatalf("failed to pare reqeuest body due to %s", err)
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
 		assert.Equal(t, businessKey, requestBody.BusinessKey)
 		assert.Equal(t, messageType, requestBody.MessageName)
@@ -141,7 +141,7 @@ func TestSubscription_Complete(t *testing.T) {
 	ctx := context.Background()
 	taskID := uuid.New().String()
 	params := taskCompletionParams{
-		WorkerID: workerID,
+		WorkerID: testWorkerID,
 	}
 
 	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
@@ -176,7 +176,7 @@ func TestSubscription_FetchAndLock(t *testing.T) {
 	taskID := uuid.New().String()
 	topic := "test-topic"
 	params := &fetchAndLock{
-		WorkerID: workerID,
+		WorkerID: testWorkerID,
 		MaxTasks: maxTasksFetch,
 	}
 
@@ -217,7 +217,7 @@ func newTestClient() (*client, *MockHttpClient) {
 		camundaURL:  "http://testing.local",
 		processKey:  "TestingRides",
 		httpClient:  mockHttpClient,
-		credentials: &basicAuth,
+		credentials: basicAuth,
 	}
 	return client, mockHttpClient
 }
@@ -226,11 +226,11 @@ func parseStartProcessRequestBody(t *testing.T, body io.ReadCloser) processStart
 	requestBody := &processStartParams{}
 	byteBody, err := ioutil.ReadAll(body)
 	if err != nil {
-		t.Fatalf("failed to pare reqeuest body due to %s", err)
+		t.Fatalf("failed to parse reqeuest body due to %s", err)
 	}
 	err = json.Unmarshal(byteBody, requestBody)
 	if err != nil {
-		t.Fatalf("failed to pare reqeuest body due to %s", err)
+		t.Fatalf("failed to parse reqeuest body due to %s", err)
 	}
 
 	return *requestBody

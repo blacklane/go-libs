@@ -13,32 +13,33 @@ type (
 		handlers  []TaskHandlerFunc
 		interval  time.Duration
 		isRunning int32 // we need to use atomic int operations to make this thread safe
+		workerID  string
 	}
 )
 
 const (
-	workerID          = "ride-bundler-worker"
 	maxTasksFetch     = 100
 	taskLockDuration  = 10000 // 10s
 	businessKeyVarKey = "BusinessKey"
 )
 
 func (s *subscription) Stop() {
-	atomic.AddInt32(&s.isRunning, -1)
+	atomic.StoreInt32(&s.isRunning, 0)
 }
 
-func newSubscription(client *client, topic string, interval time.Duration) *subscription {
+func newSubscription(client *client, topic string, workerID string, interval time.Duration) *subscription {
 	return &subscription{
 		client:    client,
 		topic:     topic,
 		interval:  interval,
 		isRunning: 0,
+		workerID:  workerID,
 	}
 }
 
 func (s *subscription) complete(ctx context.Context, taskID string) error {
 	completeParams := taskCompletionParams{
-		WorkerID:  workerID,
+		WorkerID:  s.workerID,
 		Variables: map[string]CamundaVariable{}, // we don't need to update any variables for now
 	}
 
@@ -73,7 +74,7 @@ func extractBusinessKey(task Task) string {
 func (s *subscription) schedule() {
 	atomic.AddInt32(&s.isRunning, 1)
 	lockParam := fetchAndLock{
-		WorkerID: workerID,
+		WorkerID: s.workerID,
 		MaxTasks: maxTasksFetch,
 		Topics: []topic{
 			{

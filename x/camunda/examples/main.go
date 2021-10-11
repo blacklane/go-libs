@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -26,7 +27,7 @@ func main() {
 		logger.WithLevel("debug"))
 
 	// camunda stuff
-	client := camunda.NewClient(url, processKey, nil)
+	client := camunda.NewClient(url, processKey, http.Client{}, camunda.BasicAuthCredentials{})
 
 	businessKey := uuid.New().String()
 	variables := map[string]camunda.CamundaVariable{}
@@ -35,7 +36,7 @@ func main() {
 		log.Err(err).Msg("Failed to start process")
 	}
 
-	subscription := client.Subscribe("test-topic", func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+	subscription := client.Subscribe("test-topic", "worker-id", func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 		log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
 		err := completeFunc(context.Background(), t.ID)
