@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/blacklane/go-libs/x/camunda/internal"
 )
@@ -16,7 +15,7 @@ type (
 	Client interface {
 		StartProcess(ctx context.Context, businessKey string, variables map[string]CamundaVariable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]CamundaVariable) error
-		Subscribe(topicName string, workerID string, handler TaskHandlerFunc, interval time.Duration) Subscription
+		Subscribe(topicName string, workerID string, handler TaskHandlerFunc, options ...func(*Subscription)) *Subscription
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -78,9 +77,13 @@ func (c *client) SendMessage(ctx context.Context, messageType string, businessKe
 	return nil
 }
 
-func (c *client) Subscribe(topicName string, workerID string, handler TaskHandlerFunc, interval time.Duration) Subscription {
-	sub := newSubscription(c, topicName, workerID, interval)
+func (c *client) Subscribe(topicName string, workerID string, handler TaskHandlerFunc, options ...func(*Subscription)) *Subscription {
+	sub := newSubscription(c, topicName, workerID)
 	sub.addHandler(handler)
+
+	for _, option := range options {
+		option(sub)
+	}
 
 	// run async fetch loop
 	go sub.schedule()

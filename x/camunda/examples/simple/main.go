@@ -5,16 +5,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/blacklane/go-libs/logger"
-	"github.com/google/uuid"
-
 	"github.com/blacklane/go-libs/x/camunda"
+	"github.com/google/uuid"
 )
 
-const url = "http://localhost:8080"
-const processKey = "example-process"
+const (
+	url        = "http://localhost:8080"
+	processKey = "example-process"
+	workerID   = "worker-id"
+	topic      = "test-topic"
+)
 
 func main() {
 	// catch the signals as soon as possible
@@ -26,8 +28,12 @@ func main() {
 		"camunda-sample-client",
 		logger.WithLevel("debug"))
 
+	credentials := camunda.BasicAuthCredentials{
+		User:     "Bernd",
+		Password: "password",
+	}
 	// camunda stuff
-	client := camunda.NewClient(url, processKey, http.Client{}, camunda.BasicAuthCredentials{})
+	client := camunda.NewClient(url, processKey, http.Client{}, credentials)
 
 	businessKey := uuid.New().String()
 	variables := map[string]camunda.CamundaVariable{}
@@ -36,14 +42,14 @@ func main() {
 		log.Err(err).Msg("Failed to start process")
 	}
 
-	subscription := client.Subscribe("test-topic", "worker-id", func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+	subscription := client.Subscribe(topic, workerID, func(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 		log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
 		err := completeFunc(context.Background(), t.ID)
 		if err != nil {
 			log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
 		}
-	}, time.Second*10)
+	})
 
 	<-signalChan
 	log.Printf("Shutting down")

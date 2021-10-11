@@ -7,37 +7,60 @@ import (
 )
 
 type (
-	subscription struct {
-		client    *client
-		topic     string
-		handlers  []TaskHandlerFunc
-		interval  time.Duration
-		isRunning int32 // we need to use atomic int operations to make this thread safe
-		workerID  string
+	Subscription struct {
+		client           *client
+		topic            string
+		handlers         []TaskHandlerFunc
+		interval         time.Duration
+		isRunning        int32 // we need to use atomic int operations to make this thread safe
+		maxTasksFetch    int
+		taskLockDuration int
+		workerID         string
 	}
 )
 
 const (
-	maxTasksFetch     = 100
-	taskLockDuration  = 10000 // 10s
-	businessKeyVarKey = "BusinessKey"
+	defaultFetchInterval    = time.Second * 5
+	defaultMaxTasksFetch    = 100
+	defaultTaskLockDuration = 10000 // 10s
+	businessKeyVarKey       = "BusinessKey"
 )
 
-func (s *subscription) Stop() {
+func (s *Subscription) Stop() {
 	atomic.StoreInt32(&s.isRunning, 0)
 }
 
-func newSubscription(client *client, topic string, workerID string, interval time.Duration) *subscription {
-	return &subscription{
-		client:    client,
-		topic:     topic,
-		interval:  interval,
-		isRunning: 0,
-		workerID:  workerID,
+func MaxTasksFetch(maxTasksFetch int) func(subscription *Subscription) {
+	return func(sub *Subscription) {
+		sub.maxTasksFetch = maxTasksFetch
 	}
 }
 
-func (s *subscription) complete(ctx context.Context, taskID string) error {
+func FetchInterval(interval time.Duration) func(subscription *Subscription) {
+	return func(sub *Subscription) {
+		sub.interval = interval
+	}
+}
+
+func LockDuration(duration int) func(subscription *Subscription) {
+	return func(sub *Subscription) {
+		sub.taskLockDuration = duration
+	}
+}
+
+func newSubscription(client *client, topic string, workerID string) *Subscription {
+	return &Subscription{
+		client:           client,
+		topic:            topic,
+		interval:         defaultFetchInterval,
+		isRunning:        0,
+		maxTasksFetch:    defaultMaxTasksFetch,
+		taskLockDuration: defaultTaskLockDuration,
+		workerID:         workerID,
+	}
+}
+
+func (s *Subscription) complete(ctx context.Context, taskID string) error {
 	completeParams := taskCompletionParams{
 		WorkerID:  s.workerID,
 		Variables: map[string]CamundaVariable{}, // we don't need to update any variables for now
@@ -47,13 +70,13 @@ func (s *subscription) complete(ctx context.Context, taskID string) error {
 }
 
 // addHandler is attaching handlers to the Subscription
-func (s *subscription) addHandler(handler TaskHandlerFunc) {
+func (s *Subscription) addHandler(handler TaskHandlerFunc) {
 	s.handlers = append(s.handlers, handler)
 }
 
 // Open connects to camunda and start polling the external tasks
 // It will call each addHandler if there is a new task on the topic
-func (s *subscription) fetch(fal fetchAndLock) {
+func (s *Subscription) fetch(fal fetchAndLock) {
 	tasks, _ := s.client.fetchAndLock(&fal)
 	for _, task := range tasks {
 		for _, handler := range s.handlers {
@@ -71,15 +94,15 @@ func extractBusinessKey(task Task) string {
 	return value.Value.(string)
 }
 
-func (s *subscription) schedule() {
+func (s *Subscription) schedule() {
 	atomic.AddInt32(&s.isRunning, 1)
 	lockParam := fetchAndLock{
 		WorkerID: s.workerID,
-		MaxTasks: maxTasksFetch,
+		MaxTasks: defaultMaxTasksFetch,
 		Topics: []topic{
 			{
 				Name:         s.topic,
-				LockDuration: taskLockDuration,
+				LockDuration: defaultTaskLockDuration,
 			},
 		},
 	}

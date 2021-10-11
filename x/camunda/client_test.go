@@ -177,7 +177,7 @@ func TestSubscription_FetchAndLock(t *testing.T) {
 	topic := "test-topic"
 	params := &fetchAndLock{
 		WorkerID: testWorkerID,
-		MaxTasks: maxTasksFetch,
+		MaxTasks: defaultMaxTasksFetch,
 	}
 
 	bodyString := fmt.Sprintf(`[{"id":"%s", "topicName": "%s"}]`, taskID, topic)

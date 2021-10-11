@@ -50,9 +50,6 @@ type Task struct {
 type (
 	TaskCompleteFunc func(ctx context.Context, taskID string) error
 	TaskHandlerFunc  func(completeFunc TaskCompleteFunc, t Task)
-	Subscription     interface {
-		Stop()
-	}
 )
 
 func NewVariable(varType string, value interface{}) CamundaVariable {
