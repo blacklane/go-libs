@@ -74,8 +74,8 @@ func (s *Subscription) addHandler(handler TaskHandler) {
 	s.handlers = append(s.handlers, handler.Handle)
 }
 
-// Open connects to camunda and start polling the external tasks
-// It will call each addHandler if there is a new task on the topic
+// fetch connects to camunda and starts polling the external tasks
+// It will call each Handler if there is a new task on the topic
 func (s *Subscription) fetch(fal fetchAndLock) {
 	tasks, _ := s.client.fetchAndLock(&fal)
 	for _, task := range tasks {
