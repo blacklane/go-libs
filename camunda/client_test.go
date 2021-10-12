@@ -152,11 +152,11 @@ func TestSubscription_Complete(t *testing.T) {
 		requestBody := &taskCompletionParams{}
 		byteBody, err := ioutil.ReadAll(request.Body)
 		if err != nil {
-			t.Fatalf("failed to pare reqeuest body due to %s", err)
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
 		err = json.Unmarshal(byteBody, requestBody)
 		if err != nil {
-			t.Fatalf("failed to pare reqeuest body due to %s", err)
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
 		assert.Equal(t, params.WorkerID, requestBody.WorkerID)
 	}).Return(&http.Response{
@@ -189,11 +189,11 @@ func TestSubscription_FetchAndLock(t *testing.T) {
 		requestBody := &fetchAndLock{}
 		byteBody, err := ioutil.ReadAll(request.Body)
 		if err != nil {
-			t.Fatalf("failed to pare reqeuest body due to %s", err)
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
 		err = json.Unmarshal(byteBody, requestBody)
 		if err != nil {
-			t.Fatalf("failed to pare reqeuest body due to %s", err)
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
 		assert.Equal(t, params.WorkerID, requestBody.WorkerID)
 		assert.Equal(t, params.MaxTasks, requestBody.MaxTasks)

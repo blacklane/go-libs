@@ -11,7 +11,7 @@ It can connect to any camunda engine deployment and supports a subset of operati
 
 ## Installation
 ```shell
-go get -u github.com/blacklane/go-libs/logger
+go get -u github.com/blacklane/go-libs/camunda
 ```
 
 ## Getting Started
