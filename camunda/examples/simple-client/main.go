@@ -41,7 +41,7 @@ func main() {
 	}
 
 	err = client.SendMessage(context.Background(), "set-color", businessKey, map[string]camunda.Variable{
-		"color": camunda.NewVariable(camunda.VarTypeString, "yellow"),
+		"color": camunda.NewStringVariable(camunda.VarTypeString, "yellow"),
 	})
 	if err != nil {
 		log.Err(err).Msg("Failed to send message")

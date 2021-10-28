@@ -26,7 +26,7 @@ type (
 	TaskHandlerFunc  func(completeFunc TaskCompleteFunc, t Task)
 )
 
-func NewVariable(varType string, value interface{}) Variable {
+func NewStringVariable(varType string, value interface{}) Variable {
 	return Variable{
 		Type:  varType,
 		Value: value,
