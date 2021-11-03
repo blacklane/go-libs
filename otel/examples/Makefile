@@ -3,8 +3,9 @@ KAFKA_BOOTSTRAP_SERVERS ?=http://host.docker.internal:9092
 KAFKA_TOPIC ?= tracing-example
 
 GOPRIVATE ?= github.com/blacklane/*
-BUILD_TAGS ?=
+GOLINTER ?= revive
 
+BUILD_TAGS ?=
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	BUILD_TAGS =-tags musl,integration
@@ -25,6 +26,10 @@ run-http: deps
 .PHONY: run-events
 run-events: deps
 	go run ${BUILD_TAGS} cmd/events/main.go
+
+.PHONY: lint
+lint:
+	${GOLINTER} ./...
 
 .PHONY: compose-dependencies
 compose-dependencies:
