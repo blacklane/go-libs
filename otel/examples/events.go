@@ -26,7 +26,11 @@ func eventsHandler() events.HandlerFunc {
 }
 
 // NewStartedConsumer creates, initialises, starts and then returns a new Kafka consumer.
-func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string, eventName string) events.Consumer {
+func NewStartedConsumer(
+	serviceName string,
+	conf *kafka.ConfigMap,
+	topic string,
+	eventName string) events.Consumer {
 	// Creates a logger for this "service"
 	log := logger.New(logger.ConsoleWriter{Out: os.Stdout}, serviceName).
 		With().
@@ -36,17 +40,17 @@ func NewStartedConsumer(serviceName string, conf *kafka.ConfigMap, topic string,
 	// injects it on the context. If not span is found, it creates one.
 	handler := middleware.Events(eventsHandler(), log, eventName)
 
+	log.Info().Msgf("consumer kafka configs: %v", conf)
 	c, err := events.NewKafkaConsumer(
 		events.NewKafkaConsumerConfig(conf),
 		[]string{topic},
 		handler)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("could not create kafka consumer: %v", err))
 	}
 
 	c.Run(time.Second)
 	log.Info().Msgf("started to consume events from topic: %s", topic)
-	log.Info().Msgf("consumer kafka configs: %v", conf)
 
 	return c
 }

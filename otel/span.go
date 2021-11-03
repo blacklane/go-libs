@@ -5,8 +5,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// SpanAddErr adds an error to span with SpanErrorMessageKey and SpanErrorTypeKey
-// attributes.
+// SpanAddErr adds an error, including stacktrace, to span and sets its status
+// to error.
 func SpanAddErr(span trace.Span, err error) {
 	span.RecordError(err, trace.WithStackTrace(true))
 	span.SetStatus(codes.Error, err.Error())

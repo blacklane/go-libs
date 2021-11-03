@@ -6,10 +6,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/rs/zerolog/log"
-
 	"github.com/blacklane/go-libs/otel"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"github.com/blacklane/go-libs/otel/examples"
 )
@@ -50,6 +48,6 @@ func main() {
 	defer c.Shutdown(context.TODO())
 
 	<-signalChan
-	log.Info().Msg("Goodbye cruel world!")
+	cfg.Log.Info().Msg("Goodbye cruel world!")
 	os.Exit(0)
 }

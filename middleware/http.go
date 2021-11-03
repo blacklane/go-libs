@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/blacklane/go-libs/logger"
@@ -56,4 +57,16 @@ func newTrackingID(r *http.Request) string {
 	// returns an error
 	newUUID, _ := uuid.NewUUID()
 	return newUUID.String()
+}
+
+// HTTPAddTrackingIDToRequest adds the tracking id in the contest to the request
+// headers. If not tracking id is found, it does nothing.
+// TODO(Anderson): better name for this function? another package? rename the module?
+func HTTPAddTrackingIDToRequest(ctx context.Context, r *http.Request) {
+	trackingID := tracking.IDFromContext(ctx)
+	if trackingID == "" {
+		return
+	}
+
+	r.Header.Add(constants.HeaderTrackingID, trackingID)
 }

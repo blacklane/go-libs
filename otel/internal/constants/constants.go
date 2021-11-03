@@ -1,7 +1,7 @@
 package constants
 
 const (
-	TraceID = "trace_id"
+	LogKeyTraceID = "trace_id"
 )
 
 const (

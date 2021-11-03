@@ -1,21 +1,5 @@
 version: "3"
 services:
-#  app:
-#    build:
-#      context: ../
-#      # The 'dockerfile' directive is relative to the 'context', therefore the parent directory.
-#      dockerfile: examples/Dockerfile
-#      args:
-#        GITHUB_TOKEN:
-#    environment:
-#      KAFKA_BOOTSTRAP_SERVERS: http://kafka-compose:9092
-#      TRACER_HOST: http://jaegertracing:14268/api/traces
-#    ports:
-#      - "4242:4242"
-#    links:
-#      - kafka-compose
-#      - jaegertracing
-
   kafka-compose:
     image: wurstmeister/kafka:2.11-0.11.0.3
     ports:

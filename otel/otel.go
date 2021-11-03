@@ -37,19 +37,21 @@ func (c Config) String() string {
 	return fmt.Sprintf(`%s`, bs)
 }
 
+// WithServiceVersion adds version as the service version span attribute.
 func WithServiceVersion(version string) Option {
 	return func(cfg *Config) {
 		cfg.serviceVersion = version
 	}
 }
 
+// WithEnvironment adds env as the environment span attribute.
 func WithEnvironment(env string) Option {
 	return func(cfg *Config) {
 		cfg.env = env
 	}
 }
 
-// WithDebug activates de
+// WithDebug enables debug by adding a span processor which prints to stdout.
 func WithDebug() Option {
 	return func(cfg *Config) {
 		cfg.debug = true
