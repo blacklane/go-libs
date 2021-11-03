@@ -9,8 +9,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/blacklane/go-libs/camunda"
 	"github.com/blacklane/go-libs/logger"
-	"github.com/blacklane/go-libs/x/camunda"
 )
 
 const (

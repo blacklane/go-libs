@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/blacklane/go-libs/camunda"
 	"github.com/blacklane/go-libs/logger"
-	"github.com/blacklane/go-libs/x/camunda"
 	"github.com/google/uuid"
 )
 
