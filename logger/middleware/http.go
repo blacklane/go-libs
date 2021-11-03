@@ -127,10 +127,6 @@ func ipAddress(r *http.Request) string {
 	return forwardedIP
 }
 
-func isEntryPoint(r *http.Request) bool {
-	return r.Header.Get(internal.HeaderRequestID) == "" && r.Header.Get(internal.HeaderTrackingID) == ""
-}
-
 type responseWriter struct {
 	w          http.ResponseWriter
 	statusCode int

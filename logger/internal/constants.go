@@ -1,10 +1,7 @@
 package internal
 
+// Internal constants
 const (
-	// Constants follow http://handbook.int.blacklane.io/monitoring/logging-standard.html
-
-	// Field log constants
-
 	FieldApplication     = "application"
 	FieldDuration        = "duration_ms"
 	FieldEvent           = "event"

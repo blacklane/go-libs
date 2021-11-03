@@ -15,8 +15,12 @@ type config struct {
 	level  string
 }
 
-type Logger = zerolog.Logger
-type ConsoleWriter = zerolog.ConsoleWriter
+// Type alias for zerolog types.
+//revive:disable:exported The whole block is already documented.
+type (
+	Logger        = zerolog.Logger
+	ConsoleWriter = zerolog.ConsoleWriter
+)
 
 // New creates a new logger writing to w.
 // Use WithStr(key, value) to add new fields to the logger, example:

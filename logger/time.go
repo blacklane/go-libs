@@ -15,6 +15,8 @@ func SetNowFunc(f func() time.Time) {
 	zerolog.TimestampFunc = now
 }
 
+// Now returns the current time. It defaults to time.Now. To change
+// it check SetNowFunc.
 func Now() time.Time {
 	return now()
 }

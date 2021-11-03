@@ -43,7 +43,7 @@ func TestHTTPRequestLogger(t *testing.T) {
 		fmt.Sprintf("http://example.com%s", skipRoutes[1]), nil)
 	rLog := httptest.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("http://example.com/do_not_skip"), nil)
+		"http://example.com/do_not_skip", nil)
 	rLog.Header.Set(internal.HeaderForwardedFor, "localhost")
 	rLog.Header.Set(internal.HeaderRequestID, "a_known_id")
 
