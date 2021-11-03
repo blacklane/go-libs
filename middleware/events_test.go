@@ -181,20 +181,21 @@ func ExampleEvents_trackingIDAndRequestIDHeaders() {
 
 func TestEventsTrackingIDCreatesIDWhenEventHeaderEmpty(t *testing.T) {
 	e := events.Event{
-		Headers: events.Header(map[string]string{constants.HeaderRequestID: ""}),
+		Headers: events.Header(
+			map[string]string{constants.HeaderRequestID: ""}),
 	}
 
 	testHandler := middleware.EventsTrackingID(events.Handler(
 		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
 			if tracking.IDFromContext(ctx) == "" {
-				t.Errorf("request id in context empty")
+				t.Errorf("tracking id in context is empty")
 			}
 			return nil
 		})))
 
 	err := testHandler.Handle(context.Background(), e)
 	if err != nil {
-		t.Errorf("could not successfully handle: %v", err)
+		t.Errorf("Handle returned an error: %v", err)
 	}
 }
 

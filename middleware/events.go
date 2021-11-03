@@ -45,10 +45,10 @@ func EventsTrackingID(next events.Handler) events.Handler {
 }
 
 func eventsExtractTrackingID(e events.Event) string {
-	if trackingID, ok := e.Headers[constants.HeaderTrackingID]; ok {
+	if trackingID, ok := e.Headers[constants.HeaderTrackingID]; ok && trackingID != "" {
 		return trackingID
 	}
-	if requestID, ok := e.Headers[constants.HeaderRequestID]; ok {
+	if requestID, ok := e.Headers[constants.HeaderRequestID]; ok && requestID != "" {
 		return requestID
 	}
 
