@@ -17,17 +17,23 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-type Option func(config *Config)
+type (
+	// Option applies a configuration to config.
+	Option func(config *Config)
 
-type Config struct {
-	debug            bool
-	env              string
-	exporterEndpoint string
-	serviceName      string
-	serviceVersion   string
-	errHandler       otel.ErrorHandler
-}
+	// Config holds the OTel configuration and is edited by Option.
+	Config struct {
+		debug            bool
+		env              string
+		exporterEndpoint string
+		serviceName      string
+		serviceVersion   string
+		errHandler       otel.ErrorHandler
+	}
+)
 
+// String returns a JSON representation of c. If json.Marshal fails,
+// the returned string will be the error.
 func (c Config) String() string {
 	bs, err := json.Marshal(c)
 	if err != nil {
@@ -66,6 +72,16 @@ func WithErrorHandler(h func(error)) Option {
 	}
 }
 
+// SetUpOTel perform all necessary initialisations for open telemetry and registers
+// a trace provider. Any call to OTel API before the setup is done, will likely
+// use the default noop implementations.
+// serviceName cannot be empty, it identifies the service being instrumented.
+// exporterEndpoint is to where the traces will be sent to using GRPC. If it's
+// empty, OTel will NOT be enabled, no tracer will be registered.Therefore, the
+// OTel APIs will use the default noop implementation.
+// log is a logger used to log relevant as well as debug information. If a non-fatal
+// error occurs, it's logged as warning and the setup proceeds.
+// Check the WithXxx functions for optional configurations.
 func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...Option) error {
 	cfg := &Config{
 		debug:            false,

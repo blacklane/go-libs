@@ -48,9 +48,9 @@ func TestHTTPInject(t *testing.T) {
 
 	HTTPInject(ctx, r)
 
-	gotTrackingId := r.Header.Get("X-Tracking-Id")
-	if gotTrackingId != trackingID {
-		t.Errorf("got X-Tracking-Id = %s, want %s", gotTrackingId, trackingID)
+	gotTrackingID := r.Header.Get("X-Tracking-Id")
+	if gotTrackingID != trackingID {
+		t.Errorf("got X-Tracking-Id = %s, want %s", gotTrackingID, trackingID)
 	}
 
 	gotCtx := otel.GetTextMapPropagator().
