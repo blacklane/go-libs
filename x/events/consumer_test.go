@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -118,9 +119,13 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
 	kcc.WithDeliveryOrder(OrderByEventKey)
 	var processedEvents []string
+	mu := sync.Mutex{}
+
 	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
 		waitFor, _ := time.ParseDuration(string(e.Payload))
 		time.Sleep(waitFor)
+		mu.Lock()
+		defer mu.Unlock()
 		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
 		return nil
 	}))
@@ -165,9 +170,14 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
 	var processedEvents []string
+	mu := sync.Mutex{}
+
 	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
 		waitFor, _ := time.ParseDuration(string(e.Payload))
 		time.Sleep(waitFor)
+		mu.Lock()
+		defer mu.Unlock()
+
 		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
 		return nil
 	}))

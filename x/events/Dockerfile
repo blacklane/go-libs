@@ -1,4 +1,4 @@
-FROM golang:1.14.3-alpine as baseimg
+FROM golang:1.17-alpine as baseimg
 
 ARG BUILD_TAGS="-tags musl,integration"
 
@@ -11,7 +11,10 @@ RUN apk update && \
 COPY ./go.mod ./go.sum ./Makefile /app/
 WORKDIR /app/
 
-RUN make deps install_golint
+ARG GITHUB_TOKEN
+RUN git config --global url.https://$GITHUB_TOKEN:@github.com/.insteadOf https://github.com/
+
+RUN make deps
 COPY . ./
 
-CMD make check test
+CMD make test

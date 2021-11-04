@@ -21,10 +21,14 @@ services:
     image: wurstmeister/zookeeper
 
   tests:
-    build: .
+    build:
+      context: .
+      args:
+        - GITHUB_TOKEN
+        - GOPRIVATE
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_ADVERTISED_HOST_NAME}"
       BUILD_TAGS: "-tags musl,integration"
+      KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_ADVERTISED_HOST_NAME}"
       TIMEOUT_MULTIPLIER:
     depends_on:
       - zookeeper
