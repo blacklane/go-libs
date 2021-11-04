@@ -1,5 +1,3 @@
-.PHONY: consumer-docker producer-docker
-
 OAUTH_CLIENT_ID ?=test-go-libs-events
 OAUTH_CLIENT_SECRET ?=FIX_ME_CLIENT_ID
 # TODO(Anderson): remove this default
@@ -9,6 +7,7 @@ KAFKA_GROUP_ID ?=test-go-libs-events
 KAFKA_BOOTSTRAP_SERVERS ?=kafka-bootstrap.int.blacklane.io:9094
 KAFKA_TOPIC ?=test-go-libs-events
 
+.PHONY: run-producer
 run-producer:
 	@KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS} \
 	KAFKA_GROUP_ID=${KAFKA_GROUP_ID} \
@@ -18,6 +17,7 @@ run-producer:
 	OAUTH_TOKEN_ENDPOINT_URI=${OAUTH_TOKEN_ENDPOINT_URI} \
 	go run producer/main.go
 
+.PHONY: run-consumer
 run-consumer:
 	@KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS} \
 	KAFKA_GROUP_ID=${KAFKA_GROUP_ID} \
@@ -27,7 +27,8 @@ run-consumer:
 	OAUTH_TOKEN_ENDPOINT_URI=${OAUTH_TOKEN_ENDPOINT_URI} \
 	go run consumer/main.go
 
-kafka:
+.PHONY: kafka-start
+kafka-start:
 	docker compose --env-file ../../.env_local -f ../../docker-compose.yml up \
     		--build \
     		--force-recreate \
@@ -35,6 +36,11 @@ kafka:
     		-d \
     		kafka
 
+.PHONY: kafka-stop
+kafka-stop:
+	docker compose -f ../../docker-compose.yml down --remove-orphans --volumes
+
+.PHONY: consumer-docker
 consumer-docker:
 	docker run --rm -it \
 		-e CLASSPATH='/opt/kafka/libs/kafka-oauth-client-*:/opt/kafka/libs/kafka-oauth-common-*' \
@@ -57,6 +63,7 @@ consumer-docker:
 
 # When producing events they must follow the format MESSAGE_KEY:EVENT_MESSAGE.
 # Depending on how the topic is configured the presence of a message key is optional.
+.PHONY: producer-docker
 producer-docker:
 	docker run --rm -it \
 		-e CLASSPATH='/opt/kafka/libs/kafka-oauth-client-*:/opt/kafka/libs/kafka-oauth-common-*' \
