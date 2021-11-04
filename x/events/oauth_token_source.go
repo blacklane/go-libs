@@ -59,7 +59,7 @@ func NewTokenSource(
 
 func (t source) Token() (*oauth2.Token, error) {
 	ctx := context.WithValue(
-		context.Background(), oauth2.HTTPClient, &t.httpClient)
+		context.TODO(), oauth2.HTTPClient, &t.httpClient)
 
 	if t.token == nil || t.token.Expiry.Sub(time.Now()) < t.refreshBefore {
 		token, err := t.config.Token(ctx)

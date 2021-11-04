@@ -1,6 +1,6 @@
-.PHONY: test check deps install_golint compose-tests compose-kafka clean
+.PHONY: test check deps install_golint docker-tests docker-kafka clean
 
-GOLINT ?= golint
+GOLINTER ?= revive
 GO ?= go
 
 KAFKA_BOOTSTRAP_SERVERS ?= localhost:9092
@@ -20,25 +20,25 @@ test: deps
 
 check:
 	$(GO) vet ${BUILD_TAGS} $$($(GO) list ./...)
-	$(GOLINT) $$($(GO) list ./...)
+	$(GOLINTER) $$($(GO) list ./...)
 
-compose-tests:
+docker-tests:
 	export COMPOSE_PROJECT_NAME="golib-events-build-$(DRONE_BUILD_NUMBER)"
-	docker-compose --env-file .env_compose up \
+	docker compose --env-file .env_compose up \
 		--build \
 		--force-recreate \
 		--remove-orphans \
 		--abort-on-container-exit \
 		--exit-code-from tests
-	docker-compose down
+	docker compose down
 
-compose-kafka:
-	docker-compose --env-file .env_local up \
+docker-kafka:
+	docker compose --env-file .env_local up \
     		--build \
     		--force-recreate \
     		--remove-orphans \
     		-d \
     		kafka
 
-compose-kafka-down clean:
-	docker-compose down
+docker-kafka-down clean:
+	docker compose down

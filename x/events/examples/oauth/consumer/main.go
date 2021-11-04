@@ -16,10 +16,10 @@ import (
 	"github.com/blacklane/go-libs/x/events/examples/oauth"
 )
 
-var config oauth.Cfg
+var config oauth.Config
 
 func loadEnvVars() {
-	c := &oauth.Cfg{}
+	c := &oauth.Config{}
 	if err := env.Parse(c); err != nil {
 		panic(fmt.Sprintf("could not load environment variables: %v", err))
 	}
@@ -40,7 +40,7 @@ func main() {
 	tokenSource := events.NewTokenSource(
 		config.ClientID,
 		config.ClientSecret,
-		config.TokenURL,
+		config.OauthTokenURL,
 		5*time.Second,
 		http.Client{Timeout: 3 * time.Second})
 
