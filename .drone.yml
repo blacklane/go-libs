@@ -16,35 +16,35 @@ pipeline:
     aws_secrets:
       - GITHUB_TOKEN: devops/github/blacklane-deploy-token
 
-  test_tracking:
-    image: golang:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - export $(cat .ci-secrets | xargs)
-      - cd tracking
-      - make gitconfig test
-
-  test_logger:
-    image: golang:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - export $(cat .ci-secrets | xargs)
-      - cd logger
-      - make gitconfig test
-
-  test_camunda:
-    image: golang:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - export $(cat .ci-secrets | xargs)
-      - cd camunda
-      - make gitconfig test
+#  test_tracking:
+#    image: golang:latest
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    commands:
+#      - export $(cat .ci-secrets | xargs)
+#      - cd tracking
+#      - make gitconfig test
+#
+#  test_logger:
+#    image: golang:latest
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    commands:
+#      - export $(cat .ci-secrets | xargs)
+#      - cd logger
+#      - make gitconfig test
+#
+#  test_camunda:
+#    image: golang:latest
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    commands:
+#      - export $(cat .ci-secrets | xargs)
+#      - cd camunda
+#      - make gitconfig test
 
   test_x/events:
-    image: docker/compose:alpine-1.28.2
+    image: docker/compose:alpine-1.29.2
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
