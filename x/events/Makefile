@@ -10,6 +10,9 @@ KAFKA_BOOTSTRAP_SERVERS ?= localhost:9092
 
 BUILD_TAGS ?= -tags integration
 
+gitconfig:
+	@git config --global url.https://${GITHUB_TOKEN}@github.com.insteadOf https://github.com
+
 deps:
 	GOPRIVATE=${GOPRIVATE} $(GO) mod download
 

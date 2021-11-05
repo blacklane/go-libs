@@ -12,9 +12,7 @@ COPY ./go.mod ./go.sum ./Makefile /app/
 WORKDIR /app/
 
 ARG GITHUB_TOKEN
-RUN git config --global url.https://$GITHUB_TOKEN:@github.com/.insteadOf https://github.com/
-
-RUN make deps
+RUN make gitconfig deps
 COPY . ./
 
 CMD make test
