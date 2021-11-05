@@ -213,3 +213,35 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 		t.Errorf("incorrect order of processed messages %q when should be %q", got, wantOrder)
 	}
 }
+
+func TestKafkaConsumerShutdown(t *testing.T) {
+	kc, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"group.id": "TestKafkaConsumerShutdown",
+	})
+	if err != nil {
+		t.Fatalf("could not create kafka consumer: %v", err)
+	}
+
+	consumer := kafkaConsumer{consumer: kc}
+	ctx, _ := context.WithTimeout(context.Background(), time.Microsecond)
+
+	got := consumer.Shutdown(ctx)
+
+	if !errors.Is(got, ErrShutdownTimeout) {
+		t.Errorf("got: %v, want: %v", got, ErrConsumerAlreadyShutdown)
+	}
+}
+
+func TestKafkaConsumerShutdownAlreadyShutdown(t *testing.T) {
+	kc := kafkaConsumer{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	kc.Shutdown(ctx)
+	got := kc.Shutdown(ctx)
+
+	if !errors.Is(got, ErrConsumerAlreadyShutdown) {
+		t.Errorf("got: %v, want: %v", got, ErrConsumerAlreadyShutdown)
+	}
+}
