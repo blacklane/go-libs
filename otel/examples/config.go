@@ -8,7 +8,7 @@ import (
 	"github.com/caarlos0/env"
 )
 
-//revive:disable:exported Default and obvious config struct.
+//revive:disable:exported Obvious config struct.
 type Config struct {
 	ServiceName string
 
