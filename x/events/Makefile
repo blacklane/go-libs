@@ -26,7 +26,7 @@ check:
 docker-tests:
 	export COMPOSE_PROJECT_NAME="golib-events-build-$(DRONE_BUILD_NUMBER)"
 	export GOPRIVATE=${GOPRIVATE}
-	docker compose --env-file .env_compose up \
+	docker-compose --env-file .env_compose up \
 		--build \
 		--force-recreate \
 		--remove-orphans \
