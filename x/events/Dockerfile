@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine as baseimg
+FROM golang:1.17-alpine3.13 as baseimg
 
 ARG BUILD_TAGS="-tags musl,integration"
 
