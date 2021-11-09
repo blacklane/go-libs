@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/blacklane/go-libs/camunda"
 	"github.com/blacklane/go-libs/logger"
 	"github.com/google/uuid"
+
+	"github.com/blacklane/go-libs/camunda"
 )
 
 const (
