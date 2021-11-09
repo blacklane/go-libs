@@ -18,7 +18,7 @@ run-consumer:
 
 .PHONY: kafka-start
 kafka-start:
-	docker compose --env-file ../../.env_local -f ../../docker-compose.yml up \
+	docker-compose --env-file ../../.env_local -f ../../docker-compose.yml up \
     		--build \
     		--force-recreate \
     		--remove-orphans \
@@ -27,4 +27,4 @@ kafka-start:
 
 .PHONY: kafka-stop
 kafka-stop:
-	docker compose -f ../../docker-compose.yml down --remove-orphans --volumes
+	docker-compose -f ../../docker-compose.yml down --remove-orphans --volumes

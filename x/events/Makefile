@@ -35,10 +35,10 @@ docker-tests:
 		--remove-orphans \
 		--abort-on-container-exit \
 		--exit-code-from tests
-	docker compose down
+	docker-compose down
 
 docker-kafka:
-	docker compose --env-file .env_local up \
+	docker-compose --env-file .env_local up \
     		--build \
     		--force-recreate \
     		--remove-orphans \
@@ -46,4 +46,4 @@ docker-kafka:
     		kafka
 
 docker-kafka-down clean:
-	docker compose down
+	docker-compose down
