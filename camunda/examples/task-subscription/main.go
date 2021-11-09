@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/blacklane/go-libs/logger"
-	"github.com/rs/zerolog/log"
 
 	"github.com/blacklane/go-libs/camunda"
 )
@@ -21,6 +20,8 @@ const (
 )
 
 type taskHandler struct{}
+
+var log logger.Logger
 
 func main() {
 	// catch the signals as soon as possible
