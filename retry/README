@@ -1,0 +1,25 @@
+# retry
+
+`retry` is a middleware which works with x/events. it will retry with exponential back-off algorism until max retry count which is passed by argument for middleware.
+
+## Installation
+
+```go
+go get -u github.com/blacklane/go-libs/retry
+```
+
+## Getting Started: WIP
+
+```go
+hb := xevents.HandlerBuilder{}
+hb.AddHandler(handler)
+hb.UseMiddleware(
+		retry.Middleware(maxRetry),
+	)
+```
+
+in handler, if it return RetriableError then will be retried.
+
+```go
+
+```
