@@ -1,29 +1,34 @@
-.PHONY: test check deps install_golint compose-tests compose-kafka clean
+.PHONY: test check deps install_golint docker-tests docker-kafka clean
 
-GOLINT ?= golint
+GOPRIVATE ?= github.com/blacklane/*
+GOLINTER ?= revive
 GO ?= go
-
+TOOLS_FOLDER=$$(pwd)/.tools
 KAFKA_BOOTSTRAP_SERVERS ?= localhost:9092
 # musl build tag is required on Alpine linux to use the prebuilt librdkafka.
 # More on https://github.com/confluentinc/confluent-kafka-go/blob/master/README.md#librdkafka
 
 BUILD_TAGS ?= -tags integration
 
-deps:
-	$(GO) mod download
+gitconfig:
+	@git config --global url.https://${GITHUB_TOKEN}@github.com.insteadOf https://github.com
 
-install_golint:
-	$(GO) get -u golang.org/x/lint/golint
+deps:
+	GOPRIVATE=${GOPRIVATE} $(GO) mod download
+
+install_go_tools:
+	GOBIN=${TOOLS_FOLDER} $(GO) install github.com/mgechev/revive@latest
 
 test: deps
-	KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS} $(GO) test ${BUILD_TAGS} -cover ./...
+	GOPRIVATE=${GOPRIVATE} KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS} $(GO) test -race ${BUILD_TAGS} -cover ./...
 
 check:
 	$(GO) vet ${BUILD_TAGS} $$($(GO) list ./...)
-	$(GOLINT) $$($(GO) list ./...)
+	$(GOLINTER) $$($(GO) list ./...)
 
-compose-tests:
+docker-tests:
 	export COMPOSE_PROJECT_NAME="golib-events-build-$(DRONE_BUILD_NUMBER)"
+	export GOPRIVATE=${GOPRIVATE}
 	docker-compose --env-file .env_compose up \
 		--build \
 		--force-recreate \
@@ -32,7 +37,7 @@ compose-tests:
 		--exit-code-from tests
 	docker-compose down
 
-compose-kafka:
+docker-kafka:
 	docker-compose --env-file .env_local up \
     		--build \
     		--force-recreate \
@@ -40,5 +45,5 @@ compose-kafka:
     		-d \
     		kafka
 
-compose-kafka-down clean:
+docker-kafka-down clean:
 	docker-compose down

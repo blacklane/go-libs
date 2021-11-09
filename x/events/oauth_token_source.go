@@ -10,16 +10,16 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-type Token struct {
-	AccessToken      string `json:"access_token"`
-	ExpiresIn        int    `json:"expires_in"`
-	RefreshExpiresIn int    `json:"refresh_expires_in"`
-	RefreshToken     string `json:"refresh_token"`
-	TokenType        string `json:"token_type"`
-	NotBeforePolicy  int    `json:"not-before-policy"`
-	SessionState     string `json:"session_state"`
-	Scope            string `json:"scope"`
-}
+// type Token struct {
+// 	AccessToken      string `json:"access_token"`
+// 	ExpiresIn        int    `json:"expires_in"`
+// 	RefreshExpiresIn int    `json:"refresh_expires_in"`
+// 	RefreshToken     string `json:"refresh_token"`
+// 	TokenType        string `json:"token_type"`
+// 	NotBeforePolicy  int    `json:"not-before-policy"`
+// 	SessionState     string `json:"session_state"`
+// 	Scope            string `json:"scope"`
+// }
 
 type source struct {
 	clientID     string
@@ -59,7 +59,7 @@ func NewTokenSource(
 
 func (t source) Token() (*oauth2.Token, error) {
 	ctx := context.WithValue(
-		context.Background(), oauth2.HTTPClient, &t.httpClient)
+		context.TODO(), oauth2.HTTPClient, &t.httpClient)
 
 	if t.token == nil || t.token.Expiry.Sub(time.Now()) < t.refreshBefore {
 		token, err := t.config.Token(ctx)

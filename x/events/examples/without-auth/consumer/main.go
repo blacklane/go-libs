@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -13,61 +12,53 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"github.com/blacklane/go-libs/x/events"
-	"github.com/blacklane/go-libs/x/events/examples/oauth"
 )
 
-var config oauth.Config
+//revive:disable:exported Obvious config struct.
+type config struct {
+	KafkaBootstrapServer string `env:"KAFKA_BOOTSTRAP_SERVERS,required"`
+	KafkaGroupID         string `env:"KAFKA_GROUP_ID,required"`
+	Topic                string `env:"KAFKA_TOPIC" envDefault:"test-go-libs-events"`
+}
+
+var cfg config
 
 func loadEnvVars() {
-	c := &oauth.Config{}
+	c := &config{}
 	if err := env.Parse(c); err != nil {
 		panic(fmt.Sprintf("could not load environment variables: %v", err))
 	}
 
-	config = *c
+	cfg = *c
 }
-
 func main() {
 	// catch the signals as soon as possible
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt) // a.k.a ctrl+C
 
-	errLogger := log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
-
 	loadEnvVars()
+	log.Printf("config: %#v", cfg)
 
-	tokenSource := events.NewTokenSource(
-		config.ClientID,
-		config.ClientSecret,
-		config.OauthTokenURL,
-		5*time.Second,
-		http.Client{Timeout: 3 * time.Second})
-
-	kafkaConfig := &kafka.ConfigMap{
-		"group.id":           config.KafkaGroupID,
-		"bootstrap.servers":  config.KafkaServer,
+	conf := &kafka.ConfigMap{
+		"group.id":           cfg.KafkaGroupID,
+		"bootstrap.servers":  "localhost:9092",
 		"session.timeout.ms": 6000,
 		"auto.offset.reset":  "earliest",
 	}
 
-	kc := events.NewKafkaConsumerConfig(kafkaConfig)
-	kc.WithOAuth(tokenSource)
-	kc.WithErrFunc(func(err error) { errLogger.Print(err) })
-
-	log.Printf("creating kafka consumer for topic %s...", config.Topic)
 	c, err := events.NewKafkaConsumer(
-		kc,
-		[]string{config.Topic},
+		events.NewKafkaConsumerConfig(conf),
+		[]string{cfg.Topic},
 		events.HandlerFunc(
 			func(ctx context.Context, e events.Event) error {
 				log.Printf("consumed event: %s", e.Payload)
 				return nil
 			}))
 	if err != nil {
-		panic(fmt.Sprintf("could not create kafka consumer: %v", err))
+		panic(err)
 	}
 
-	log.Printf("starting consumer listening to %s, press CTRL+C to exit", config.Topic)
+	log.Printf("starting to consume events from %s, press CTRL+C to exit", cfg.Topic)
 	c.Run(time.Second)
 
 	<-signalChan
