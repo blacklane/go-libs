@@ -36,7 +36,7 @@ compose-dependencies:
 	docker-compose up \
     		--remove-orphans \
     		-d \
-    		elasticsearch kafka zookeeper jaeger redis-graphql
+    		elasticsearch kafka zookeeper jaeger
 
 .PHONY: compose-down
 compose-down:
