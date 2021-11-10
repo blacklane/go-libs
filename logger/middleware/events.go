@@ -38,8 +38,8 @@ func EventsHandlerStatusLogger(eventNames ...string) events.Middleware {
 	return EventsHandlerStatusLoggerWithNameFn(eventName, eventNames...)
 }
 
-// EventsLoggerWithNameFn is the same as EventsHandlerStatusLogger, but using a custom
-// function to extract the event name.
+// EventsHandlerStatusLoggerWithNameFn is the same as EventsHandlerStatusLogger,
+// but using a custom function to extract the event name.
 func EventsHandlerStatusLoggerWithNameFn(
 	eventNameFn func(e events.Event) string,
 	eventNames ...string) events.Middleware {
@@ -53,6 +53,7 @@ func EventsHandlerStatusLoggerWithNameFn(
 			evName := eventNameFn(e)
 
 			log := *logger.FromContext(ctx)
+
 			trackingID := tracking.IDFromContext(ctx)
 			logFields := map[string]interface{}{
 				internal.FieldTrackingID: trackingID,

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"time"
 
 	"github.com/blacklane/go-libs/tracking"
@@ -23,7 +22,7 @@ func ExampleHTTPAddLogger() {
 	r := httptest.NewRequest(http.MethodGet, "http://example.com/foo?bar=foo", nil)
 	r.Header.Set(internal.HeaderForwardedFor, "localhost")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyJSONWriter{}, "ExampleHTTPAddLogger")
 
 	loggerMiddleware := HTTPAddLogger(log)
 
@@ -36,7 +35,12 @@ func ExampleHTTPAddLogger() {
 	h.ServeHTTP(w, r)
 
 	// Output:
-	// {"level":"info","application":"","timestamp":"2009-11-10T23:00:00.000Z","message":"Hello, Gophers"}
+	// {
+	//   "application": "ExampleHTTPAddLogger",
+	//   "level": "info",
+	//   "message": "Hello, Gophers",
+	//   "timestamp": "2009-11-10T23:00:00.000Z"
+	// }
 }
 
 func ExampleHTTPRequestLogger_simple() {
@@ -49,7 +53,7 @@ func ExampleHTTPRequestLogger_simple() {
 	r := httptest.NewRequest(http.MethodGet, "http://example.com/foo?bar=foo", nil)
 	r.Header.Set(internal.HeaderForwardedFor, "localhost")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyJSONWriter{}, "ExampleHTTPRequestLogger_simple")
 	ctx := log.WithContext(r.Context())
 
 	loggerMiddleware := HTTPRequestLogger([]string{})
@@ -61,7 +65,23 @@ func ExampleHTTPRequestLogger_simple() {
 	h.ServeHTTP(w, r.WithContext(ctx))
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tracking_id":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00.000Z","message":"GET /foo"}
+	// {
+	//   "application": "ExampleHTTPRequestLogger_simple",
+	//   "duration_ms": 0,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "tracking_id": "",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+
 }
 
 func ExampleHTTPRequestLogger_complete() {
@@ -78,7 +98,7 @@ func ExampleHTTPRequestLogger_complete() {
 
 	ctx := tracking.SetContextID(r.Context(), "42")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyJSONWriter{}, "ExampleHTTPRequestLogger_complete")
 	ctx = log.WithContext(ctx)
 
 	rr := r.WithContext(ctx)
@@ -90,7 +110,22 @@ func ExampleHTTPRequestLogger_complete() {
 	h.ServeHTTP(w, rr)
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"42.42.42.42","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"42","route":"","tracking_id":"42","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":1000,"timestamp":"2009-11-10T23:00:02.000Z","message":"GET /foo"}
+	// {
+	//   "application": "ExampleHTTPRequestLogger_complete",
+	//   "duration_ms": 1000,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "42.42.42.42",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "42",
+	//   "timestamp": "2009-11-10T23:00:02.000Z",
+	//   "tracking_id": "42",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
 }
 
 func ExampleHTTPRequestLogger_skipRoutes() {
@@ -107,13 +142,14 @@ func ExampleHTTPRequestLogger_skipRoutes() {
 	rLive := httptest.NewRequest(http.MethodGet, "http://example.com"+livePath, nil)
 	rLive.Header.Set(internal.HeaderForwardedFor, "localhost")
 
-	log := logger.New(os.Stdout, "")
+	log := logger.New(prettyJSONWriter{}, "ExampleHTTPRequestLogger_skipRoutes")
 	ctx := log.WithContext(rBar.Context())
 
 	loggerMiddleware := HTTPRequestLogger([]string{livePath})
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger.FromContext(r.Context()).Info().Msg("always logged")
 			_, _ = fmt.Fprint(w, "Hello, world")
 		}))
 
@@ -121,5 +157,48 @@ func ExampleHTTPRequestLogger_skipRoutes() {
 	h.ServeHTTP(w, rLive.WithContext(ctx))
 
 	// Output:
-	// {"level":"info","application":"","entry_point":true,"host":"example.com","ip":"localhost","params":"bar=foo","path":"/foo","request_depth":0,"request_id":"","route":"","tracking_id":"","tree_path":"","user_agent":"","verb":"GET","event":"request_finished","status":200,"request_duration":0,"timestamp":"2009-11-10T23:00:00.000Z","message":"GET /foo"}
+	// {
+	//   "application": "ExampleHTTPRequestLogger_skipRoutes",
+	//   "host": "example.com",
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "always logged",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "tracking_id": "",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+	// {
+	//   "application": "ExampleHTTPRequestLogger_skipRoutes",
+	//   "duration_ms": 0,
+	//   "host": "example.com",
+	//   "http_status": 200,
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "GET /foo",
+	//   "params": "bar=foo",
+	//   "path": "/foo",
+	//   "request_id": "",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "tracking_id": "",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
+	// {
+	//   "application": "ExampleHTTPRequestLogger_skipRoutes",
+	//   "host": "example.com",
+	//   "ip": "localhost",
+	//   "level": "info",
+	//   "message": "always logged",
+	//   "params": "",
+	//   "path": "/live",
+	//   "request_id": "",
+	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "tracking_id": "",
+	//   "user_agent": "",
+	//   "verb": "GET"
+	// }
 }
