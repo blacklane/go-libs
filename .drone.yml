@@ -25,6 +25,15 @@ pipeline:
       - cd camunda
       - make gitconfig test
 
+  test_otel:
+    image: golang:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - export $(cat .ci-secrets | xargs)
+      - cd otel
+      - make gitconfig test
+
   test_logger:
     image: golang:latest
     volumes:
