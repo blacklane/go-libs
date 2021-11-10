@@ -43,6 +43,15 @@ pipeline:
       - cd logger
       - make gitconfig test
 
+  test_middleware:
+    image: golang:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - export $(cat .ci-secrets | xargs)
+      - cd middleware
+      - make gitconfig test
+
   test_tracking:
     image: golang:latest
     volumes:
