@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package events
@@ -60,8 +61,7 @@ func TestKafkaConsumer_Run(t *testing.T) {
 	for key, msg := range payloads {
 		produce(t, producer, key, msg, topic)
 	}
-
-	c.Run(20 * timeoutMultiplier)
+	c.Run(time.Second)
 
 	notFlushedCount := producer.Flush(10 * int(timeoutMultiplier.Milliseconds()))
 	if notFlushedCount > 0 {
