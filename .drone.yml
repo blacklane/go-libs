@@ -16,13 +16,13 @@ pipeline:
     aws_secrets:
       - GITHUB_TOKEN: devops/github/blacklane-deploy-token
 
-  test_tracking:
+  test_camunda:
     image: golang:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
       - export $(cat .ci-secrets | xargs)
-      - cd tracking
+      - cd camunda
       - make gitconfig test
 
   test_logger:
@@ -34,13 +34,13 @@ pipeline:
       - cd logger
       - make gitconfig test
 
-  test_camunda:
+  test_tracking:
     image: golang:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
       - export $(cat .ci-secrets | xargs)
-      - cd camunda
+      - cd tracking
       - make gitconfig test
 
   test_x/events:
