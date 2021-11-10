@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/blacklane/go-libs/logger"
+	"github.com/blacklane/go-libs/middleware"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-
-	"github.com/blacklane/go-libs/otel/examples/middleware"
 )
 
 func eventsHandler() events.HandlerFunc {
