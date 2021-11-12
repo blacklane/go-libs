@@ -45,10 +45,13 @@ func Retry(maxRetry int) events.Middleware {
 					return fmt.Errorf("handler failed with non retriable error: %w", err)
 				}
 
-				// exponential backoff
-				time.Sleep(time.Duration(math.Pow(2.0, float64(retries))*100) * time.Millisecond)
+				time.Sleep(exponentialBackoff(retries))
 			}
 			return fmt.Errorf("handler failed after %d retries: maximum retries exceeded: %w", maxRetry, err)
 		})
 	}
+}
+
+func exponentialBackoff(retries int) time.Duration {
+	return time.Duration(math.Pow(2.0, float64(retries))*100) * time.Millisecond
 }

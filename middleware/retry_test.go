@@ -1,12 +1,11 @@
-package middleware_test
+package middleware
 
 import (
 	"context"
 	"errors"
-	"testing"
-
-	"github.com/blacklane/go-libs/middleware"
 	"github.com/blacklane/go-libs/x/events"
+	"testing"
+	"time"
 )
 
 type mockHandler struct {
@@ -26,8 +25,8 @@ func TestRetryMiddleware(t *testing.T) {
 		handleReturnErr   error
 		wantErr           error
 	}{
-		{"RetriableError", 3, &middleware.RetriableError{Retriable: true, Err: errors.New("SampleError")}, errors.New("handler failed after 3 retries: maximum retries exceeded: SampleError")},
-		{"NonRetriableError", 1, &middleware.RetriableError{Retriable: false, Err: errors.New("SampleError")}, errors.New("handler failed with non retriable error: SampleError")},
+		{"RetriableError", 3, &RetriableError{Retriable: true, Err: errors.New("SampleError")}, errors.New("handler failed after 3 retries: maximum retries exceeded: SampleError")},
+		{"NonRetriableError", 1, &RetriableError{Retriable: false, Err: errors.New("SampleError")}, errors.New("handler failed with non retriable error: SampleError")},
 		{"NormalError", 1, errors.New("SampleError"), errors.New("SampleError")},
 	}
 
@@ -42,7 +41,7 @@ func TestRetryMiddleware(t *testing.T) {
 				}),
 			}
 
-			err := middleware.Retry(maxRetries)(handler).Handle(context.Background(), events.Event{})
+			err := Retry(maxRetries)(handler).Handle(context.Background(), events.Event{})
 
 			if handler.Called != wantHandlerCalled {
 				t.Errorf("Handle() is expected to be called %d times but it called %d times", wantHandlerCalled, handler.Called)
@@ -52,5 +51,35 @@ func TestRetryMiddleware(t *testing.T) {
 				t.Errorf("Handle() is expected to return err: %v, but it returns err: %v", tt.wantErr, err)
 			}
 		})
+	}
+}
+
+func TestExponentialBackoff(t *testing.T) {
+	want := 100 * time.Millisecond
+	got := exponentialBackoff(0)
+
+	if want != got {
+		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
+	}
+
+	want = 200 * time.Millisecond
+	got = exponentialBackoff(1)
+
+	if want != got {
+		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
+	}
+
+	want = 400 * time.Millisecond
+	got = exponentialBackoff(2)
+
+	if want != got {
+		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
+	}
+
+	want = 1600 * time.Millisecond
+	got = exponentialBackoff(3)
+
+	if want != got {
+		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
 	}
 }
