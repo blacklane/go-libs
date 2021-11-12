@@ -1,4 +1,4 @@
-package retry
+package middleware
 
 import (
 	"context"
@@ -15,14 +15,18 @@ type RetriableError struct {
 	Err       error
 }
 
-func (re RetriableError) Error() string {
+func (re *RetriableError) Error() string {
 	if re.Err == nil {
 		return "RetriableError.Err is nil"
 	}
 	return re.Err.Error()
 }
 
-func Middleware(maxRetry int) events.Middleware {
+func (re *RetriableError) Unwrap() error {
+	return re.Err
+}
+
+func Retry(maxRetry int) events.Middleware {
 	return func(handler events.Handler) events.Handler {
 		return events.HandlerFunc(func(ctx context.Context, e events.Event) error {
 			var err error
@@ -33,7 +37,7 @@ func Middleware(maxRetry int) events.Middleware {
 					return nil
 				}
 
-				var rerr RetriableError
+				var rerr *RetriableError
 				if !errors.As(err, &rerr) {
 					return err
 				}
@@ -44,7 +48,7 @@ func Middleware(maxRetry int) events.Middleware {
 				// exponential backoff
 				time.Sleep(time.Duration(math.Pow(2.0, float64(retries))*100) * time.Millisecond)
 			}
-			return fmt.Errorf("handler failed after %d retries: %w", maxRetry, err)
+			return fmt.Errorf("handler failed after %d retries: maximum retries exceeded: %w", maxRetry, err)
 		})
 	}
 }
