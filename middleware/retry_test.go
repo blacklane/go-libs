@@ -3,9 +3,10 @@ package middleware
 import (
 	"context"
 	"errors"
-	"github.com/blacklane/go-libs/x/events"
 	"testing"
 	"time"
+
+	"github.com/blacklane/go-libs/x/events"
 )
 
 type mockHandler struct {
@@ -55,31 +56,25 @@ func TestRetryMiddleware(t *testing.T) {
 }
 
 func TestExponentialBackoff(t *testing.T) {
-	want := 100 * time.Millisecond
-	got := exponentialBackoff(0)
-
-	if want != got {
-		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
+	tests := []struct {
+		name           string
+		retryCount     int
+		wantMillsecond time.Duration
+	}{
+		{"retry 0", 0, 100 * time.Millisecond},
+		{"retry 1", 1, 200 * time.Millisecond},
+		{"retry 2", 2, 400 * time.Millisecond},
+		{"retry 3", 3, 800 * time.Millisecond},
 	}
 
-	want = 200 * time.Millisecond
-	got = exponentialBackoff(1)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := exponentialBackoff(tt.retryCount)
 
-	if want != got {
-		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
-	}
-
-	want = 400 * time.Millisecond
-	got = exponentialBackoff(2)
-
-	if want != got {
-		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
-	}
-
-	want = 1600 * time.Millisecond
-	got = exponentialBackoff(3)
-
-	if want != got {
-		t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", want, got)
+			if tt.wantMillsecond != got {
+				t.Errorf("exponentialBackoff is expected to return: %d, but it returned: %d", tt.wantMillsecond, got)
+			}
+		},
+		)
 	}
 }
