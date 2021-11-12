@@ -49,7 +49,7 @@ func TestRetryMiddleware(t *testing.T) {
 			}
 
 			if err.Error() != tt.wantErr.Error() {
-				t.Errorf("Handle() is expected to return err: %s, but it returns err: %s", tt.wantErr, err)
+				t.Errorf("Handle() is expected to return err: %v, but it returns err: %v", tt.wantErr, err)
 			}
 		})
 	}
