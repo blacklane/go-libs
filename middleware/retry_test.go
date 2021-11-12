@@ -65,6 +65,10 @@ func TestExponentialBackoff(t *testing.T) {
 		{"retry 1", 1, 200 * time.Millisecond},
 		{"retry 2", 2, 400 * time.Millisecond},
 		{"retry 3", 3, 800 * time.Millisecond},
+		{"retry 4", 4, 1600 * time.Millisecond},
+		{"retry 5", 5, 3200 * time.Millisecond},
+		{"retry 6", 6, 6400 * time.Millisecond},
+		{"retry 7", 7, 12800 * time.Millisecond},
 	}
 
 	for _, tt := range tests {
