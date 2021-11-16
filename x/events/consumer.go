@@ -10,7 +10,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-var ErrShutdownTimeout = errors.New("shutdown timeout: not all handlers finished")
+var ErrShutdownTimeout = errors.New("shutdown timeout: not all handlers finished, not closing kafka client")
 var ErrConsumerAlreadyShutdown = errors.New("consumer already shutdown")
 
 type Consumer interface {
@@ -117,18 +117,24 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 // been created to read from the beginning of the topic.
 func (c *kafkaConsumer) Run(timeout time.Duration) {
 	c.startRunning()
+
 	go func() {
+		timeoutMs := int(timeout.Milliseconds())
 		for c.running() {
-			kev := c.consumer.Poll(int(timeout.Milliseconds()))
-			switch kev := kev.(type) {
+			kev := c.consumer.Poll(timeoutMs)
+			switch kmt := kev.(type) {
 			case *kafka.Message:
-				c.deliverMessage(kev)
+				c.deliverMessage(kmt)
 			case kafka.OAuthBearerTokenRefresh:
 				c.refreshToken()
 			case kafka.Error:
-				if kev.Code() != kafka.ErrTimedOut {
-					c.errFn(fmt.Errorf("failed to read message: %w", kev))
+				if kmt.Code() != kafka.ErrTimedOut {
+					c.errFn(fmt.Errorf("failed to read message: %w", kmt))
 				}
+			case nil: // when c.consumer.Poll(timeoutMs) times out, it returns nil.
+				continue
+			default:
+				c.errFn(fmt.Errorf("unknown kafka message type: '%T': %#v", kev, kev))
 			}
 		}
 
@@ -137,20 +143,23 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 	}()
 }
 
-// Shutdown receives a context with deadline or will wait until all handlers to
-// finish. Shutdown can only be called once, if called more than once it returns
-// ErrConsumerAlreadyShutdown
+// Shutdown receives a context with deadline, or it will wait until all handlers to
+// finish. The closing of the underlying kafka client is skipped if the cxt is
+// done before trying to close it. Also, the underlying kafka client close does
+// not respect the ctx cancellation.
+// If Shutdown is called more than once, it immediately returns ErrConsumerAlreadyShutdown
+// for the subsequent calls.
 func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 	if c.shutdown {
 		return ErrConsumerAlreadyShutdown
 	}
+	c.shutdown = true
 
 	c.stopRun()
-
 	var err error
 	select {
 	case <-ctx.Done():
-		err = ErrShutdownTimeout
+		return ErrShutdownTimeout
 	case <-c.done:
 		err = nil
 	}
@@ -216,8 +225,8 @@ func parseHeaders(headers []kafka.Header) Header {
 
 func (c *kafkaConsumer) startRunning() bool {
 	c.runMu.RLock()
-	c.run = true
 	defer c.runMu.RUnlock()
+	c.run = true
 	return c.run
 }
 

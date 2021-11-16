@@ -6,16 +6,28 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/blacklane/go-libs/tracking"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var ErrProducerNotHandlingEvents = errors.New("producer should be handling events")
 var ErrProducerIsAlreadyRunning = errors.New("producer is already running")
 
 type Producer interface {
-	// Send an event to the given topic
+	// Send sends an event to the given topic
+	// Deprecated. use SendCtx instead
 	Send(event Event, topic string) error
-	// SendWithTrackingID adds the tracking ID to the event's headers and sends it to the given topic
+	// SendCtx send an event to the given topic.
+	// It also adds the OTel propagation headers and the X-Tracking-Id if not set
+	// already.
+	SendCtx(ctx context.Context, eventName string, event Event, topic string) error
+	// SendWithTrackingID adds the tracking ID to the event's headers and sends
+	// it to the given topic
+	// Deprecated. use SendCtx instead
 	SendWithTrackingID(trackingID string, event Event, topic string) error
 	// HandleEvents starts to listen to the producer events channel
 	HandleEvents() error
@@ -46,12 +58,14 @@ type kafkaProducer struct {
 
 	flushTimeoutMs int
 
+	otelPropagator propagation.TextMapPropagator
+
 	runMu    sync.RWMutex
 	run      bool
 	shutdown bool
 }
 
-// NewKafkaProducerConfig returns a initialised *KafkaProducerConfig
+// NewKafkaProducerConfig returns an initialised *KafkaProducerConfig
 func NewKafkaProducerConfig(config *kafka.ConfigMap) *KafkaProducerConfig {
 	return &KafkaProducerConfig{
 		kafkaConfig: &kafkaConfig{
@@ -76,7 +90,7 @@ func (pc *KafkaProducerConfig) WithFlushTimeout(timeout int) {
 
 // NewKafkaProducer returns new a producer.
 // To handle errors, either `kafka.Error` messages or any other error while
-// interacting with Kafka, register a Error function on *KafkaConsumerConfig.
+// interacting with Kafka, register an Error function on *KafkaConsumerConfig.
 func NewKafkaProducer(c *KafkaProducerConfig) (Producer, error) {
 	kp := &kafkaProducer{
 		kafkaCommon: &kafkaCommon{
@@ -87,6 +101,8 @@ func NewKafkaProducer(c *KafkaProducerConfig) (Producer, error) {
 
 		deliveryErrHandler: c.deliveryErrHandler,
 		flushTimeoutMs:     c.flushTimeoutMs,
+
+		otelPropagator: otel.GetTextMapPropagator(),
 	}
 
 	p, err := kafka.NewProducer(c.config)
@@ -138,15 +154,44 @@ func (p *kafkaProducer) refreshToken() {
 	p.kafkaCommon.refreshToken(p.producer)
 }
 
-// SendWithTrackingID adds the tracking ID to the event's headers. If the event already
-// has the tracking ID header set, it does nothing.
+// SendCtx send an event to the given topic.
+// It also adds the OTel propagation headers and the X-Tracking-Id if not set
+// already.
+func (p *kafkaProducer) SendCtx(ctx context.Context, eventName string, event Event, topic string) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("will not send event: %w", err)
+	}
+
+	ctx, sp := otel.Tracer(OTelTracerName).
+		Start(ctx,
+			"produced:"+eventName,
+			trace.WithSpanKind(trace.SpanKindProducer),
+			trace.WithAttributes(semconv.MessagingDestinationKey.String(topic)))
+	defer sp.End()
+
+	sp.SetAttributes(semconv.MessagingMessageIDKey.String(string(event.Key)))
+
+	if event.Headers == nil {
+		event.Headers = map[string]string{}
+	}
+	p.otelPropagator.Inject(ctx, event.Headers)
+
+	trackedEvent := addTrackingID(tracking.IDFromContext(ctx), event)
+
+	return p.Send(trackedEvent, topic)
+}
+
+// SendWithTrackingID adds the tracking ID to the event's headers and sends
+// it to the given topic
+// Deprecated. use SendCtx instead
 func (p *kafkaProducer) SendWithTrackingID(trackingID string, event Event, topic string) error {
 	trackedEvent := addTrackingID(trackingID, event)
 	return p.Send(trackedEvent, topic)
 }
 
-// Sends messages to the given topic. Delivery errors are sent to the producer's
+// Send messages to the given topic. Delivery errors are sent to the producer's
 // event channel. To handle delivery errors check *KafkaProducerConfig.WithEventDeliveryErrHandler.
+// Deprecated. Use SendCtx instead.
 func (p *kafkaProducer) Send(event Event, topic string) error {
 	return p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
@@ -156,7 +201,7 @@ func (p *kafkaProducer) Send(event Event, topic string) error {
 	}, nil)
 }
 
-// Shuts the producer down and also closes the underlying kafka producer.
+// Shutdown shuts down the producer and also closes the underlying kafka producer.
 func (p *kafkaProducer) Shutdown(ctx context.Context) error {
 	isRunning := p.running()
 	p.stopRun()

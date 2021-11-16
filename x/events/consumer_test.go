@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -118,9 +119,13 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
 	kcc.WithDeliveryOrder(OrderByEventKey)
 	var processedEvents []string
+	mu := sync.Mutex{}
+
 	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
 		waitFor, _ := time.ParseDuration(string(e.Payload))
 		time.Sleep(waitFor)
+		mu.Lock()
+		defer mu.Unlock()
 		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
 		return nil
 	}))
@@ -165,9 +170,14 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
 	var processedEvents []string
+	mu := sync.Mutex{}
+
 	c, err := NewKafkaConsumer(kcc, []string{"topic"}, HandlerFunc(func(ctx context.Context, e Event) error {
 		waitFor, _ := time.ParseDuration(string(e.Payload))
 		time.Sleep(waitFor)
+		mu.Lock()
+		defer mu.Unlock()
+
 		processedEvents = append(processedEvents, fmt.Sprintf("%s:%s", e.Key, e.Payload))
 		return nil
 	}))
@@ -201,5 +211,37 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 	got := strings.Join(processedEvents, ",")
 	if got != wantOrder {
 		t.Errorf("incorrect order of processed messages %q when should be %q", got, wantOrder)
+	}
+}
+
+func TestKafkaConsumerShutdown(t *testing.T) {
+	kc, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"group.id": "TestKafkaConsumerShutdown",
+	})
+	if err != nil {
+		t.Fatalf("could not create kafka consumer: %v", err)
+	}
+
+	consumer := kafkaConsumer{consumer: kc}
+	ctx, _ := context.WithTimeout(context.Background(), time.Microsecond)
+
+	got := consumer.Shutdown(ctx)
+
+	if !errors.Is(got, ErrShutdownTimeout) {
+		t.Errorf("got: %v, want: %v", got, ErrConsumerAlreadyShutdown)
+	}
+}
+
+func TestKafkaConsumerShutdownAlreadyShutdown(t *testing.T) {
+	kc := kafkaConsumer{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	kc.Shutdown(ctx)
+	got := kc.Shutdown(ctx)
+
+	if !errors.Is(got, ErrConsumerAlreadyShutdown) {
+		t.Errorf("got: %v, want: %v", got, ErrConsumerAlreadyShutdown)
 	}
 }

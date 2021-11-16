@@ -44,11 +44,12 @@ pipeline:
       - make gitconfig test
 
   test_x/events:
-    image: docker/compose:alpine-1.28.2
+    image: docker/compose:alpine-1.29.2
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
       - apk --no-cache add make
+      - export $(cat .ci-secrets | xargs)
       - cd x/events
-      - make compose-tests
+      - make docker-tests
 
