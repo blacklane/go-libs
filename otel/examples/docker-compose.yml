@@ -1,0 +1,179 @@
+version: "3"
+services:
+  kafka-compose:
+    image: wurstmeister/kafka:2.11-0.11.0.3
+    ports:
+      - "9092:9092"
+    restart: on-failure:3
+    links:
+      - zookeeper
+    environment:
+      KAFKA_CREATE_TOPICS: 'tracing-example:1:1,chauffeur-positions:1:1,commands-bookings:1:1,events-bookings:1:1,on-demand-chauffeur-offers:1:1,events-rides:1:1,on-demand-ride-fulfilment:1:1,on-demand-chauffeur-status:1:1'
+      KAFKA_ADVERTISED_HOST_NAME: 'kafka-compose'
+      KAFKA_VERSION: '0.11.0.1'
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_ADVERTISED_PORT: '9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  kafka:
+    image: wurstmeister/kafka:2.11-0.11.0.3
+    ports:
+      - "9092:9092"
+    restart: on-failure:3
+    links:
+      - zookeeper
+    environment:
+      KAFKA_CREATE_TOPICS: 'tracing-example:1:1'
+      KAFKA_ADVERTISED_HOST_NAME: 'localhost'
+      KAFKA_VERSION: '0.11.0.1'
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_ADVERTISED_PORT: '9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+
+  jaeger:
+    image: jaegertracing/opentelemetry-all-in-one
+    command:
+      --config-file=/config/config.yaml
+      --es.server-urls=http://elasticsearch:9200
+      --es-archive.server-urls=http://elasticsearch:9200
+      --log-format=console
+      --log-profile=dev
+      --es.num-shards=3
+    container_name: jaeger
+    environment:
+      SPAN_STORAGE_TYPE: elasticsearch
+    ports:
+      - "55680:55680"
+      - "13133:13133"
+      - "16686:16686"
+      - "14268:14268"
+      - "14269:14269"
+    networks:
+      - otel
+    volumes:
+      - ./config-jaeger-collector.yaml:/config/config.yaml
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  jaeger-collector:
+    image: jaegertracing/jaeger-opentelemetry-collector
+    command:
+      --config-file=/config/config.yaml
+      --es.server-urls=http://elasticsearch:9200
+      --es.num-shards=3
+    container_name: jaeger-collector
+    environment:
+      SPAN_STORAGE_TYPE: elasticsearch
+    ports:
+      - "13133:13133"
+      - "14250:14250"
+      - "14269:14269"
+      - "55680:55680/tcp"
+      - "55680:55680/udp"
+    networks:
+      - otel
+    volumes:
+      - ./config-jaeger-collector.yaml:/config/config.yaml
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:1.21
+    command:
+      --reporter.grpc.host-port=jaeger-agent:14250
+    container_name: jaeger-agent
+    environment:
+      SPAN_STORAGE_TYPE: elasticsearch
+    ports:
+      - "14271:14271/tcp"
+      - "5778:5778/tcp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+    networks:
+      - otel
+#    volumes:
+#      - ./config-jaeger-collector.yaml:/config/config.yaml
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    links:
+      - jaeger-collector
+      - elasticsearch
+
+  jaeger-ui:
+    image: jaegertracing/jaeger-query:1.21
+    command:
+      --query.grpc-server.host-port=jaeger-agent:14250
+    container_name: jaeger-ui
+    environment:
+      SPAN_STORAGE_TYPE: elasticsearch
+      ES_SERVER_URLS: http://elasticsearch:9200
+    ports:
+      - "16686:16686"
+      - "16687:16687"
+    networks:
+      - otel
+#    volumes:
+#      - ./config-jaeger-collector.yaml:/config/config.yaml
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    links:
+      - jaeger-collector
+      - jaeger-agent
+      - elasticsearch
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+    container_name: elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - cluster.name=docker-cluster
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-XX:UseAVX=2 -Xms1g -Xmx1g
+    ulimits:
+      memlock:
+        hard: -1
+        soft: -1
+    volumes:
+      - otel:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - otel
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+
+  redis-graphql:
+    image: redis:alpine
+    container_name: redis-graphql
+    ports:
+      - 6379:6379
+    networks:
+      - otel
+
+
+volumes:
+  otel:
+    driver: local
+
+networks:
+  otel:
+    driver: bridge
