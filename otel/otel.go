@@ -135,7 +135,7 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithSampler(trace.AlwaysSample()),
 		trace.WithResource(res),
-		trace.WithSyncer(otlpExporter),
+		trace.WithBatcher(otlpExporter),
 	)
 	if cfg.debug {
 		log.Debug().Msg("adding stdout span processor")
