@@ -3,7 +3,7 @@ package tracking
 import (
 	"context"
 
-	"github.com/google/uuid"
+	guuid "github.com/google/uuid"
 )
 
 type key struct{}
@@ -21,7 +21,7 @@ func SetContextID(ctx context.Context, id string) context.Context {
 func ContextWithID(ctx context.Context) context.Context {
 	var id string
 
-	if uuid, err := uuid.NewUUID(); err == nil {
+	if uuid, err := guuid.NewUUID(); err == nil {
 		id = uuid.String()
 	}
 
