@@ -43,8 +43,8 @@ github.com/blacklane/go-libs/tracking v0.2.1 h1:rGpVB5Eiv1Ert9iAjCzEb55GX6ocNLxD
 github.com/blacklane/go-libs/tracking v0.2.1/go.mod h1:l9W5ytCjN/aej7NqC2D+ayC0AmQxfjZikmIAVKWPdN4=
 github.com/blacklane/go-libs/x/events v0.0.0-20200729083625-bff51d3ec664/go.mod h1:9XVqU/pwOlbeFpSzzFIGm+iSWXmIYiTJyvOL38XoIzQ=
 github.com/blacklane/go-libs/x/events v0.0.5/go.mod h1:9XVqU/pwOlbeFpSzzFIGm+iSWXmIYiTJyvOL38XoIzQ=
-github.com/blacklane/go-libs/x/events v0.1.1-0.20211110143534-f824e5cfdd98 h1:zw7Couf57quojZm5Vr4DTxzT/uNHMz4aLWupc6LDxLU=
-github.com/blacklane/go-libs/x/events v0.1.1-0.20211110143534-f824e5cfdd98/go.mod h1:gVG3YdCIY+jzjnB1ItP3+Oq09padqW0ncUulxU8CiwU=
+github.com/blacklane/go-libs/x/events v0.1.1-0.20211116134309-0563d1c4aa2a h1:AYvu6Ljivww7/07c/xwrkB1d0Iz5ju5GJ1q9gyI+0l0=
+github.com/blacklane/go-libs/x/events v0.1.1-0.20211116134309-0563d1c4aa2a/go.mod h1:gVG3YdCIY+jzjnB1ItP3+Oq09padqW0ncUulxU8CiwU=
 github.com/caarlos0/env v3.5.0+incompatible/go.mod h1:tdCsowwCzMLdkqRYDlHpZCp2UooDD3MspDBjZ2AD02Y=
 github.com/cenkalti/backoff/v4 v4.1.1 h1:G2HAfAmvm/GcKan2oOQpBXOd2tT2G57ZnZGWa1PxPBQ=
 github.com/cenkalti/backoff/v4 v4.1.1/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
