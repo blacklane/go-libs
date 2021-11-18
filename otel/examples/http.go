@@ -11,14 +11,13 @@ import (
 	"time"
 
 	"github.com/blacklane/go-libs/logger"
+	"github.com/blacklane/go-libs/middleware"
 	"github.com/blacklane/go-libs/otel"
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/blacklane/go-libs/otel/examples/middleware"
 )
 
 // StartHTTPServer creates and starts a http.Server listening on port 4242, with no router
