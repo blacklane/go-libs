@@ -1,0 +1,26 @@
+mode: atomic
+github.com/blacklane/go-libs/probes/probes.go:53.30,53.44 1 0
+github.com/blacklane/go-libs/probes/probes.go:56.48,56.62 1 0
+github.com/blacklane/go-libs/probes/probes.go:59.65,59.79 1 0
+github.com/blacklane/go-libs/probes/probes.go:62.35,62.36 0 0
+github.com/blacklane/go-libs/probes/probes.go:65.32,65.33 0 0
+github.com/blacklane/go-libs/probes/probes.go:68.36,68.37 0 0
+github.com/blacklane/go-libs/probes/probes.go:71.33,71.34 0 0
+github.com/blacklane/go-libs/probes/probes.go:77.29,96.2 6 7
+github.com/blacklane/go-libs/probes/probes.go:99.22,101.2 1 2
+github.com/blacklane/go-libs/probes/probes.go:110.31,112.2 1 6
+github.com/blacklane/go-libs/probes/probes.go:115.53,117.2 1 1
+github.com/blacklane/go-libs/probes/probes.go:119.66,121.2 1 1
+github.com/blacklane/go-libs/probes/probes.go:123.35,127.2 3 1
+github.com/blacklane/go-libs/probes/probes.go:129.32,133.2 3 1
+github.com/blacklane/go-libs/probes/probes.go:135.36,139.2 3 1
+github.com/blacklane/go-libs/probes/probes.go:141.33,145.2 3 3
+github.com/blacklane/go-libs/probes/probes.go:147.69,152.11 4 2
+github.com/blacklane/go-libs/probes/probes.go:158.2,158.38 1 1
+github.com/blacklane/go-libs/probes/probes.go:152.11,156.3 3 1
+github.com/blacklane/go-libs/probes/probes.go:161.70,166.12 4 3
+github.com/blacklane/go-libs/probes/probes.go:172.2,172.39 1 1
+github.com/blacklane/go-libs/probes/probes.go:166.12,170.3 3 2
+github.com/blacklane/go-libs/probes/context.go:11.41,13.9 2 2
+github.com/blacklane/go-libs/probes/context.go:17.2,17.12 1 1
+github.com/blacklane/go-libs/probes/context.go:13.9,15.3 1 1
