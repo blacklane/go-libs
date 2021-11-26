@@ -3,10 +3,11 @@ module github.com/blacklane/go-libs/otel/examples
 go 1.17
 
 require (
-	github.com/blacklane/go-libs/logger v0.5.2-0.20211110092643-1fb9abbd16c5
+	github.com/blacklane/go-libs/logger v0.6.0
+	github.com/blacklane/go-libs/middleware v0.0.0-20211126162057-c90039f771cf
 	github.com/blacklane/go-libs/otel v0.0.0
-	github.com/blacklane/go-libs/tracking v0.2.1
-	github.com/blacklane/go-libs/x/events v0.1.1-0.20211110092643-1fb9abbd16c5
+	github.com/blacklane/go-libs/tracking v0.3.0
+	github.com/blacklane/go-libs/x/events v0.2.0
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/confluentinc/confluent-kafka-go v1.7.0
 	github.com/google/uuid v1.3.0
@@ -16,7 +17,6 @@ require (
 )
 
 require (
-	github.com/blacklane/go-libs/middleware v0.0.0-20211110095358-291aa53d7be9 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
