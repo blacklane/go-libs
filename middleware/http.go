@@ -12,19 +12,27 @@ import (
 	"github.com/blacklane/go-libs/middleware/internal/constants"
 )
 
-// HTTP returns the composition of HTTPGenericMiddleware and
-// HTTPMiddleware. Therefore, it should be applied to each http.Handler
-// individually.
-func HTTP(serviceName, handlerName, path string, log logger.Logger, skipRoutes ...string) func(http.Handler) http.Handler {
+// HTTP returns the composition of all Blacklane's middleware.
+func HTTP(serviceName, handlerName, path string, log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := otel.HTTPMiddleware(serviceName, handlerName, path)(next)
-			h = logmiddleware.HTTPRequestLogger(skipRoutes)(h)
+			h = logmiddleware.HTTPRequestLogger([]string{})(h)
 			h = logmiddleware.HTTPAddLogger(log)(h)
 			h = HTTPTrackingID(h)
 
 			h.ServeHTTP(w, r)
 		})
+	}
+}
+
+// HTTPFunc is a helper function to use ordinary functions instead of http.Handler as HTTP requires.
+// It makes the necessary type conversions and delegates to HTTP.
+// Check HTTP for details.
+// TODO: add tests.
+func HTTPFunc(serviceName, handlerName, path string, log logger.Logger) func(func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+		return HTTP(serviceName, handlerName, path, log)(http.HandlerFunc(next)).ServeHTTP
 	}
 }
 

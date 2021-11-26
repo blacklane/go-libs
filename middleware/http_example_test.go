@@ -14,7 +14,6 @@ import (
 
 func ExampleHTTP() {
 	trackingID := "tracking_id_ExampleHTTP"
-	ignoredRoute := "/live"
 
 	// Set current time function so we can control the request duration
 	logger.SetNowFunc(func() time.Time {
@@ -27,11 +26,6 @@ func ExampleHTTP() {
 	requestBar.Header.Set(constants.HeaderTrackingID, trackingID)
 	requestBar.Header.Set(constants.HeaderForwardedFor, "localhost")
 
-	respWriterIgnored := httptest.NewRecorder()
-	requestIgnored := httptest.NewRequest(http.MethodGet, "http://example.com"+ignoredRoute, nil)
-	requestIgnored.Header.Set(constants.HeaderTrackingID, trackingID)
-	requestIgnored.Header.Set(constants.HeaderForwardedFor, "localhost")
-
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.FromContext(r.Context()).Info().Msg("always logged")
 		_, _ = fmt.Fprint(w, "ExampleHTTP")
@@ -41,29 +35,12 @@ func ExampleHTTP() {
 		"ExampleHTTPDefaultMiddleware",
 		"foo",
 		"/foo",
-		log,
-		ignoredRoute)
+		log)
 	h := allInOneMiddleware(handler)
 
-	h.ServeHTTP(respWriterIgnored, requestIgnored)
 	h.ServeHTTP(respWriterBar, requestBar)
 
 	// Output:
-	// {
-	//   "application": "ExampleHTTP",
-	//   "host": "example.com",
-	//   "ip": "localhost",
-	//   "level": "info",
-	//   "message": "always logged",
-	//   "params": "",
-	//   "path": "/live",
-	//   "request_id": "tracking_id_ExampleHTTP",
-	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
-	//   "tracking_id": "tracking_id_ExampleHTTP",
-	//   "user_agent": "",
-	//   "verb": "GET"
-	// }
 	// {
 	//   "application": "ExampleHTTP",
 	//   "host": "example.com",
