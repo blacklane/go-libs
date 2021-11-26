@@ -3,10 +3,10 @@ module github.com/blacklane/go-libs/middleware
 go 1.17
 
 require (
-	github.com/blacklane/go-libs/logger v0.5.2-0.20211110123002-5f1d885ee0d0
-	github.com/blacklane/go-libs/otel v0.0.0-20211116140607-f4d6cab2e73f
-	github.com/blacklane/go-libs/tracking v0.2.1
-	github.com/blacklane/go-libs/x/events v0.1.1-0.20211116140607-f4d6cab2e73f
+	github.com/blacklane/go-libs/logger v0.6.0
+	github.com/blacklane/go-libs/otel v0.1.0
+	github.com/blacklane/go-libs/tracking v0.3.0
+	github.com/blacklane/go-libs/x/events v0.2.0
 	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.3.0
 )
