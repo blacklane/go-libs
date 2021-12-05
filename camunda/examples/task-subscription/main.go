@@ -37,7 +37,7 @@ func main() {
 	client := camunda.NewClient(url, processKey, http.Client{}, camunda.BasicAuthCredentials{})
 
 	handler := taskHandler{}
-	subscription := client.Subscribe(topic, workerID, &handler,
+	subscription := client.Subscribe(context.Background(), topic, workerID, &handler,
 		camunda.FetchInterval(time.Second*2),
 		camunda.MaxTasksFetch(10),
 		camunda.LockDuration(2000),
@@ -48,7 +48,7 @@ func main() {
 	subscription.Stop()
 }
 
-func (th *taskHandler) Handle(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+func (th *taskHandler) Handle(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 	log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
 	err := completeFunc(context.Background(), t.ID)
