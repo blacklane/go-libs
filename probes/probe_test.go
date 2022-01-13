@@ -8,7 +8,11 @@ import (
 	"net"
 	"net/http"
 	"testing"
+	"time"
 )
+
+// Time to wait for the server to start before sending requests
+const wait = time.Second / 2
 
 func TestProbe_LivenessSucceed(t *testing.T) {
 	const want = liveResponse
@@ -24,6 +28,9 @@ func TestProbe_LivenessSucceed(t *testing.T) {
 	}()
 
 	p.LivenessSucceed()
+
+	// Wait for the server to start
+	time.Sleep(wait)
 
 	resp, err := http.Get("http://" + addr + "/live")
 	if err != nil {
@@ -55,6 +62,9 @@ func TestProbe_LivenessFail(t *testing.T) {
 
 	p.LivenessFail()
 
+	// Wait for the server to start
+	time.Sleep(wait)
+
 	respLive, err := http.Get("http://" + addr + "/live")
 	if err != nil {
 		panic("liveness probe failed: " + err.Error())
@@ -84,6 +94,9 @@ func TestProbe_ReadinessSucceed(t *testing.T) {
 	}()
 
 	p.ReadinessSucceed()
+
+	// Wait for the server to start
+	time.Sleep(wait)
 
 	resp, err := http.Get("http://" + addr + "/ready")
 	if err != nil {
@@ -115,6 +128,9 @@ func TestProbe_ReadinessFail(t *testing.T) {
 
 	p.ReadinessFail()
 
+	// Wait for the server to start
+	time.Sleep(wait)
+
 	respLive, err := http.Get("http://" + addr + "/ready")
 	if err != nil {
 		panic("liveness probe failed: " + err.Error())
@@ -140,6 +156,9 @@ func TestProbe_Shutdown(t *testing.T) {
 			panic("could not start probes server")
 		}
 	}()
+
+	// Wait for the server to start
+	time.Sleep(wait)
 
 	err := p.Shutdown(context.Background())
 
@@ -179,6 +198,9 @@ func TestProbe_raceCondition(t *testing.T) {
 	}()
 
 	p.ReadinessFail()
+
+	// Wait for the server to start
+	time.Sleep(wait)
 
 	respLive, err := http.Get("http://" + addr + "/ready")
 	if err != nil {
