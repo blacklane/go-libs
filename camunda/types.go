@@ -20,11 +20,15 @@ type (
 		Variables   map[string]Variable `json:"variables"`
 	}
 	TaskHandler interface {
-		Handle(completeFunc TaskCompleteFunc, t Task)
+		Handle(ctx context.Context, completeFunc TaskCompleteFunc, t Task)
 	}
+	TaskHandlerFunc  func(ctx context.Context, completeFunc TaskCompleteFunc, t Task)
 	TaskCompleteFunc func(ctx context.Context, taskID string) error
-	TaskHandlerFunc  func(completeFunc TaskCompleteFunc, t Task)
 )
+
+func (h TaskHandlerFunc) Handle(ctx context.Context, completeFunc TaskCompleteFunc, t Task) {
+	h(ctx, completeFunc, t)
+}
 
 func NewStringVariable(varType string, value interface{}) Variable {
 	return Variable{

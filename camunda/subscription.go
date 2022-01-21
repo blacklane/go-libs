@@ -76,12 +76,12 @@ func (s *Subscription) addHandler(handler TaskHandler) {
 
 // fetch connects to camunda and starts polling the external tasks
 // It will call each Handler if there is a new task on the topic
-func (s *Subscription) fetch(fal fetchAndLock) {
+func (s *Subscription) fetch(ctx context.Context, fal fetchAndLock) {
 	tasks, _ := s.client.fetchAndLock(&fal)
 	for _, task := range tasks {
 		for _, handler := range s.handlers {
 			task.BusinessKey = extractBusinessKey(task)
-			handler(s.complete, task)
+			handler(ctx, s.complete, task)
 		}
 	}
 }
@@ -94,7 +94,7 @@ func extractBusinessKey(task Task) string {
 	return value.Value.(string)
 }
 
-func (s *Subscription) schedule() {
+func (s *Subscription) schedule(ctx context.Context) {
 	atomic.AddInt32(&s.isRunning, 1)
 	lockParam := fetchAndLock{
 		WorkerID: s.workerID,
@@ -109,6 +109,6 @@ func (s *Subscription) schedule() {
 
 	for s.isRunning > 0 {
 		<-time.After(s.interval) // fetch every x seconds
-		go s.fetch(lockParam)
+		go s.fetch(ctx, lockParam)
 	}
 }

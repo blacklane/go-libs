@@ -15,7 +15,7 @@ type (
 	Client interface {
 		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error
-		Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
+		Subscribe(ctx context.Context, topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -77,7 +77,7 @@ func (c *client) SendMessage(ctx context.Context, messageType string, businessKe
 	return nil
 }
 
-func (c *client) Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription {
+func (c *client) Subscribe(ctx context.Context, topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription {
 	sub := newSubscription(c, topicName, workerID)
 	sub.addHandler(handler)
 
@@ -86,7 +86,7 @@ func (c *client) Subscribe(topicName string, workerID string, handler TaskHandle
 	}
 
 	// run async fetch loop
-	go sub.schedule()
+	go sub.schedule(ctx)
 
 	return sub
 }
