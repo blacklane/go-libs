@@ -3,6 +3,7 @@ module github.com/blacklane/go-libs/middleware
 go 1.17
 
 require (
+	github.com/blacklane/go-libs/camunda v0.0.1
 	github.com/blacklane/go-libs/logger v0.6.0
 	github.com/blacklane/go-libs/otel v0.1.0
 	github.com/blacklane/go-libs/tracking v0.3.0
