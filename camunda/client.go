@@ -153,4 +153,3 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 
 	return body, nil
 }
-
