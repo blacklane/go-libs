@@ -81,7 +81,7 @@ func (s *Subscription) fetch(fal fetchAndLock) {
 	for _, task := range tasks {
 		for _, handler := range s.handlers {
 			task.BusinessKey = extractBusinessKey(task)
-			handler(s.complete, task)
+			handler(context.Background(), s.complete, task)
 		}
 	}
 }
