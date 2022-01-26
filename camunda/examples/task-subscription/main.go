@@ -56,3 +56,4 @@ func (th *taskHandler) Handle(ctx context.Context, completeFunc camunda.TaskComp
 		log.Err(err).Msgf("Failed to complete task [%s]", t.ID)
 	}
 }
+
