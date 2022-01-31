@@ -48,7 +48,7 @@ func main() {
 	subscription.Stop()
 }
 
-func (th *taskHandler) Handle(completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+func (th *taskHandler) Handle(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 	log.Info().Msgf("Handling Task [%s] on topic [%s]", t.ID, t.TopicName)
 
 	err := completeFunc(context.Background(), t.ID)
