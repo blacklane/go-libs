@@ -22,7 +22,7 @@ pipeline:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
       - export $(cat .ci-secrets | xargs)
-      - cd camunda
+      - cd camunda/v2
       - make gitconfig test
 
   test_otel:
