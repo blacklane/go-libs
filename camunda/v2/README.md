@@ -11,7 +11,7 @@ It can connect to any camunda engine deployment and supports a subset of operati
 
 ## Installation
 ```shell
-go get -u github.com/blacklane/go-libs/camunda
+go get -u github.com/blacklane/go-libs/camunda/v2
 ```
 
 ## Getting Started

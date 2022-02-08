@@ -1,4 +1,4 @@
-module github.com/blacklane/go-libs/camunda
+module github.com/blacklane/go-libs/camunda/v2
 
 go 1.14
 
