@@ -9,7 +9,7 @@ import (
 	"github.com/blacklane/go-libs/logger"
 	"github.com/google/uuid"
 
-	"github.com/blacklane/go-libs/camunda"
+	"github.com/blacklane/go-libs/camunda/v2"
 )
 
 const (

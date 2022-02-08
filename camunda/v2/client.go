@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/blacklane/go-libs/camunda/internal"
+	"github.com/blacklane/go-libs/camunda/v2/internal"
 )
 
 type (
