@@ -7,7 +7,7 @@ import (
 	"github.com/blacklane/go-libs/logger"
 )
 
-func SubscriptionsAddLogger(log logger.Logger) func(camunda.TaskHandler) camunda.TaskHandler {
+func CamundaSubscriptionsAddLogger(log logger.Logger) func(camunda.TaskHandler) camunda.TaskHandler {
 	return func(next camunda.TaskHandler) camunda.TaskHandler {
 		return camunda.TaskHandlerFunc(func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
 			log = log.With().Logger()

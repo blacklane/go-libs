@@ -16,7 +16,7 @@ func ExamplesSubscriptions() {
 		l.Info().Msg("always logged")
 	})
 
-	h := middleware.SubscriptionsAddLogger(log)(handler)
+	h := middleware.CamundaSubscriptionsAddLogger(log)(handler)
 
 	completeHandler := camunda.TaskCompleteFunc(func(ctx context.Context, taskID string) error {
 		return nil
