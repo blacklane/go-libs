@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/blacklane/go-libs/logger v0.6.0
+	github.com/blacklane/go-libs/camunda/v2 v2.0.0-20220208132721-238c65053cf6
 	github.com/blacklane/go-libs/otel v0.1.0
 	github.com/blacklane/go-libs/tracking v0.3.0
 	github.com/blacklane/go-libs/x/events v0.2.0

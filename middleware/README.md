@@ -8,7 +8,7 @@ TODO: write the readme
 go get -u github.com/blacklane/go-libs/middleware
 ```
 
-## Retry: getting Started
+## Retry: Getting Started
 
 `retry` is a middleware which for x/events. It will retry with exponential back-off algorithm until it exceeds max retry, which is passed by argument to `middleware.Retry`.
 
@@ -35,5 +35,21 @@ func (h Handler) Handle(ctx context.Context, e events.Event) error {
 	}
 
 	return nil
+}
+```
+
+## Camunda Subscription Handler: Getting Started
+
+The Camunda subscription handler is a middleware which allows the injection of the `context` from the service in ot the Camunda subscription handler.
+
+```go
+func CamundaSubscriptionsAddLogger(log logger.Logger) func(camunda.TaskHandler) camunda.TaskHandler {
+	return func(next camunda.TaskHandler) camunda.TaskHandler {
+		return camunda.TaskHandlerFunc(func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
+			log = log.With().Logger()
+			context := log.WithContext(ctx)
+			next.Handle(context, completeFunc, t)
+		})
+	}
 }
 ```
