@@ -58,6 +58,7 @@ func ExampleHTTP() {
 	// }
 	// {
 	//   "application": "ExampleHTTP",
+	//   "body": null,
 	//   "duration_ms": 0,
 	//   "host": "example.com",
 	//   "http_status": 200,
@@ -121,6 +122,7 @@ func ExampleHTTP_onlyRequestIDHeader() {
 	// }
 	// {
 	//   "application": "ExampleHTTP",
+	//   "body": null,
 	//   "duration_ms": 0,
 	//   "host": "example.com",
 	//   "http_status": 200,
@@ -185,6 +187,7 @@ func ExampleHTTP_trackingIDAndRequestIDHeaders() {
 	// }
 	// {
 	//   "application": "ExampleHTTP",
+	//   "body": null,
 	//   "duration_ms": 0,
 	//   "host": "example.com",
 	//   "http_status": 200,
