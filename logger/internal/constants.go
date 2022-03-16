@@ -3,6 +3,7 @@ package internal
 // Internal constants
 const (
 	FieldApplication     = "application"
+	FieldBody            = "body"
 	FieldDuration        = "duration_ms"
 	FieldEvent           = "event"
 	FieldHTTPStatus      = "http_status"
@@ -25,4 +26,9 @@ const (
 	HeaderForwardedFor = "X-Forwarded-For"
 	HeaderRequestID    = "X-Request-Id"
 	HeaderTrackingID   = "X-Tracking-Id"
+)
+
+const (
+	FilterTag  = "[FILTERED]"
+	FilterKeys = "filterKeys"
 )
