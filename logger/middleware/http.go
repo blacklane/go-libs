@@ -80,7 +80,15 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 					}
 				}
 
-				b := filterBody(body, ctx.Value(internal.FilterKeys))
+				var b map[string]interface{}
+				if body != nil {
+					keys, ok := ctx.Value(internal.FilterKeys).([]string)
+					if !ok {
+						log.Log().Msg("error getting filter keys from context")
+					}
+					b = filterBody(body, keys)
+				}
+
 				//post process fields
 				f := make(map[string]interface{})
 				f[internal.FieldBody] = b
@@ -97,28 +105,29 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 	}
 }
 
-func filterBody(body []byte, filterKeys interface{}) map[string]interface{} {
-	if _, ok := filterKeys.([]string); ok {
-		filters := filterKeys.([]string)
-		var b map[string]interface{}
-		_ = json.Unmarshal(body, &b)
-
-		for k, v := range b {
-			if _, ok := v.(map[string]interface{}); ok {
-				marshalData, _ := json.Marshal(v)
-				b[k] = filterBody(marshalData, filters)
-			}
-
-			//validate tag list
-			toSearch := strings.Join(filters, ",")
-			if strings.Contains(toSearch, k) {
-				b[k] = internal.FilterTag
-			}
-		}
-		return b
+func filterBody(body []byte, filterKeys []string) map[string]interface{} {
+	var b map[string]interface{}
+	err := json.Unmarshal(body, &b)
+	if err != nil {
+		return nil
 	}
 
-	return nil
+	for k, v := range b {
+		if _, ok := v.(map[string]interface{}); ok {
+			marshalData, err := json.Marshal(v)
+			if err != nil {
+				return nil
+			}
+			b[k] = filterBody(marshalData, filterKeys)
+		}
+
+		//validate tag list
+		toSearch := strings.Join(filterKeys, ",")
+		if strings.Contains(toSearch, k) {
+			b[k] = internal.FilterTag
+		}
+	}
+	return b
 }
 
 // Logger adds the logger into the request context.
