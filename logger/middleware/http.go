@@ -86,10 +86,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 
 				var b map[string]interface{}
 				if body != nil {
-					keys, ok := ctx.Value(internal.FilterKeys).([]string)
-					if !ok {
-						log.Log().Msg("error getting filter keys from context")
-					}
+					keys := getKeys(ctx, log)
 					b = filterBody(body, keys)
 				}
 
@@ -107,6 +104,19 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(&ww, r)
 		})
 	}
+}
+
+func getKeys(ctx context.Context, log logger.Logger) []string {
+	keys, ok := ctx.Value(internal.FilterKeys).([]string)
+	if !ok {
+		log.Log().Msg("error getting filter keys from context")
+	}
+
+	if len(keys) == 0 {
+		return internal.DefaultKeys
+	}
+
+	return keys
 }
 
 func filterBody(body []byte, filterKeys []string) map[string]interface{} {

@@ -32,3 +32,7 @@ const (
 	FilterTag  = "[FILTERED]"
 	FilterKeys = "filterKeys"
 )
+
+// DefaultKeys Please don't mutate it!
+var DefaultKeys = []string{"new_payer_email", "new_booker_email", "email", "new_booker_mobile_phone",
+	"old_booker_new_booker_mobile_phone", "new_payer_mobile_phone", "mobile_phone", "phone"}
