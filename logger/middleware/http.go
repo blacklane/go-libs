@@ -51,7 +51,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			var body []byte
 
 			//save body to log later
-			if r.Body != nil {
+			if r.Body != http.NoBody {
 				body, _ = ioutil.ReadAll(r.Body) //Body swap
 				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 			}
