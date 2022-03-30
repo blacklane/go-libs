@@ -52,7 +52,11 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 
 			//save body to log later
 			if r.Body != http.NoBody {
-				body, _ = ioutil.ReadAll(r.Body) //Body swap
+				var err error
+				body, err = ioutil.ReadAll(r.Body) //Body swap
+				if err != nil {
+					log.Log().Msg("error reading body")
+				}
 				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 			}
 
