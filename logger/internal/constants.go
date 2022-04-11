@@ -3,6 +3,7 @@ package internal
 // Internal constants
 const (
 	FieldApplication     = "application"
+	FieldBody            = "body"
 	FieldDuration        = "duration_ms"
 	FieldEvent           = "event"
 	FieldHTTPStatus      = "http_status"
@@ -26,3 +27,12 @@ const (
 	HeaderRequestID    = "X-Request-Id"
 	HeaderTrackingID   = "X-Tracking-Id"
 )
+
+const (
+	FilterTag  = "[FILTERED]"
+	FilterKeys = "filterKeys"
+)
+
+// DefaultKeys Please don't mutate it!
+var DefaultKeys = []string{"new_payer_email", "new_booker_email", "email", "new_booker_mobile_phone",
+	"old_booker_new_booker_mobile_phone", "new_payer_mobile_phone", "mobile_phone", "phone"}

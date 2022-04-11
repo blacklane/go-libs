@@ -2,16 +2,18 @@ package middleware
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
 
-	"github.com/blacklane/go-libs/tracking"
-	"github.com/rs/zerolog"
-
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
+	"github.com/blacklane/go-libs/tracking"
+	"github.com/rs/zerolog"
 )
 
 // HTTPAddLogger adds the logger into the request context.
@@ -20,6 +22,16 @@ func HTTPAddLogger(log logger.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log = log.With().Logger() // Creates a sub logger so all requests won't share the same logger instance
 			ctx := log.WithContext(r.Context())
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// HTTPAddBodyFilters adds body filter values into the request context.
+func HTTPAddBodyFilters(filterKeys []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), internal.FilterKeys, filterKeys)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -36,6 +48,17 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			log := *logger.FromContext(ctx)
 
 			trackingID := tracking.IDFromContext(ctx)
+			var body []byte
+
+			//save body to log later
+			if r.Body != http.NoBody {
+				var err error
+				body, err = ioutil.ReadAll(r.Body) //Body swap
+				if err != nil {
+					log.Log().Msg("error reading body")
+				}
+				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			}
 
 			logFields := map[string]interface{}{
 				internal.FieldHost:       r.Host,
@@ -61,15 +84,64 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 					}
 				}
 
+				var b map[string]interface{}
+				if body != nil {
+					keys := getKeys(ctx, log)
+					b = filterBody(body, keys)
+				}
+
+				//post process fields
+				f := make(map[string]interface{})
+				f[internal.FieldBody] = b
+
 				getLogLevel(log, ww).
 					Int(internal.FieldHTTPStatus, ww.statusCode).
 					Dur(internal.FieldRequestDuration, logger.Now().Sub(startTime)).
+					Fields(f).
 					Msgf("%s %s", r.Method, urlPath)
 			}()
 
 			next.ServeHTTP(&ww, r)
 		})
 	}
+}
+
+func getKeys(ctx context.Context, log logger.Logger) []string {
+	keys, ok := ctx.Value(internal.FilterKeys).([]string)
+	if !ok {
+		log.Log().Msg("error getting filter keys from context")
+	}
+
+	if len(keys) == 0 {
+		return internal.DefaultKeys
+	}
+
+	return keys
+}
+
+func filterBody(body []byte, filterKeys []string) map[string]interface{} {
+	var b map[string]interface{}
+	err := json.Unmarshal(body, &b)
+	if err != nil {
+		return nil
+	}
+
+	for k, v := range b {
+		if _, ok := v.(map[string]interface{}); ok {
+			marshalData, err := json.Marshal(v)
+			if err != nil {
+				return nil
+			}
+			b[k] = filterBody(marshalData, filterKeys)
+		}
+
+		//validate tag list
+		toSearch := strings.Join(filterKeys, ",")
+		if strings.Contains(toSearch, k) {
+			b[k] = internal.FilterTag
+		}
+	}
+	return b
 }
 
 // Logger adds the logger into the request context.
