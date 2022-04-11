@@ -42,6 +42,8 @@ github.com/blacklane/go-libs/camunda/v2 v2.0.0-20220208132721-238c65053cf6/go.mo
 github.com/blacklane/go-libs/logger v0.5.1/go.mod h1:y6b3vg6DXd2LHdqUZ5KIkqcHj9pl64eYx0PVbBo4Osw=
 github.com/blacklane/go-libs/logger v0.6.0 h1:SG+rsiYTxb1JkL2g0BOZphYA9HqZY222UlSu6OvcXrc=
 github.com/blacklane/go-libs/logger v0.6.0/go.mod h1:DL3ZJKe5u2ogG6FFnicjyw6lOBY9CoA1obl7KbAJztw=
+github.com/blacklane/go-libs/logger v0.6.1 h1:5Hy3zXheWjg5YNicqyQ0YgxvR4b7ipwTnujKBGWk1c0=
+github.com/blacklane/go-libs/logger v0.6.1/go.mod h1:j4RBBcgXH6z5GWWpU23bX2+cp50gNctI224RCPLtA/Q=
 github.com/blacklane/go-libs/otel v0.1.0 h1:Vctb1Whv7nr2biaDBe8KOZT/ISSnihiOiHexKQLhCpM=
 github.com/blacklane/go-libs/otel v0.1.0/go.mod h1:Iun1zfQbWWG1dY0f+uGgC79p7eKfgXfukM0xuTYU9aY=
 github.com/blacklane/go-libs/tracking v0.0.1/go.mod h1:mnDJmT2e0oqtVY5qoQNSrdP5kPMe/XOpNQ3WeVNiM7U=

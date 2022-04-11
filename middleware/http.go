@@ -31,11 +31,11 @@ func HTTPWithBodyFilter(serviceName, handlerName, path string, filterKeys []stri
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h := otel.HTTPMiddleware(serviceName, handlerName, path)(next)
-			h = logmiddleware.HTTPAddBodyFilters(filterKeys)(h)
 			h = logmiddleware.HTTPRequestLogger([]string{})(h)
 			h = logmiddleware.HTTPAddLogger(log)(h)
 			h = HTTPTrackingID(h)
-			
+			h = logmiddleware.HTTPAddBodyFilters(filterKeys)(h)
+
 			h.ServeHTTP(w, r)
 		})
 	}
