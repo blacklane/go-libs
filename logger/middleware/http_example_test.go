@@ -67,6 +67,7 @@ func ExampleHTTPRequestLogger_simple() {
 	// Output:
 	// {
 	//   "application": "ExampleHTTPRequestLogger_simple",
+	//   "body": null,
 	//   "duration_ms": 0,
 	//   "host": "example.com",
 	//   "http_status": 200,
@@ -112,6 +113,7 @@ func ExampleHTTPRequestLogger_complete() {
 	// Output:
 	// {
 	//   "application": "ExampleHTTPRequestLogger_complete",
+	//   "body": null,
 	//   "duration_ms": 1000,
 	//   "host": "example.com",
 	//   "http_status": 200,
@@ -173,6 +175,7 @@ func ExampleHTTPRequestLogger_skipRoutes() {
 	// }
 	// {
 	//   "application": "ExampleHTTPRequestLogger_skipRoutes",
+	//   "body": null,
 	//   "duration_ms": 0,
 	//   "host": "example.com",
 	//   "http_status": 200,
