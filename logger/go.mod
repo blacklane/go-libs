@@ -7,7 +7,7 @@ require (
 	github.com/blacklane/go-libs/x/events v0.2.0
 	github.com/google/go-cmp v0.5.6
 	github.com/rs/zerolog v1.20.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 )
 
 require (
