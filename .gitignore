@@ -1,4 +1,8 @@
 .env
 .idea/
+.vscode/
+
+go.work
+go.work.*
 
 x/events/.tools/

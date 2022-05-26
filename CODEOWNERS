@@ -1,6 +1,6 @@
 # For the syntax and docs for this file check https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
 
-*   @AndersonQ @giulliano-bueno
+*   @AndersonQ @giulliano-bueno @jcyamacho
 
 # x/events
-x/events   @AndersonQ @mcrakhman
+x/events   @AndersonQ @mcrakhman @jcyamacho
