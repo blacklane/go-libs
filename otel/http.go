@@ -49,3 +49,23 @@ func HTTPInject(ctx context.Context, r *http.Request) {
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(r.Header))
 	r.Header.Set("X-Tracking-Id", tracking.IDFromContext(ctx))
 }
+
+type otelTransport struct {
+	Transport http.RoundTripper
+}
+
+func (o *otelTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
+	HTTPInject(ctx, req)
+	return o.Transport.RoundTrip(req)
+}
+
+// InstrumentTransport instruments the given http.RoundTripper with OTel.
+// If the given http.RoundTripper is nil, http.DefaultTransport is used.
+// Requests should be made with the context with the span.
+func InstrumentTransport(t http.RoundTripper) http.RoundTripper {
+	if t == nil {
+		t = http.DefaultTransport
+	}
+	return &otelTransport{Transport: t}
+}
