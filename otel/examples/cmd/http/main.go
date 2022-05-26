@@ -25,10 +25,8 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// OpenTelemetry (OTel) tracer for service A.
-	err := otel.SetUpOTel(
-		serviceName,
-		cfg.OTelExporterEndpoint,
-		cfg.Log,
+	err := otel.SetUpOTel(serviceName, cfg.Log,
+		otel.WithGrpcTraceExporter(cfg.OTelExporterEndpoint),
 		otel.WithServiceVersion(serviceVersion),
 		otel.WithDebug(),
 		otel.WithErrorHandler(func(err error) {

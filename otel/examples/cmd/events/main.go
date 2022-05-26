@@ -24,7 +24,8 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// Set up OpenTelemetry (OTel) with a Jaeger tracer.
-	otel.SetUpOTel(serviceName, cfg.OTelExporterEndpoint, cfg.Log,
+	otel.SetUpOTel(serviceName, cfg.Log,
+		otel.WithGrpcTraceExporter(cfg.OTelExporterEndpoint),
 		otel.WithDebug(),
 		otel.WithServiceVersion(serviceVersion),
 		otel.WithErrorHandler(func(err error) {
