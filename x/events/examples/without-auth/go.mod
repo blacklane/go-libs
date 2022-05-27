@@ -2,7 +2,10 @@ module github.com/blacklane/go-libs/x/events/examples/without-auth
 
 go 1.17
 
-replace github.com/blacklane/go-libs/x/events => ../../
+replace (
+	github.com/blacklane/go-libs/tracking => ../../../../tracking
+	github.com/blacklane/go-libs/x/events => ../../
+)
 
 require (
 	github.com/blacklane/go-libs/x/events v0.0.0-20200729083625-bff51d3ec664
@@ -11,7 +14,7 @@ require (
 )
 
 require (
-	github.com/blacklane/go-libs/tracking v0.3.0 // indirect
+	github.com/blacklane/go-libs/tracking v0.3.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

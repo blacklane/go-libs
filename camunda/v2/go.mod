@@ -4,7 +4,9 @@ go 1.14
 
 replace (
 	github.com/blacklane/go-libs/logger => ../../logger
+	github.com/blacklane/go-libs/tracking => ../../tracking
 	github.com/blacklane/go-libs/x/events => ../../x/events
+
 )
 
 require (
