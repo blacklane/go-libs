@@ -12,3 +12,5 @@ RUN git config --global url.https://${GITHUB_TOKEN}:@github.com.insteadOf https:
 
 WORKDIR /src
 COPY . ./
+
+ENTRYPOINT [ "sh", "-c" ]
