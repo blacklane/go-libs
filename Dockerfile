@@ -7,7 +7,8 @@ RUN apk update && \
     git \
     make
 
+ARG GITHUB_TOKEN
+RUN git config --global url.https://${GITHUB_TOKEN}:@github.com.insteadOf https://github.com
+
 WORKDIR /src
 COPY . ./
-
-ENTRYPOINT [ "sh", "-c" ]

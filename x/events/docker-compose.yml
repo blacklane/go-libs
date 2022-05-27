@@ -19,8 +19,7 @@ services:
 
   tests:
     build:
-      context: ../..
-      # dockerfile: ../../Dockerfile
+      context: ../../
       args:
         - GITHUB_TOKEN
         - GOPRIVATE
@@ -30,8 +29,10 @@ services:
       TIMEOUT_MULTIPLIER:
       BUILD_TAGS: "-tags musl,integration"
       KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
-    command: 
-      - make gitconfig deps test
+    command:
+      - make
+      - deps
+      - test
     depends_on:
       - zookeeper
       - kafka
