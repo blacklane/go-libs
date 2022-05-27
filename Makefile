@@ -140,6 +140,9 @@ prerelease: | $(MULTIMOD)
 	@[ "${MODSET}" ] || ( echo ">> env var MODSET is not set"; exit 1 )
 	$(MULTIMOD) verify && $(MULTIMOD) prerelease -m ${MODSET}
 
+prerelease-all: | $(MULTIMOD)
+	$(MULTIMOD) verify && $(MULTIMOD) prerelease -a
+
 COMMIT ?= "HEAD"
 .PHONY: add-tags
 add-tags: | $(MULTIMOD)
