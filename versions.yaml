@@ -23,7 +23,7 @@ module-sets:
     version: v0.3.1
     modules:
       - github.com/blacklane/go-libs/tracking
-  events:
+  xevents:
     version: v0.2.1
     modules:
       - github.com/blacklane/go-libs/x/events
