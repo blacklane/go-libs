@@ -2,6 +2,8 @@ module github.com/blacklane/go-libs/x/events
 
 go 1.17
 
+replace github.com/blacklane/go-libs/tracking => ../../tracking
+
 require (
 	github.com/blacklane/go-libs/tracking v0.3.0
 	github.com/confluentinc/confluent-kafka-go v1.7.0

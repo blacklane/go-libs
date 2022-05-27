@@ -4,6 +4,10 @@ Blacklane's [multi-module repository](https://github.com/golang/go/wiki/Modules#
 
 It's a work in progress, everyone is welcome to help. We use 
 [GitHub Issues](https://github.com/blacklane/go-libs/issues) for bug report and requests.
+
+## Releasing
+
+Follow the [Releasing Process](./RELEASING.md)
  
 ## Repository structure
 

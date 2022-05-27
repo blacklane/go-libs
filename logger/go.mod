@@ -2,6 +2,11 @@ module github.com/blacklane/go-libs/logger
 
 go 1.17
 
+replace (
+	github.com/blacklane/go-libs/tracking => ../tracking
+	github.com/blacklane/go-libs/x/events => ../x/events
+)
+
 require (
 	github.com/blacklane/go-libs/tracking v0.3.0
 	github.com/blacklane/go-libs/x/events v0.2.0

@@ -2,6 +2,14 @@ module github.com/blacklane/go-libs/middleware
 
 go 1.17
 
+replace (
+	github.com/blacklane/go-libs/camunda/v2 => ../camunda/v2
+	github.com/blacklane/go-libs/logger => ../logger
+	github.com/blacklane/go-libs/otel => ../otel
+	github.com/blacklane/go-libs/tracking => ../tracking
+	github.com/blacklane/go-libs/x/events => ../x/events
+)
+
 require (
 	github.com/blacklane/go-libs/camunda/v2 v2.0.0-20220208132721-238c65053cf6
 	github.com/blacklane/go-libs/logger v0.6.1
@@ -29,6 +37,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.7.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.7.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.7.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.7.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.7.0 // indirect
 	go.opentelemetry.io/otel/metric v0.30.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.7.0 // indirect

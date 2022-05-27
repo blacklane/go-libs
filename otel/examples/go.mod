@@ -2,8 +2,16 @@ module github.com/blacklane/go-libs/otel/examples
 
 go 1.17
 
+replace (
+	github.com/blacklane/go-libs/logger => ../../logger
+	github.com/blacklane/go-libs/middleware => ../../middleware
+	github.com/blacklane/go-libs/otel => ../
+	github.com/blacklane/go-libs/tracking => ../../tracking
+	github.com/blacklane/go-libs/x/events => ../../x/events
+)
+
 require (
-	github.com/blacklane/go-libs/logger v0.6.0
+	github.com/blacklane/go-libs/logger v0.6.1
 	github.com/blacklane/go-libs/middleware v0.1.0
 	github.com/blacklane/go-libs/otel v0.1.0
 	github.com/blacklane/go-libs/tracking v0.3.0
@@ -17,6 +25,7 @@ require (
 )
 
 require (
+	github.com/blacklane/go-libs/camunda/v2 v2.0.0-20220208132721-238c65053cf6 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -41,5 +50,3 @@ require (
 	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
-
-replace github.com/blacklane/go-libs/otel => ../
