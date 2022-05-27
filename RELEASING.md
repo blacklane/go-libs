@@ -7,7 +7,7 @@ release using this tool for this repository.
 
 ## Start a release
 
-First, decide which module sets will have their versions chagned and what those
+First, decide which module sets will have their versions changed and what those
 versions will be.
 
 ### Create a release branch
