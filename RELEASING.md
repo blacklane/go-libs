@@ -91,7 +91,7 @@ should be fine.
 
 ## Release
 
-Finally create a Release on GitHub. If you are release multiple versions for
+Finally create a Release on GitHub. If you are releasing multiple versions for
 different module sets, be sure to use the stable release tag but be sure to
 include each version in the release title (i.e. `Release v1.0.0/v0.25.0`). The
 release body should include all the curated changes from the Changelog for this
