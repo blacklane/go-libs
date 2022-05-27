@@ -10,7 +10,7 @@ replace (
 require (
 	github.com/blacklane/go-libs/x/events v0.0.0-20200729083625-bff51d3ec664
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/confluentinc/confluent-kafka-go v1.7.0
+	github.com/confluentinc/confluent-kafka-go v1.8.2
 )
 
 require (

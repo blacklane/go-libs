@@ -3,6 +3,7 @@ module github.com/blacklane/go-libs/otel/examples
 go 1.17
 
 replace (
+	github.com/blacklane/go-libs/camunda/v2 => ../../camunda/v2
 	github.com/blacklane/go-libs/logger => ../../logger
 	github.com/blacklane/go-libs/middleware => ../../middleware
 	github.com/blacklane/go-libs/otel => ../
@@ -11,13 +12,13 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/logger v0.6.1
+	github.com/blacklane/go-libs/logger v0.6.2
 	github.com/blacklane/go-libs/middleware v0.1.0
-	github.com/blacklane/go-libs/otel v0.1.0
+	github.com/blacklane/go-libs/otel v0.1.1
 	github.com/blacklane/go-libs/tracking v0.3.1
 	github.com/blacklane/go-libs/x/events v0.2.1
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/confluentinc/confluent-kafka-go v1.7.0
+	github.com/confluentinc/confluent-kafka-go v1.8.2
 	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.26.0
 	go.opentelemetry.io/otel v1.7.0
@@ -25,7 +26,7 @@ require (
 )
 
 require (
-	github.com/blacklane/go-libs/camunda/v2 v2.0.0-20220208132721-238c65053cf6 // indirect
+	github.com/blacklane/go-libs/camunda/v2 v2.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
