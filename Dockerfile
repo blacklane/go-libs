@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine
+FROM golang:1.17-alpine3.13
 
 RUN apk update && \
     apk --no-cache upgrade && \
@@ -12,5 +12,3 @@ RUN git config --global url.https://${GITHUB_TOKEN}:@github.com.insteadOf https:
 
 WORKDIR /src
 COPY . ./
-
-ENTRYPOINT [ "sh", "-c" ]

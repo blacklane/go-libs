@@ -32,7 +32,9 @@ services:
       BUILD_TAGS: "-tags musl,integration"
       KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_ADVERTISED_HOST_NAME}"
     command:
-      - make deps test
+      - make
+      - deps
+      - test
     depends_on:
       - zookeeper
       - kafka
