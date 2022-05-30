@@ -1,4 +1,13 @@
 .env
 .idea/
+.vscode/
+
+go.work
+go.work.*
+
+.tools/
+coverage.*
+example
+examples
 
 x/events/.tools/

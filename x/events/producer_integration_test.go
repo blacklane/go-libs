@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package events
@@ -54,9 +55,9 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 		if ok := errors.As(err, &errDelivery); !ok {
 			t.Errorf("want %T, got %T", kafka.Error{}, err)
 		}
-		if errDelivery.Code() != kafka.ErrUnknownTopicOrPart {
+		if errDelivery.Code() != kafka.ErrMsgTimedOut {
 			t.Errorf("want %s, got: %s",
-				kafka.ErrUnknownTopicOrPart.String(), errDelivery.Code())
+				kafka.ErrMsgTimedOut.String(), errDelivery.Code())
 		}
 
 		mu.Lock()

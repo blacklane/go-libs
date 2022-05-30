@@ -10,11 +10,16 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+)
+
+var (
+	ErrEmptyServiceName = errors.New("serviceName cannot be empty")
 )
 
 type (
@@ -23,12 +28,12 @@ type (
 
 	// Config holds the OTel configuration and is edited by Option.
 	Config struct {
-		debug            bool
-		env              string
-		exporterEndpoint string
-		serviceName      string
-		serviceVersion   string
-		errHandler       otel.ErrorHandler
+		debug           bool
+		env             string
+		otlptraceClient otlptrace.Client
+		serviceName     string
+		serviceVersion  string
+		errHandler      otel.ErrorHandler
 	}
 )
 
@@ -72,6 +77,26 @@ func WithErrorHandler(h func(error)) Option {
 	}
 }
 
+// WithGrpcTraceExporter registers an otlp trace exporter.
+func WithGrpcTraceExporter(endpoint string) Option {
+	return func(c *Config) {
+		c.otlptraceClient = otlptracegrpc.NewClient(
+			otlptracegrpc.WithInsecure(),
+			otlptracegrpc.WithEndpoint(endpoint),
+		)
+	}
+}
+
+// WithHttpTraceExporter registers an otlp http trace exporter.
+func WithHttpTraceExporter(endpoint string) Option {
+	return func(c *Config) {
+		c.otlptraceClient = otlptracehttp.NewClient(
+			otlptracehttp.WithInsecure(),
+			otlptracehttp.WithEndpoint(endpoint),
+		)
+	}
+}
+
 // SetUpOTel perform all necessary initialisations for open telemetry and registers
 // a trace provider. Any call to OTel API before the setup is done, will likely
 // use the default noop implementations.
@@ -82,24 +107,23 @@ func WithErrorHandler(h func(error)) Option {
 // log is a logger used to log relevant as well as debug information. If a non-fatal
 // error occurs, it's logged as warning and the setup proceeds.
 // Check the WithXxx functions for optional configurations.
-func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...Option) error {
+func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 	cfg := &Config{
-		debug:            false,
-		env:              "env not set",
-		exporterEndpoint: exporterEndpoint,
-		serviceName:      serviceName,
-		serviceVersion:   "version not set",
+		debug:          false,
+		env:            "env not set",
+		serviceName:    serviceName,
+		serviceVersion: "version not set",
 	}
 	if cfg.serviceName == "" {
-		return errors.New("serviceName cannot be empty")
+		return ErrEmptyServiceName
 	}
 
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	if cfg.exporterEndpoint == "" {
-		log.Info().Msg("otel is disabled as OTEL exporter endpoint is empty")
+	if cfg.otlptraceClient == nil {
+		log.Info().Msg("otel is disabled as otlp client is not set")
 		return nil
 	}
 
@@ -109,11 +133,7 @@ func SetUpOTel(serviceName, exporterEndpoint string, log logger.Logger, opts ...
 		otel.SetErrorHandler(cfg.errHandler)
 	}
 
-	otlpClient := otlptracegrpc.NewClient(
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(exporterEndpoint))
-
-	otlpExporter, err := otlptrace.New(context.TODO(), otlpClient)
+	otlpExporter, err := otlptrace.New(context.TODO(), cfg.otlptraceClient)
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to create OTel exporter, disabling OTel")
 		return nil

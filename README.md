@@ -4,6 +4,32 @@ Blacklane's [multi-module repository](https://github.com/golang/go/wiki/Modules#
 
 It's a work in progress, everyone is welcome to help. We use 
 [GitHub Issues](https://github.com/blacklane/go-libs/issues) for bug report and requests.
+
+## Releasing
+
+Follow the [Releasing Process](./RELEASING.md)
+
+## Makefile commands
+
+- `tools`: download all dev tools
+- `golangci-lint`: run [golangci-lint](https://golangci-lint.run/) in all modules
+- **`go-mod-tidy`**: run `go mod tidy` in all modules
+- `misspell`: run [misspell](https://github.com/client9/misspell) in all `*.md` files
+- **`lint`**: execute `go-mod-tidy`, ` golangci-lint` and `misspell`
+- `generate`: run `go generate ./...` in all modules
+- `build`: run `go build ./...` in all modules
+- **`test`**: run `go test ./...` in all modules, extra targets are also provided:
+  - `test-race`
+  - `test-bench`
+  - `test-short`
+  - `test-verbose`
+- **`test-coverage`**: run test coverage and merge all results in a `coverage.txt` file
+- `go-work-init`: initialize go workspace to help in local development
+- **`prerelease`**: create prerelease branch for the provided `MODSET` (configured in [versions.yaml](./versions.yaml) file)
+- **`prerelease-all`**: create a prerelease branch for every version
+- **`add-tags`**: create all tags for the actual versions, a `COMMIT` can be specified
+- **`push-tags`**: push tags matching the `VERSION` param to origin
+
  
 ## Repository structure
 

@@ -1,4 +1,3 @@
-version: "3"
 services:
   kafka:
     image: wurstmeister/kafka:2.11-0.11.0.3
@@ -22,15 +21,20 @@ services:
 
   tests:
     build:
-      context: .
+      context: ../../
       args:
         - GITHUB_TOKEN
         - GOPRIVATE
+    working_dir: /src/x/events
     environment:
       KAFKA_ADVERTISED_HOST_NAME:
       TIMEOUT_MULTIPLIER:
       BUILD_TAGS: "-tags musl,integration"
       KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_ADVERTISED_HOST_NAME}"
+    command:
+      - make
+      - deps
+      - test
     depends_on:
       - zookeeper
       - kafka

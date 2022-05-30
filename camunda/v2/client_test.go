@@ -69,10 +69,11 @@ func TestClient_StartProcess_UsesBasicAuth(t *testing.T) {
 	})
 
 	// act
-	client.StartProcess(context.Background(), businessKey, variables)
+	err := client.StartProcess(context.Background(), businessKey, variables)
 
 	// assert
 	mockHttpClient.AssertExpectations(t)
+	assert.Nil(t, err)
 }
 
 func TestClient_SendMessage(t *testing.T) {

@@ -1,0 +1,35 @@
+module-sets:
+  camunda:
+    version: v2.0.1
+    modules:
+      - github.com/blacklane/go-libs/camunda/v2
+  logger:
+    version: v0.6.2
+    modules:
+      - github.com/blacklane/go-libs/logger
+  middleware:
+    version: v0.3.1
+    modules:
+      - github.com/blacklane/go-libs/middleware
+  otel:
+    version: v0.1.1
+    modules:
+      - github.com/blacklane/go-libs/otel
+  probes:
+    version: v0.1.1
+    modules:
+      - github.com/blacklane/go-libs/probes
+  tracking:
+    version: v0.3.1
+    modules:
+      - github.com/blacklane/go-libs/tracking
+  xevents:
+    version: v0.2.1
+    modules:
+      - github.com/blacklane/go-libs/x/events
+excluded-modules:
+  - github.com/blacklane/go-libs/internal/tools
+  - github.com/blacklane/go-libs/otel/examples
+  - github.com/blacklane/go-libs/probes/examples
+  - github.com/blacklane/go-libs/x/events/examples/oauth
+  - github.com/blacklane/go-libs/x/events/examples/without-auth
