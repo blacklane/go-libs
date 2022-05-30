@@ -11,7 +11,7 @@ require (
 	github.com/blacklane/go-libs/tracking v0.3.1
 	github.com/blacklane/go-libs/x/events v0.2.1
 	github.com/google/go-cmp v0.5.7
-	github.com/rs/zerolog v1.26.0
+	github.com/rs/zerolog v1.26.1
 	github.com/stretchr/testify v1.7.1
 )
 
