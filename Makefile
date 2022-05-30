@@ -129,9 +129,7 @@ test-coverage/%:
 go-work-init:
 	@rm -f go.work*
 	@$(GO) work init
-	@for mod in $(ALL_GO_MOD_DIRS); do \
-		$(GO) work use $$mod; \
-	done
+	@$(GO) work use -r .
 
 # Releasing
 
