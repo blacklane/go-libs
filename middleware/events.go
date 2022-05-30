@@ -17,7 +17,7 @@ import (
 // - a tracking ID in the context,
 // - a logger in the context and log the "status" at the end of each handler,
 // - a OTel span for handler.
-func Events(handler events.Handler, log logger.Logger, eventName string) events.Handler {
+func Events(handler events.Handler, log logger.Logger, eventName string, middlewares ...events.Middleware) events.Handler {
 	hb := events.HandlerBuilder{}
 	hb.AddHandler(handler)
 	hb.UseMiddleware(
@@ -26,6 +26,7 @@ func Events(handler events.Handler, log logger.Logger, eventName string) events.
 		otel.EventsAddOpenTelemetry(eventName),
 		logmiddleware.EventsHandlerStatusLogger(eventName),
 	)
+	hb.UseMiddleware(middlewares...)
 
 	return hb.Build()[0]
 }
