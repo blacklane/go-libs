@@ -7,6 +7,11 @@ module-sets:
     version: v0.6.2
     modules:
       - github.com/blacklane/go-libs/logger
+  logr:
+    version: v0.1.0
+    modules:
+      - github.com/blacklane/go-libs/logr
+      - github.com/blacklane/go-libs/logr/zerolog
   middleware:
     version: v0.3.1
     modules:
