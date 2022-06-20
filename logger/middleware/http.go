@@ -108,11 +108,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 
 func getKeys(ctx context.Context, log logger.Logger) []string {
 	keys, ok := ctx.Value(internal.FilterKeys).([]string)
-	if !ok {
-		log.Log().Msg("error getting filter keys from context")
-	}
-
-	if len(keys) == 0 {
+	if !ok || len(keys) == 0 {
 		return internal.DefaultKeys
 	}
 
