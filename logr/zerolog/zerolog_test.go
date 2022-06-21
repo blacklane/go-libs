@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blacklane/go-libs/logr"
+	"github.com/blacklane/go-libs/logr/field"
 	"github.com/rs/zerolog"
 )
 
@@ -15,7 +15,7 @@ func TestInfo(t *testing.T) {
 	var buf bytes.Buffer
 	logger := New(zerolog.New(&buf))
 
-	logger.Info("test", logr.String("key1", "value1"), logr.Int32("key2", 10))
+	logger.Info("test", field.String("key1", "value1"), field.Int32("key2", 10))
 
 	expected := `{"level":"info","key1":"value1","key2":10,"message":"test"}`
 	assertTrimEqual(t, expected, &buf)
@@ -25,9 +25,9 @@ func TestError(t *testing.T) {
 	var buf bytes.Buffer
 	logger := New(zerolog.New(&buf))
 
-	logger.Error("test", logr.Bytes("key1", []byte{65, 67}), logr.Error(errors.New("error1")))
+	logger.Error(errors.New("error1"), "test", field.Bytes("key1", []byte{65, 67}))
 
-	expected := `{"level":"error","key1":"AC","error":"error1","message":"test"}`
+	expected := `{"level":"error","error":"error1","key1":"AC","message":"test"}`
 	assertTrimEqual(t, expected, &buf)
 }
 
@@ -36,8 +36,8 @@ func TestWithFields(t *testing.T) {
 	logger := New(zerolog.New(&buf))
 
 	logger = logger.WithFields(
-		logr.String("key1", "value1"),
-		logr.Error(errors.New("error1")),
+		field.String("key1", "value1"),
+		field.Error(errors.New("error1")),
 	)
 	logger.Info("test")
 

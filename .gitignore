@@ -7,7 +7,7 @@ go.work.*
 
 .tools/
 coverage.*
-example
-examples
+**/example/example
+**/examples/examples
 
 x/events/.tools/

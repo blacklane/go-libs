@@ -1,6 +1,9 @@
-package logr
+package field
 
-import "time"
+import (
+	"math/bits"
+	"time"
+)
 
 func String(key string, value string) Field {
 	return &field{
@@ -70,6 +73,14 @@ func Int64(key string, value int64) Field {
 	}
 }
 
+func Int(key string, value int) Field {
+	if bits.UintSize == 32 {
+		return Int32(key, int32(value))
+	} else {
+		return Int64(key, int64(value))
+	}
+}
+
 func Uint16(key string, value uint16) Field {
 	unsigned := uint64(value)
 	return &field{
@@ -93,6 +104,14 @@ func Uint64(key string, value uint64) Field {
 		Key:      key,
 		Unsigned: &value,
 		Kind:     kindUint64,
+	}
+}
+
+func Uint(key string, value uint) Field {
+	if bits.UintSize == 32 {
+		return Uint32(key, uint32(value))
+	} else {
+		return Uint64(key, uint64(value))
 	}
 }
 

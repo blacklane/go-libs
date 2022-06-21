@@ -3,11 +3,11 @@ package zerolog
 import (
 	"time"
 
-	"github.com/blacklane/go-libs/logr"
+	"github.com/blacklane/go-libs/logr/field"
 	"github.com/rs/zerolog"
 )
 
-func eventWithFields(ev *zerolog.Event, fields ...logr.Field) *zerolog.Event {
+func eventWithFields(ev *zerolog.Event, fields ...field.Field) *zerolog.Event {
 	if len(fields) > 0 {
 		enc := &eventEncoder{Event: ev}
 		for _, f := range fields {

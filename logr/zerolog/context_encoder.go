@@ -3,11 +3,11 @@ package zerolog
 import (
 	"time"
 
-	"github.com/blacklane/go-libs/logr"
+	"github.com/blacklane/go-libs/logr/field"
 	"github.com/rs/zerolog"
 )
 
-func contextWithFields(ctx zerolog.Context, fields ...logr.Field) zerolog.Context {
+func contextWithFields(ctx zerolog.Context, fields ...field.Field) zerolog.Context {
 	if len(fields) > 0 {
 		enc := &contextEncoder{Context: ctx}
 		for _, f := range fields {
