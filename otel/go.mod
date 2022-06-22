@@ -9,7 +9,7 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/logger v0.6.2
+	github.com/blacklane/go-libs/logger v0.6.3
 	github.com/blacklane/go-libs/tracking v0.3.1
 	github.com/blacklane/go-libs/x/events v0.2.1
 	github.com/rs/zerolog v1.26.0
