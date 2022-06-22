@@ -4,7 +4,7 @@ module-sets:
     modules:
       - github.com/blacklane/go-libs/camunda/v2
   logger:
-    version: v0.6.2
+    version: v0.6.3
     modules:
       - github.com/blacklane/go-libs/logger
   middleware:
