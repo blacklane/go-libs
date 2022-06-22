@@ -12,7 +12,7 @@ module-sets:
     modules:
       - github.com/blacklane/go-libs/middleware
   otel:
-    version: v0.1.1
+    version: v0.1.2
     modules:
       - github.com/blacklane/go-libs/otel
   probes:
