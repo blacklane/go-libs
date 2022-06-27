@@ -6,7 +6,7 @@ replace github.com/blacklane/go-libs/tracking => ../../tracking
 
 require (
 	github.com/blacklane/go-libs/tracking v0.3.1
-	github.com/confluentinc/confluent-kafka-go v1.8.2
+	github.com/confluentinc/confluent-kafka-go v1.9.0
 	github.com/google/go-cmp v0.5.7
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/trace v1.7.0
