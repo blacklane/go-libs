@@ -9,6 +9,7 @@ type Logger interface {
 	Info(msg string, fields ...field.Field)
 	Error(err error, msg string, fields ...field.Field)
 	WithFields(fields ...field.Field) Logger
+	SkipCallerFrame() Logger
 }
 
 var defaultLogger Logger = Discard()
@@ -22,15 +23,15 @@ func SetLogger(logger Logger) {
 }
 
 func Debug(msg string, fields ...field.Field) {
-	defaultLogger.Debug(msg, fields...)
+	defaultLogger.SkipCallerFrame().Debug(msg, fields...)
 }
 
 func Info(msg string, fields ...field.Field) {
-	defaultLogger.Info(msg, fields...)
+	defaultLogger.SkipCallerFrame().Info(msg, fields...)
 }
 
 func Error(err error, msg string, fields ...field.Field) {
-	defaultLogger.Error(err, msg, fields...)
+	defaultLogger.SkipCallerFrame().Error(err, msg, fields...)
 }
 
 func WithFields(fields ...field.Field) Logger {

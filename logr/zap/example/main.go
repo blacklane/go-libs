@@ -5,16 +5,22 @@ import (
 
 	"github.com/blacklane/go-libs/logr"
 	"github.com/blacklane/go-libs/logr/field"
-	"github.com/blacklane/go-libs/logr/zerolog"
-	"github.com/rs/zerolog/log"
+	zaplogr "github.com/blacklane/go-libs/logr/zap"
+	"go.uber.org/zap"
 )
 
 func init() {
-	logger := zerolog.New(log.With().Caller().Logger())
-	logr.SetLogger(logger)
+	logger, err := zap.NewProduction(zap.AddCaller())
+	if err != nil {
+		panic(err)
+	}
+
+	zlogr := zaplogr.New(logger)
+	logr.SetLogger(zlogr)
 }
 
 func main() {
+	logr.Debug("debug")
 
 	logr.Info("message",
 		field.String("key1", "value1"),
