@@ -9,6 +9,34 @@ It's a work in progress, everyone is welcome to help. We use
 
 Follow the [Releasing Process](./RELEASING.md)
 
+## Dependency Graph
+```mermaid
+flowchart LR
+        github.com/blacklane/go-libs/otel --> github.com/blacklane/go-libs/logger
+        github.com/blacklane/go-libs/otel --> github.com/blacklane/go-libs/tracking
+        github.com/blacklane/go-libs/otel --> github.com/blacklane/go-libs/x/events
+        github.com/blacklane/go-libs/otel --> github.com/rs/zerolog
+        github.com/blacklane/go-libs/otel --> go.opentelemetry.io/otel
+        
+        github.com/blacklane/go-libs/middleware --> github.com/blacklane/go-libs/camunda/v2
+        github.com/blacklane/go-libs/middleware --> github.com/blacklane/go-libs/logger
+        github.com/blacklane/go-libs/middleware --> github.com/blacklane/go-libs/otel
+        github.com/blacklane/go-libs/middleware --> github.com/blacklane/go-libs/tracking
+        github.com/blacklane/go-libs/middleware --> github.com/blacklane/go-libs/x/events
+        
+        github.com/blacklane/go-libs/x/events --> github.com/blacklane/go-libs/tracking
+        github.com/blacklane/go-libs/x/events --> github.com/confluentinc/confluent-kafka-go
+        github.com/blacklane/go-libs/x/events --> go.opentelemetry.io/otel
+        
+        github.com/blacklane/go-libs/logger --> github.com/blacklane/go-libs/tracking
+        github.com/blacklane/go-libs/logger --> github.com/blacklane/go-libs/x/events
+        github.com/blacklane/go-libs/logger --> github.com/rs/zerolog
+        
+        github.com/blacklane/go-libs/camunda/v2 --> github.com/blacklane/go-libs/logger
+
+        github.com/blacklane/go-libs/probes --> github.com/go-chi/chi
+```
+
 ## Makefile commands
 
 - `tools`: download all dev tools
