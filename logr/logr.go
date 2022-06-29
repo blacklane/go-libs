@@ -5,25 +5,24 @@ import (
 )
 
 type Logger interface {
+	Debug(msg string, fields ...field.Field)
 	Info(msg string, fields ...field.Field)
 	Error(err error, msg string, fields ...field.Field)
 	WithFields(fields ...field.Field) Logger
 }
 
-type dummyLogger struct{}
-
-func (d *dummyLogger) Info(msg string, fields ...field.Field)             {}
-func (d *dummyLogger) Error(err error, msg string, fields ...field.Field) {}
-func (d *dummyLogger) WithFields(fields ...field.Field) Logger            { return d }
-
-var defaultLogger Logger = &dummyLogger{}
+var defaultLogger Logger = Discard()
 
 func SetLogger(logger Logger) {
 	if logger == nil {
-		defaultLogger = &dummyLogger{}
+		defaultLogger = Discard()
 	} else {
 		defaultLogger = logger
 	}
+}
+
+func Debug(msg string, fields ...field.Field) {
+	defaultLogger.Debug(msg, fields...)
 }
 
 func Info(msg string, fields ...field.Field) {

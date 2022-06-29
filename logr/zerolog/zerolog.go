@@ -14,6 +14,10 @@ type zlogr struct {
 	L *zerolog.Logger
 }
 
+func (z *zlogr) Debug(msg string, fields ...field.Field) {
+	eventWithFields(z.L.Debug(), fields...).Msg(msg)
+}
+
 func (z *zlogr) Info(msg string, fields ...field.Field) {
 	eventWithFields(z.L.Info(), fields...).Msg(msg)
 }
