@@ -11,6 +11,22 @@ func New(logger *zap.Logger) logr.Logger {
 	return &zapLogr{logger}
 }
 
+func NewProduction(options ...zap.Option) (logr.Logger, error) {
+	logger, err := zap.NewProduction(options...)
+	if err != nil {
+		return nil, err
+	}
+	return New(logger), nil
+}
+
+func NewDevelopment(options ...zap.Option) (logr.Logger, error) {
+	logger, err := zap.NewDevelopment(options...)
+	if err != nil {
+		return nil, err
+	}
+	return New(logger), nil
+}
+
 type zapLogr struct {
 	L *zap.Logger
 }

@@ -10,13 +10,11 @@ import (
 )
 
 func init() {
-	logger, err := zap.NewProduction(zap.AddCaller())
+	logger, err := zaplogr.NewProduction(zap.AddCaller())
 	if err != nil {
 		panic(err)
 	}
-
-	zlogr := zaplogr.New(logger)
-	logr.SetLogger(zlogr)
+	logr.SetLogger(logger)
 }
 
 func main() {
