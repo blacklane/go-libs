@@ -16,6 +16,6 @@ const (
 // or a disabled logger if none is found. For details check the docs for zerolog.Ctx.
 func FromContext(ctx context.Context) *Logger {
 	logger := zerolog.Ctx(ctx)
-	logger.Hook(hooks.TraceContext(ctx))
-	return logger
+	newLogger := logger.Hook(hooks.TraceContext(ctx))
+	return &newLogger
 }
