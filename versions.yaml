@@ -1,6 +1,6 @@
 module-sets:
   camunda:
-    version: v2.0.2
+    version: v2.0.3
     modules:
       - github.com/blacklane/go-libs/camunda/v2
   logger:
