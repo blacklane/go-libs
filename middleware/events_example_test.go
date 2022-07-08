@@ -50,7 +50,6 @@ func ExampleEvents() {
 	//   "message": "always logged",
 	//   "request_id": "the_tracking_id",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "the_tracking_id"
 	// }
 	// {
@@ -61,7 +60,6 @@ func ExampleEvents() {
 	//   "message": "event_to_be_logged succeeded",
 	//   "request_id": "the_tracking_id",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "the_tracking_id"
 	// }
 	// {
@@ -71,7 +69,6 @@ func ExampleEvents() {
 	//   "message": "always logged",
 	//   "request_id": "the_tracking_id",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "the_tracking_id"
 	// }
 }
@@ -110,7 +107,6 @@ func ExampleEvents_onlyRequestIDHeader() {
 	//   "message": "always logged",
 	//   "request_id": "ExampleEvents_onlyRequestIDHeader",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleEvents_onlyRequestIDHeader"
 	// }
 	// {
@@ -121,7 +117,6 @@ func ExampleEvents_onlyRequestIDHeader() {
 	//   "message": "event_to_be_logged succeeded",
 	//   "request_id": "ExampleEvents_onlyRequestIDHeader",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleEvents_onlyRequestIDHeader"
 	// }
 }
@@ -160,7 +155,6 @@ func ExampleEvents_trackingIDAndRequestIDHeaders() {
 	//   "message": "always logged",
 	//   "request_id": "ExampleEvents_trackingIDAndRequestIDHeaders",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleEvents_trackingIDAndRequestIDHeaders"
 	// }
 	// {
@@ -171,7 +165,6 @@ func ExampleEvents_trackingIDAndRequestIDHeaders() {
 	//   "message": "event_to_be_logged succeeded",
 	//   "request_id": "ExampleEvents_trackingIDAndRequestIDHeaders",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
-	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleEvents_trackingIDAndRequestIDHeaders"
 	// }
 }
