@@ -24,39 +24,20 @@ type Consumer interface {
 // *kafkaConfig.WithXXX` methods as well
 type KafkaConsumerConfig struct {
 	*kafkaConfig
-	deliveryOrder DeliveryOrder
 }
-
-type DeliveryOrder int
-
-const (
-	OrderNotSpecified DeliveryOrder = iota
-	// OrderByEventKey ensures all events with the same key are processed sequentially in the order they arrive.
-	OrderByEventKey
-)
-
-type noOpLocker struct{}
-
-func (n noOpLocker) Lock()   {}
-func (n noOpLocker) Unlock() {}
 
 type kafkaConsumer struct {
 	*kafkaCommon
 
 	consumer *kafka.Consumer
 
-	wg           *sync.WaitGroup
-	activeConnMu sync.Mutex
-	done         chan struct{}
+	done chan struct{}
 
 	handlers []Handler
 
 	runMu    sync.RWMutex
 	run      bool
 	shutdown bool
-
-	deliveryOrder  DeliveryOrder
-	keysInProgress sync.Map
 }
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
@@ -67,16 +48,7 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 			tokenSource: emptyTokenSource{},
 			errFn:       func(error) {},
 		},
-		deliveryOrder: OrderNotSpecified,
 	}
-}
-
-// WithDeliveryOrder ensures the events are processed in the chosen order and the handlers
-// are called synchronously for each event. See DeliveryOrder for possible ordering options.
-// The default is OrderNotSpecified which does not apply any ordering.
-// OrderByEventKey ensures all events with the same key are processed sequentially in the order they arrive.
-func (k *KafkaConsumerConfig) WithDeliveryOrder(order DeliveryOrder) {
-	k.deliveryOrder = order
 }
 
 // NewKafkaConsumer returns a Consumer which will send every message to all
@@ -103,11 +75,7 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 		consumer: consumer,
 		handlers: handlers,
 
-		wg:           &sync.WaitGroup{},
-		activeConnMu: sync.Mutex{},
-
-		done:          make(chan struct{}),
-		deliveryOrder: config.deliveryOrder,
+		done: make(chan struct{}),
 	}, nil
 }
 
@@ -122,6 +90,7 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 		timeoutMs := int(timeout.Milliseconds())
 		for c.running() {
 			kev := c.consumer.Poll(timeoutMs)
+
 			switch kmt := kev.(type) {
 			case *kafka.Message:
 				c.deliverMessage(kmt)
@@ -138,7 +107,6 @@ func (c *kafkaConsumer) Run(timeout time.Duration) {
 			}
 		}
 
-		c.wg.Wait()
 		close(c.done)
 	}()
 }
@@ -177,33 +145,17 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 }
 
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
-	var orderKey string
-	var orderLocker sync.Locker
-
-	c.wg.Add(1)
 	e := messageToEvent(msg)
 
-	switch c.deliveryOrder {
-	case OrderByEventKey:
-		orderKey = string(e.Key)
-		keyMutex, _ := c.keysInProgress.LoadOrStore(orderKey, &sync.Mutex{})
-		orderLocker = keyMutex.(sync.Locker)
-	case OrderNotSpecified:
-		orderLocker = noOpLocker{}
+	for _, h := range c.handlers {
+		// Errors are ignored, a middleware or the handler should handle them
+		_ = h.Handle(context.Background(), *e)
 	}
 
-	go func(handlers []Handler, orderKey string, orderLocker sync.Locker) {
-		defer c.wg.Done()
-		orderLocker.Lock()
-
-		for _, h := range handlers {
-			// Errors are ignored, a middleware or the handler should handle them
-			_ = h.Handle(context.Background(), *e)
-		}
-
-		orderLocker.Unlock()
-		c.keysInProgress.Delete(orderKey)
-	}(c.handlers, orderKey, orderLocker)
+	_, err := c.consumer.Commit()
+	if err != nil {
+		c.errFn(fmt.Errorf("error commiting offset: %v", err))
+	}
 }
 
 func (c *kafkaConsumer) refreshToken() {

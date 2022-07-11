@@ -117,7 +117,6 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	const wantOrder = "other:100ms,key:150ms,key:20ms"
 
 	kcc := NewKafkaConsumerConfig(&kafka.ConfigMap{"group.id": "TestKafkaConsumer_WithErrFunc"})
-	kcc.WithDeliveryOrder(OrderByEventKey)
 	var processedEvents []string
 	mu := sync.Mutex{}
 
@@ -157,7 +156,6 @@ func TestDeliverMessageOrderedPerMessageKey(t *testing.T) {
 	kc.deliverMessage(&msgWaitingShorter)
 	time.Sleep(time.Millisecond)
 	kc.deliverMessage(&otherMsgWaiting)
-	kc.wg.Wait()
 
 	got := strings.Join(processedEvents, ",")
 	if got != wantOrder {
@@ -206,7 +204,6 @@ func TestDeliverMessageOrderedNotSpecified(t *testing.T) {
 	kc.deliverMessage(&msgWaitingLonger)
 	kc.deliverMessage(&otherMsgWaiting)
 	kc.deliverMessage(&msgWaitingShorter)
-	kc.wg.Wait()
 
 	got := strings.Join(processedEvents, ",")
 	if got != wantOrder {

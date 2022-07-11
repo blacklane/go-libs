@@ -16,6 +16,7 @@ You can find examples on [examples](examples) folder.
 		"bootstrap.servers":  "localhost:9092",
 		"session.timeout.ms": 6000,
 		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": false  // important! the library does manual commits after a message is processed
 	})
 	if err != nil {
 		log.Panicf("could not create kafka consumer: %v", err)
