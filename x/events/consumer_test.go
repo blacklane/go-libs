@@ -103,7 +103,7 @@ func TestKafkaConsumer_WithErrFunc(t *testing.T) {
 }
 
 func TestNewKafkaConsumerConfigAllInitialised(t *testing.T) {
-	kc := NewKafkaConsumerConfig(nil)
+	kc := NewKafkaConsumerConfig(&kafka.ConfigMap{})
 
 	if kc.tokenSource == nil {
 		t.Errorf("tokenSource is nil")
