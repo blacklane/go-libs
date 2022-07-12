@@ -33,8 +33,7 @@ type kafkaConsumer struct {
 
 	done chan struct{}
 
-	handlers  []Handler
-	handlerWg *sync.WaitGroup
+	handlers []Handler
 
 	runMu    sync.RWMutex
 	run      bool
@@ -73,9 +72,8 @@ func NewKafkaConsumer(config *KafkaConsumerConfig, topics []string, handlers ...
 			tokenSource: config.tokenSource,
 		},
 
-		consumer:  consumer,
-		handlers:  handlers,
-		handlerWg: &sync.WaitGroup{},
+		consumer: consumer,
+		handlers: handlers,
 
 		done: make(chan struct{}),
 	}, nil
@@ -149,8 +147,10 @@ func (c *kafkaConsumer) Shutdown(ctx context.Context) error {
 func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	e := messageToEvent(msg)
 
+	waitGroup := sync.WaitGroup{}
+
 	worker := func(handler Handler) {
-		defer c.handlerWg.Done()
+		defer waitGroup.Done()
 
 		err := handler.Handle(context.Background(), *e)
 		if err != nil {
@@ -159,11 +159,11 @@ func (c *kafkaConsumer) deliverMessage(msg *kafka.Message) {
 	}
 
 	for _, h := range c.handlers {
-		c.handlerWg.Add(1)
+		waitGroup.Add(1)
 		go worker(h)
 	}
 
-	c.handlerWg.Wait()
+	waitGroup.Wait()
 
 	_, err := c.consumer.Commit()
 	if err != nil {
