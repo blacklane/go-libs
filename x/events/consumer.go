@@ -42,6 +42,12 @@ type kafkaConsumer struct {
 
 // NewKafkaConsumerConfig returns a initialised *KafkaConsumerConfig
 func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
+	// we do manual commits after processing a message
+	autoCommit, err := config.Get("enable.auto.commit", "")
+	if err == nil && autoCommit == "" {
+		config.SetKey("enable.auto.commit", "false")
+	}
+
 	return &KafkaConsumerConfig{
 		kafkaConfig: &kafkaConfig{
 			config:      config,
