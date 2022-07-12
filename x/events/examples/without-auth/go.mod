@@ -10,7 +10,7 @@ replace (
 require (
 	github.com/blacklane/go-libs/x/events v0.0.0-20200729083625-bff51d3ec664
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/confluentinc/confluent-kafka-go v1.8.2
+	github.com/confluentinc/confluent-kafka-go v1.9.1
 )
 
 require (
@@ -21,8 +21,8 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20211109214657-ef0fda0de508 // indirect
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )

@@ -12,13 +12,13 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/logger v0.6.2
+	github.com/blacklane/go-libs/logger v0.6.5
 	github.com/blacklane/go-libs/middleware v0.1.0
-	github.com/blacklane/go-libs/otel v0.1.1
+	github.com/blacklane/go-libs/otel v0.1.4
 	github.com/blacklane/go-libs/tracking v0.3.1
-	github.com/blacklane/go-libs/x/events v0.2.1
+	github.com/blacklane/go-libs/x/events v0.3.0
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/confluentinc/confluent-kafka-go v1.8.2
+	github.com/confluentinc/confluent-kafka-go v1.9.1
 	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.26.0
 	go.opentelemetry.io/otel v1.7.0
@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/blacklane/go-libs/camunda/v2 v2.0.1 // indirect
+	github.com/blacklane/go-libs/camunda/v2 v2.0.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -42,12 +42,12 @@ require (
 	go.opentelemetry.io/otel/metric v0.30.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.16.0 // indirect
-	golang.org/x/net v0.0.0-20211109214657-ef0fda0de508 // indirect
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sys v0.0.0-20211109184856-51b60fd695b3 // indirect
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
+	google.golang.org/genproto v0.0.0-20220503193339-ba3ae3f07e29 // indirect
 	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
