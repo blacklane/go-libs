@@ -59,6 +59,10 @@ func EventsHandlerStatusLoggerWithNameFn(
 				internal.FieldTrackingID: trackingID,
 				internal.FieldRequestID:  trackingID,
 				internal.FieldEvent:      evName,
+				internal.FieldEventKey:   e.Key,
+				internal.FieldTopic:      e.TopicPartition.Topic,
+				internal.FieldPartition:  e.TopicPartition.Partition,
+				internal.FieldOffset:     e.TopicPartition.Offset,
 			}
 
 			log = log.With().Fields(logFields).Logger()

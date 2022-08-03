@@ -7,10 +7,17 @@ import (
 )
 
 type Header map[string]string
+type TopicPartition struct {
+	Topic     string
+	Partition int32
+	Offset    int64
+}
+
 type Event struct {
-	Headers Header
-	Key     []byte
-	Payload []byte
+	Headers        Header
+	TopicPartition TopicPartition
+	Key            []byte
+	Payload        []byte
 }
 
 type Middleware func(Handler) Handler

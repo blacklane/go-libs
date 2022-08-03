@@ -182,7 +182,16 @@ func (c *kafkaConsumer) refreshToken() {
 }
 
 func messageToEvent(m *kafka.Message) *Event {
-	return &Event{Payload: m.Value, Headers: parseHeaders(m.Headers), Key: m.Key}
+	return &Event{
+		Payload: m.Value,
+		Headers: parseHeaders(m.Headers),
+		TopicPartition: TopicPartition{
+			Topic:     *m.TopicPartition.Topic,
+			Partition: m.TopicPartition.Partition,
+			Offset:    int64(m.TopicPartition.Offset),
+		},
+		Key: m.Key,
+	}
 }
 
 func parseHeaders(headers []kafka.Header) Header {
