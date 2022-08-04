@@ -18,5 +18,5 @@ func ExampleNew() {
 	l.Info().Msg("Hello, Gophers!")
 
 	// Output:
-	// {"level":"info","application":"example","key2":"value2","key1":"value1","timestamp":"0001-01-01T00:00:00.000Z","message":"Hello, Gophers!"}
+	// {"level":"info","application":"example","key1":"value1","key2":"value2","timestamp":"0001-01-01T00:00:00.000Z","message":"Hello, Gophers!"}
 }
