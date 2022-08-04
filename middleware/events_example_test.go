@@ -33,6 +33,12 @@ func ExampleEvents() {
 	eventToLog := events.Event{
 		Headers: map[string]string{constants.HeaderTrackingID: trackingID},
 		Payload: []byte(`{"event":"` + eventNameToLog + `"}`),
+		Key:     []byte("the_event_key"),
+		TopicPartition: events.TopicPartition{
+			Topic:     "the_topic",
+			Partition: 1,
+			Offset:    2,
+		},
 	}
 	eventToNotLog := events.Event{
 		Headers: map[string]string{constants.HeaderTrackingID: trackingID},
@@ -46,29 +52,41 @@ func ExampleEvents() {
 	// {
 	//   "application": "ExampleEvents",
 	//   "event": "event_to_be_logged",
+	//   "event_key": "the_event_key",
 	//   "level": "info",
 	//   "message": "always logged",
+	//   "offset": 2,
+	//   "partition": 1,
 	//   "request_id": "the_tracking_id",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "the_topic",
 	//   "tracking_id": "the_tracking_id"
 	// }
 	// {
 	//   "application": "ExampleEvents",
 	//   "duration_ms": 0,
 	//   "event": "event_to_be_logged",
+	//   "event_key": "the_event_key",
 	//   "level": "info",
 	//   "message": "event_to_be_logged succeeded",
+	//   "offset": 2,
+	//   "partition": 1,
 	//   "request_id": "the_tracking_id",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "the_topic",
 	//   "tracking_id": "the_tracking_id"
 	// }
 	// {
 	//   "application": "ExampleEvents",
 	//   "event": "event_to_not_log",
+	//   "event_key": "",
 	//   "level": "info",
 	//   "message": "always logged",
+	//   "offset": 0,
+	//   "partition": 0,
 	//   "request_id": "the_tracking_id",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "",
 	//   "tracking_id": "the_tracking_id"
 	// }
 }
@@ -103,20 +121,28 @@ func ExampleEvents_onlyRequestIDHeader() {
 	// {
 	//   "application": "ExampleEvents_onlyRequestIDHeader",
 	//   "event": "event_to_be_logged",
+	//   "event_key": "",
 	//   "level": "info",
 	//   "message": "always logged",
+	//   "offset": 0,
+	//   "partition": 0,
 	//   "request_id": "ExampleEvents_onlyRequestIDHeader",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "",
 	//   "tracking_id": "ExampleEvents_onlyRequestIDHeader"
 	// }
 	// {
 	//   "application": "ExampleEvents_onlyRequestIDHeader",
 	//   "duration_ms": 0,
 	//   "event": "event_to_be_logged",
+	//   "event_key": "",
 	//   "level": "info",
 	//   "message": "event_to_be_logged succeeded",
+	//   "offset": 0,
+	//   "partition": 0,
 	//   "request_id": "ExampleEvents_onlyRequestIDHeader",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "",
 	//   "tracking_id": "ExampleEvents_onlyRequestIDHeader"
 	// }
 }
@@ -151,20 +177,28 @@ func ExampleEvents_trackingIDAndRequestIDHeaders() {
 	// {
 	//   "application": "ExampleEvents_trackingIDAndRequestIDHeaders",
 	//   "event": "event_to_be_logged",
+	//   "event_key": "",
 	//   "level": "info",
 	//   "message": "always logged",
+	//   "offset": 0,
+	//   "partition": 0,
 	//   "request_id": "ExampleEvents_trackingIDAndRequestIDHeaders",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "",
 	//   "tracking_id": "ExampleEvents_trackingIDAndRequestIDHeaders"
 	// }
 	// {
 	//   "application": "ExampleEvents_trackingIDAndRequestIDHeaders",
 	//   "duration_ms": 0,
 	//   "event": "event_to_be_logged",
+	//   "event_key": "",
 	//   "level": "info",
 	//   "message": "event_to_be_logged succeeded",
+	//   "offset": 0,
+	//   "partition": 0,
 	//   "request_id": "ExampleEvents_trackingIDAndRequestIDHeaders",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "topic": "",
 	//   "tracking_id": "ExampleEvents_trackingIDAndRequestIDHeaders"
 	// }
 }

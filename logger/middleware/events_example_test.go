@@ -63,13 +63,7 @@ func ExampleEventsHandlerStatusLogger_success() {
 	h := hb.Build()[0]
 
 	_ = h.Handle(ctx, events.Event{
-		Key:     []byte("event_key_here"),
 		Payload: []byte(`{"event":"event_name_here"}`),
-		TopicPartition: events.TopicPartition{
-			Topic:     "topic_here",
-			Partition: 1,
-			Offset:    2,
-		},
 	})
 
 	// Output:
@@ -77,14 +71,14 @@ func ExampleEventsHandlerStatusLogger_success() {
 	//   "application": "ExampleEventsLogger",
 	//   "duration_ms": 1000,
 	//   "event": "event_name_here",
-	//   "event_key": "event_key_here",
+	//   "event_key": "",
 	//   "level": "info",
 	//   "message": "event_name_here succeeded",
-	//   "offset": 2,
-	//   "partition": 1,
+	//   "offset": 0,
+	//   "partition": 0,
 	//   "request_id": "tracking_id-ExampleEventsLogger_Success",
 	//   "timestamp": "2009-11-10T23:00:01.000Z",
-	//   "topic": "topic_here",
+	//   "topic": "",
 	//   "tracking_id": "tracking_id-ExampleEventsLogger_Success"
 	// }
 }
