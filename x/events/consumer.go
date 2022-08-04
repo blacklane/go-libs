@@ -182,11 +182,16 @@ func (c *kafkaConsumer) refreshToken() {
 }
 
 func messageToEvent(m *kafka.Message) *Event {
+	topic := ""
+	if m.TopicPartition.Topic != nil {
+		topic = *m.TopicPartition.Topic
+	}
+
 	return &Event{
 		Payload: m.Value,
 		Headers: parseHeaders(m.Headers),
 		TopicPartition: TopicPartition{
-			Topic:     *m.TopicPartition.Topic,
+			Topic:     topic,
 			Partition: m.TopicPartition.Partition,
 			Offset:    int64(m.TopicPartition.Offset),
 		},
