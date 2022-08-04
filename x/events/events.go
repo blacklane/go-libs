@@ -7,6 +7,7 @@ import (
 )
 
 type Header map[string]string
+
 type TopicPartition struct {
 	Topic     string
 	Partition int32
