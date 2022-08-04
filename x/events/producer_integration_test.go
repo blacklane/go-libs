@@ -39,7 +39,7 @@ func TestProducerProducesEventsToCorrectTopic(t *testing.T) {
 	for _, message := range messages {
 		e := Event{Payload: []byte(message)}
 		if err := p.Send(e, topic); err != nil {
-			t.Errorf("error sending the event %s: %v", e, err)
+			t.Errorf("error sending the event %v: %v", e, err)
 		}
 	}
 }
@@ -80,7 +80,7 @@ func TestProducerProducesEventsToIncorrectTopicWithError(t *testing.T) {
 	for message := range messages {
 		e := Event{Payload: []byte(message)}
 		if err := p.Send(e, topic); err != nil {
-			t.Errorf("error sending the event %s: %v", e, err)
+			t.Errorf("error sending the event %v: %v", e, err)
 		}
 	}
 
