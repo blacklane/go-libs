@@ -7,8 +7,13 @@ release using this tool for this repository.
 
 ## Start a release
 
-First, decide which module sets will have their versions changed and what those
-versions will be.
+1. Find out which modules were changed since the last release.
+2. Decide the new version of each of those modules, following semantic versioning
+3. Look at the dependency graph from the [README](./README.md) and also bump the bugfix version part of all the modules that depend on the previously identified modules
+
+For example, if you created a new feature in `x/events` and in `logger`, you would increase the
+minor version of those 2 modules and also increase the bugfix versions of
+`otel`, `camunda` and `middleware` as those 3 are depending on the other 2
 
 ### Create a release branch
 
@@ -23,6 +28,8 @@ Set the version for all the module sets you have identified to be released.
 make prerelease MODSET=<module set>
 ```
 
+where `<module set>` is something like `logger` or `xevents` for example.
+
 This will use `multimod` to upgrade the module's versions and create a new
 "prerelease" branch for the changes. Verify the changes that were made.
 
@@ -36,23 +43,6 @@ it into your release branch.
 ```sh
 git merge prerelease_<module set>_<version>
 ```
-
-### Update the CHANGELOG.md
-
-Update the [Changelog](./CHANGELOG.md). Make sure only changes relevant to this
-release are included and the changes are communicated in language that
-non-contributors to the project can understand.
-
-Double check there is no change missing by looking directly at the commits
-since the last release tag.
-
-```sh
-git --no-pager log --pretty=oneline "<last tag>..HEAD"
-```
-
-Be sure to update all the appropriate links at the bottom of the file.
-
-Finally, commit this change to your release branch.
 
 ### Make a Pull Request
 
