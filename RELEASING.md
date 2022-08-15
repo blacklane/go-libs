@@ -13,7 +13,7 @@ release using this tool for this repository.
 
 For example, if you created a new feature in `x/events` and in `logger`, you would increase the
 minor version of those 2 modules and also increase the bugfix versions of
-`otel`, `camunda` and `middleware` as those 3 are depending on the other 2
+`otel`, `camunda` and `middleware` as those 3 are depending on the other 2.
 
 ### Create a release branch
 
