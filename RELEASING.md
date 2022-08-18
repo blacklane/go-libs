@@ -72,11 +72,30 @@ should be fine.
    It should only be necessary to provide an explicit `COMMIT` value if the
    current `HEAD` of your working directory is not the correct commit.
 
-2. Push tags to the upstream remote. Make sure you
+   You have to have gpg installed and a GPG key set up and configured in GitHub:
+   https://docs.github.com/en/authentication/managing-commit-signature-verification
+
+   1. Generate a GPG key with an email address that matches with the email address of github and
+      you use when committing
+   2. Export the GPG key and configure it in Github
+   3. Configure your git command line to use the GPG key
+   4. Set this environment variable so git is able to show the GPG passphrase prompt
+      ```sh
+      export GPG_TTY=$(tty)
+      ```
+
+3. If the version of Camunda was changed, you have to create another tag manually:
+
+   ```sh
+   git tag camunda/v2.0.5
+   ```
+   assuming that `v2.0.5` is the version that was just created 
+
+4. Push tags to the upstream remote. Make sure you
    push all sub-modules as well.
 
    ```sh
-   make push-tags VERSION=<version>
+   git push origin --tags
    ```
 
 ## Release
@@ -84,5 +103,4 @@ should be fine.
 Finally create a Release on GitHub. If you are releasing multiple versions for
 different module sets, be sure to use the stable release tag but be sure to
 include each version in the release title (i.e. `Release v1.0.0/v0.25.0`). The
-release body should include all the curated changes from the Changelog for this
-release.
+release body should include all the curated changes for this release.
