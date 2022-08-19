@@ -25,22 +25,22 @@ jobs:
           paths:
             - ./
   test-race:
-    attach-workspace: true
-    workspace-root:
     executor:
       name: go/default
       tag: '1.18'
     steps:
+      - attach-workspace:
+          at: ./
       - run:
           name: Run race tests
           command: make test-race.
   test-coverage:
-    attach-workspace: true
-    workspace-root:
     executor:
       name: go/default
       tag: '1.18'
     steps:
+      - attach-workspace:
+          at: ./
       - run:
           name: Run tests
           command: make test-junit
@@ -51,10 +51,9 @@ jobs:
     executor:
       name: go/default
       tag: '1.18'
-    attach-workspace: true
-    workspace-root:
     steps:
-      - checkout
+      - attach-workspace:
+          at: ./
       - run:
           name: build
           command: make build
