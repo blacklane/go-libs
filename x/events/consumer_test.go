@@ -173,8 +173,8 @@ func TestKafkaConsumerShutdown(t *testing.T) {
 	}
 
 	consumer := kafkaConsumer{consumer: kc}
-	ctx, _ := context.WithTimeout(context.Background(), time.Microsecond)
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Microsecond)
+	defer cancel()
 	got := consumer.Shutdown(ctx)
 
 	if !errors.Is(got, ErrShutdownTimeout) {
@@ -188,7 +188,8 @@ func TestKafkaConsumerShutdownAlreadyShutdown(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	kc.Shutdown(ctx)
+	// We are not interested on validate the error here
+	kc.Shutdown(ctx) //nolint
 	got := kc.Shutdown(ctx)
 
 	if !errors.Is(got, ErrConsumerAlreadyShutdown) {

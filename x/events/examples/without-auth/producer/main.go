@@ -49,13 +49,18 @@ func main() {
 
 	// handle failed deliveries
 	_ = p.HandleEvents()
-	defer p.Shutdown(context.Background())
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			log.Panicf("could not shutdown kafka producer: %v", err)
+		}
+		log.Printf("Shutdown.")
+	}()
 
 	e := events.Event{Payload: []byte("Hello, Gophers")}
 
 	err = p.Send(e, cfg.Topic)
 	if err != nil {
-		log.Panicf("error sending the event %s: %v", e, err)
+		log.Panicf("error sending the event %s: %v", e.TopicPartition.Topic, err)
 	}
 	log.Printf("sent event.Payload: %v", string(e.Payload))
 }

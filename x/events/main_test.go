@@ -63,34 +63,6 @@ func cleanUp() {
 	kafkaAdminClient.Close()
 }
 
-// createTopic creates a topic using the default kafkaAdminClient and adds the
-// topic for deletion when all tests finish running.
-func createTopic(t *testing.T, topic string) {
-	t.Helper()
-
-	results, err := kafkaAdminClient.CreateTopics(context.Background(),
-		[]kafka.TopicSpecification{{
-			Topic:             topic,
-			NumPartitions:     1,
-			ReplicationFactor: 1}},
-		// TODO: double check which ones are really needed
-		kafka.SetAdminOperationTimeout(10*time.Second),
-		kafka.SetAdminRequestTimeout(10*time.Second))
-	if err != nil {
-		t.Fatalf("failed to create topic: %v", err)
-	}
-
-	createdTopics = append(createdTopics, topic)
-
-	for _, result := range results {
-		if result.Error.Code() != kafka.ErrNoError &&
-			result.Error.Code() != kafka.ErrTopicAlreadyExists {
-			t.Fatalf("topic creation failed for %s: %s",
-				result.Topic, result.Error.String())
-		}
-	}
-}
-
 func cleanUpTopics() {
 	results, err :=
 		kafkaAdminClient.DeleteTopics(context.Background(), createdTopics)
@@ -103,58 +75,5 @@ func cleanUpTopics() {
 			log.Printf("[ERROR] topic deletion failed for %s: %s",
 				result.Topic, result.Error.String())
 		}
-	}
-}
-
-func newConsumer(t *testing.T, topic string, groupID string) *kafka.Consumer {
-	t.Helper()
-
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"group.id":          groupID,
-		"bootstrap.servers": kafkaBootstrapServers,
-		// for unknown reasons any values smaller than 6000 produces the error:
-		// "JoinGroup failed: Broker: Invalid session timeout"
-		"session.timeout.ms":       6000,
-		"go.events.channel.enable": true,
-		"auto.offset.reset":        "earliest",
-	})
-	if err != nil {
-		t.Fatalf("could not create kafka consumer: %v", err)
-	}
-
-	if err := c.Subscribe(topic, nil); err != nil {
-		t.Fatalf("failed to subscribe to kafka topic %s: %v", topic, err)
-	}
-
-	return c
-}
-
-func newProducer(t *testing.T) *kafka.Producer {
-	t.Helper()
-
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers":  kafkaBootstrapServers,
-		"message.timeout.ms": 1000})
-	if err != nil {
-		t.Fatalf("failed to create kafkaProducer: %v", err)
-	}
-
-	return p
-}
-
-func produce(t *testing.T, p *kafka.Producer, key, msg, topic string) {
-	t.Helper()
-
-	e := Event{Payload: []byte(msg), Key: []byte(key)}
-
-	err := p.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{
-			Topic:     &topic,
-			Partition: kafka.PartitionAny},
-		Key:   e.Key,
-		Value: e.Payload,
-	}, nil)
-	if err != nil {
-		t.Errorf("error producing kafka message %v: %v", e, err)
 	}
 }

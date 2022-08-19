@@ -16,6 +16,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type contextKey string
+
+const filterKey contextKey = "filter"
+
 // HTTPAddLogger adds the logger into the request context.
 func HTTPAddLogger(log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -31,7 +35,7 @@ func HTTPAddLogger(log logger.Logger) func(http.Handler) http.Handler {
 func HTTPAddBodyFilters(filterKeys []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), internal.FilterKeys, filterKeys)
+			ctx := context.WithValue(r.Context(), filterKey, filterKeys)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -107,7 +111,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 }
 
 func getKeys(ctx context.Context, log logger.Logger) []string {
-	keys, ok := ctx.Value(internal.FilterKeys).([]string)
+	keys, ok := ctx.Value(filterKey).([]string)
 	if !ok || len(keys) == 0 {
 		return internal.DefaultKeys
 	}

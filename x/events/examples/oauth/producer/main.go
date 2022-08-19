@@ -59,14 +59,19 @@ func main() {
 	}
 
 	_ = p.HandleEvents()
-	defer func() { log.Printf("Shutdown: %v", p.Shutdown(context.Background())) }()
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			log.Panicf("could not shutdown kafka producer: %v", err)
+		}
+		log.Printf("Shutdown.")
+	}()
 
 	payload := fmt.Sprintf("[%s] Hello, Gophers", time.Now())
 	e := events.Event{Payload: []byte(payload)}
 
 	err = p.Send(e, topic)
 	if err != nil {
-		log.Printf("[ERROR] sending the event %s: %v", e, err)
+		log.Printf("[ERROR] sending the event %s: %v", e.TopicPartition.Topic, err)
 	}
 	log.Printf("publishing: %s", payload)
 }

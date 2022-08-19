@@ -42,7 +42,12 @@ func main() {
 		"bootstrap.servers":  cfg.KafkaServer,
 		"message.timeout.ms": 1000,
 	}, cfg.Log)
-	defer p.Shutdown(context.TODO())
+
+	defer func() {
+		if err := p.Shutdown(context.TODO()); err != nil {
+			cfg.Log.Err(err).Msg("error while shutting down the producer")
+		}
+	}()
 
 	// Simulates a service providing a HTTP API on localhost:4242.
 	examples.StartHTTPServer(serviceName, p, cfg.Topic, eventName)

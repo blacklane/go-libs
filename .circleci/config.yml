@@ -1,0 +1,49 @@
+version: 2.1
+parameters:
+  deploy_on_sandbox:
+    type: boolean
+    default: false
+
+orbs:
+  aws-ecr: circleci/aws-ecr@8.1.2
+  slack: circleci/slack@4.10.1
+  go: circleci/go@1.7.1
+
+jobs:
+  test:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
+      - checkout
+      - run:
+          name: Get tools
+          command: make tools
+      - run:
+          name: Run lint
+          command: make lint
+      - run:
+          name: Run race tests
+          command: make test-race
+      - run:
+          name: Run tests
+          command: make test-junit
+      - store_test_results:
+          name: Store test results
+          path: ./
+  build:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
+      - checkout
+      - run:
+          name: build
+          command: make build
+workflows:
+  build-and-test:
+    jobs:
+      - test:
+          context: team-middlewares
+      - build:
+          context: team-middlewares

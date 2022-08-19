@@ -28,11 +28,11 @@ type (
 
 	// Config holds the OTel configuration and is edited by Option.
 	Config struct {
-		debug           bool
-		env             string
+		Debug           bool   `json:"debug"`
+		Env             string `json:"Env"`
 		otlptraceClient otlptrace.Client
-		serviceName     string
-		serviceVersion  string
+		ServiceName     string `json:"ServiceName"`
+		ServiceVersion  string `json:"ServiceVersion"`
 		errHandler      otel.ErrorHandler
 	}
 )
@@ -45,27 +45,27 @@ func (c Config) String() string {
 		return fmt.Sprintf("could not marshal otel config to print it: %v", err)
 	}
 
-	return fmt.Sprintf(`%s`, bs)
+	return string(bs)
 }
 
 // WithServiceVersion adds version as the service version span attribute.
 func WithServiceVersion(version string) Option {
 	return func(cfg *Config) {
-		cfg.serviceVersion = version
+		cfg.ServiceVersion = version
 	}
 }
 
 // WithEnvironment adds env as the environment span attribute.
 func WithEnvironment(env string) Option {
 	return func(cfg *Config) {
-		cfg.env = env
+		cfg.Env = env
 	}
 }
 
 // WithDebug enables debug by adding a span processor which prints to stdout.
 func WithDebug() Option {
 	return func(cfg *Config) {
-		cfg.debug = true
+		cfg.Debug = true
 	}
 }
 
@@ -109,12 +109,12 @@ func WithHttpTraceExporter(endpoint string) Option {
 // Check the WithXxx functions for optional configurations.
 func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 	cfg := &Config{
-		debug:          false,
-		env:            "env not set",
-		serviceName:    serviceName,
-		serviceVersion: "version not set",
+		Debug:          false,
+		Env:            "env not set",
+		ServiceName:    serviceName,
+		ServiceVersion: "version not set",
 	}
-	if cfg.serviceName == "" {
+	if cfg.ServiceName == "" {
 		return ErrEmptyServiceName
 	}
 
@@ -143,9 +143,9 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 	// with common attributes from OTel spec
 	res, err := resource.New(context.TODO(),
 		resource.WithAttributes(
-			semconv.ServiceNameKey.String(cfg.serviceName),
-			semconv.ServiceVersionKey.String(cfg.serviceVersion),
-			semconv.DeploymentEnvironmentKey.String(cfg.env),
+			semconv.ServiceNameKey.String(cfg.ServiceName),
+			semconv.ServiceVersionKey.String(cfg.ServiceVersion),
+			semconv.DeploymentEnvironmentKey.String(cfg.Env),
 		),
 	)
 	if err != nil {
@@ -157,7 +157,7 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 		trace.WithResource(res),
 		trace.WithBatcher(otlpExporter),
 	)
-	if cfg.debug {
+	if cfg.Debug {
 		log.Debug().Msg("adding stdout span processor")
 
 		stdoutExporter, err := stdouttrace.New()

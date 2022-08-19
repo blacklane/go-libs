@@ -45,7 +45,9 @@ func NewKafkaConsumerConfig(config *kafka.ConfigMap) *KafkaConsumerConfig {
 	// we do manual commits after processing a message
 	autoCommit, err := config.Get("enable.auto.commit", "")
 	if err == nil && autoCommit == "" {
-		config.SetKey("enable.auto.commit", "false")
+		if err = config.SetKey("enable.auto.commit", "false"); err != nil {
+			panic(err)
+		}
 	}
 
 	return &KafkaConsumerConfig{
