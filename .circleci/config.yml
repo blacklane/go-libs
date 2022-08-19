@@ -12,11 +12,11 @@ jobs:
       - run:
           name: Get tools
           command: make tools
-      - load-cache
+      - go/load-cache
       - run:
           name: Run install deps
           command: make go-mod-tidy
-      - save-cache
+      - go/save-cache
       - run:
           name: Run lint
           command: make lint
