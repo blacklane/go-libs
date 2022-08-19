@@ -243,7 +243,10 @@ func TestHTTPWithBodyFilter(t *testing.T) {
 			log := logger.New(buf, "TestHTTPRequestLogger")
 
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(``))
+				_, err := w.Write([]byte(``))
+				if err != nil {
+					t.Error(err)
+				}
 			})
 			midd := middleware.HTTPWithBodyFilter(tt.args.serviceName, tt.args.handlerName, tt.args.path, tt.args.filterKeys, log)
 

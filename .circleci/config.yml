@@ -1,0 +1,74 @@
+version: 2.1
+orbs:
+  go: circleci/go@1.7.1
+
+jobs:
+  install:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
+      - checkout
+      - run:
+          name: Get tools
+          command: make tools
+      - run:
+          name: Run install deps
+          command: make go-mod-tidy
+      - run:
+          name: Run lint
+          command: make lint
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./
+  test-race:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Run race tests
+          command: make test-race
+  test-coverage:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Run tests
+          command: make test-junit
+      - store_test_results:
+          name: Store test results
+          path: ./
+  build:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: build
+          command: make build
+workflows:
+  build-and-test:
+    jobs:
+      - install:
+          context: team-middlewares
+      - test-coverage:
+          context: team-middlewares
+          requires:
+            - install
+      - test-race:
+          context: team-middlewares
+          requires:
+            - install
+      - build:
+          context: team-middlewares
+          requires:
+            - install

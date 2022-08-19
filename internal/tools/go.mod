@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/client9/misspell v0.3.4
 	github.com/golangci/golangci-lint v1.46.2
+	github.com/jstemmer/go-junit-report/v2 v2.0.0
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
 	go.opentelemetry.io/build-tools/multimod v0.0.0-20220502161954-e2bf744925c0
 	golang.org/x/tools v0.1.11-0.20220316014157-77aa08bb151a
@@ -70,7 +71,7 @@ require (
 	github.com/golangci/misspell v0.3.5 // indirect
 	github.com/golangci/revgrep v0.0.0-20210930125155-c22e5001d4f2 // indirect
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/gordonklaus/ineffassign v0.0.0-20210914165742-4cc7213b9bc8 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect
 	github.com/gostaticanalysis/comment v1.4.2 // indirect

@@ -63,7 +63,7 @@ func (t source) Token() (*oauth2.Token, error) {
 	ctx := context.WithValue(
 		context.TODO(), oauth2.HTTPClient, &t.httpClient)
 
-	if t.token == nil || t.token.Expiry.Sub(time.Now()) < t.refreshBefore {
+	if t.token == nil || time.Until(t.token.Expiry) < t.refreshBefore {
 		token, err := t.config.Token(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("could not retirve a new token: %w", err)

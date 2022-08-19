@@ -50,7 +50,10 @@ func TestHTTPRequestLogger(t *testing.T) {
 	log := logger.New(buf, "TestHTTPRequestLogger")
 	ms := chain{HTTPAddLogger(log), HTTPRequestLogger(skipRoutes)}
 	h := ms.apply(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(``))
+		_, err := w.Write([]byte(``))
+		if err != nil {
+			t.Error(err)
+		}
 	}))
 
 	h.ServeHTTP(w, rSkip)
@@ -106,7 +109,10 @@ func TestHTTPAddBodyFilters(t *testing.T) {
 			log := logger.New(buf, "TestHTTPRequestLogger")
 			ms := chain{HTTPAddLogger(log), HTTPAddBodyFilters(tt.args.filterKeys), HTTPRequestLogger([]string{})}
 			h := ms.apply(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(``))
+				_, err := w.Write([]byte(``))
+				if err != nil {
+					t.Error(err)
+				}
 			}))
 
 			h.ServeHTTP(w, r)
@@ -122,7 +128,10 @@ func TestHTTPAddBodyFilters(t *testing.T) {
 			log := logger.New(buf, "TestHTTPRequestLogger")
 			ms := chain{HTTPAddLogger(log), HTTPAddBodyFilters(tt.args.filterKeys), HTTPRequestLogger([]string{})}
 			h := ms.apply(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(``))
+				_, err := w.Write([]byte(``))
+				if err != nil {
+					t.Error(err)
+				}
 			}))
 
 			h.ServeHTTP(w, r)

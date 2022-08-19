@@ -8,7 +8,7 @@ import (
 	"github.com/blacklane/go-libs/middleware"
 )
 
-func ExamplesSubscriptions() {
+func ExampleCamundaSubscriptionsAddLogger() {
 	log := logger.New(prettyJSONWriter{}, "ExampleEvents")
 
 	handler := camunda.TaskHandlerFunc(func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {

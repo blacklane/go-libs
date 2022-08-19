@@ -60,9 +60,8 @@ type kafkaProducer struct {
 
 	otelPropagator propagation.TextMapPropagator
 
-	runMu    sync.RWMutex
-	run      bool
-	shutdown bool
+	runMu sync.RWMutex
+	run   bool
 }
 
 // NewKafkaProducerConfig returns an initialised *KafkaProducerConfig

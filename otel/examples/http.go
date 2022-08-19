@@ -43,7 +43,11 @@ func StartHTTPServer(serviceName string, producer events.Producer, topic string,
 		Handler: handler,
 	}
 
-	go func() { httpServer.ListenAndServe() }()
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil {
+			log.Err(err).Msg("http server failed")
+		}
+	}()
 	log.Info().Msgf("Starting HTTP server on %s", httpServer.Addr)
 }
 

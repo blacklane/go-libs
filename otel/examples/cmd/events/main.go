@@ -24,7 +24,7 @@ func main() {
 	cfg := examples.ParseConfig(serviceName)
 
 	// Set up OpenTelemetry (OTel) with a Jaeger tracer.
-	otel.SetUpOTel(serviceName, cfg.Log,
+	err := otel.SetUpOTel(serviceName, cfg.Log,
 		otel.WithGrpcTraceExporter(cfg.OTelExporterEndpoint),
 		otel.WithDebug(),
 		otel.WithServiceVersion(serviceVersion),
@@ -33,6 +33,10 @@ func main() {
 				Str("error_type", fmt.Sprintf("%T", err)).
 				Msg("an otel irremediable error happened")
 		}))
+
+	if err != nil {
+		cfg.Log.Panic().Err(err).Msg("SetUpOTel returned and error")
+	}
 
 	kafkaCfg := &kafka.ConfigMap{
 		"group.id":           cfg.KafkaGroupID,
@@ -46,7 +50,11 @@ func main() {
 		kafkaCfg,
 		cfg.Topic,
 		eventName)
-	defer c.Shutdown(context.TODO())
+	defer func() {
+		if err := c.Shutdown(context.TODO()); err != nil {
+			cfg.Log.Err(err).Msg("error while shutting down the producer")
+		}
+	}()
 
 	<-signalChan
 	cfg.Log.Info().Msg("Goodbye cruel world!")

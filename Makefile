@@ -35,7 +35,11 @@ $(STRINGER): PACKAGE=golang.org/x/tools/cmd/stringer
 GOCOVMERGE = $(TOOLS)/gocovmerge
 $(GOCOVMERGE): PACKAGE=github.com/wadey/gocovmerge
 
-tools: $(GOLANGCI_LINT) $(MISSPELL) $(GOCOVMERGE) $(STRINGER) $(MULTIMOD)
+JUNIT = $(TOOLS)/junit
+$(JUNIT): PACKAGE=github.com/jstemmer/go-junit-report/v2
+
+
+tools: $(GOLANGCI_LINT) $(MISSPELL) $(GOCOVMERGE) $(STRINGER) $(MULTIMOD) $(JUNIT)
 
 # Linting
 
@@ -123,6 +127,16 @@ test-coverage/%:
 		cd "$(DIR)" \
 		&& $$CMD ./... \
 		&& $(GO) tool cover -html=coverage.out -o coverage.html;
+
+.PHONY: test-junit
+test-junit: $(ALL_COVERAGE_MOD_DIRS:%=test-junit/%) | $(JUNIT)
+test-junit/%: DIR=$*
+test-junit/%:
+	@echo "$(GO) test ${BUILD_TAGS} -v 2>&1 $(DIR)/..." \
+		&& cd $(DIR) \
+		&& mkdir -p test-results \
+		&& $(GO) test ${BUILD_TAGS} -v 2>&1 ./... | $(JUNIT) -set-exit-code > ./test-results/report.xml
+
 
 # Workspace
 

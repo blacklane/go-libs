@@ -42,9 +42,6 @@ type probe struct {
 	ready bool
 
 	rwmu *sync.RWMutex
-
-	liveChan  chan bool
-	readyChan chan bool
 }
 
 type noop struct{}
