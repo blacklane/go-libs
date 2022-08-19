@@ -29,10 +29,10 @@ type (
 	// Config holds the OTel configuration and is edited by Option.
 	Config struct {
 		Debug           bool   `json:"debug"`
-		Env             string `json:"Env"`
+		Env             string `json:"env"`
 		otlptraceClient otlptrace.Client
-		ServiceName     string `json:"ServiceName"`
-		ServiceVersion  string `json:"ServiceVersion"`
+		ServiceName     string `json:"serviceName"`
+		ServiceVersion  string `json:"serviceVersion"`
 		errHandler      otel.ErrorHandler
 	}
 )
