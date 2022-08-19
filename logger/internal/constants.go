@@ -32,9 +32,11 @@ const (
 	HeaderTrackingID   = "X-Tracking-Id"
 )
 
+type key string
+
 const (
-	FilterTag  = "[FILTERED]"
-	FilterKeys = "filterKeys"
+	FilterTag      = "[FILTERED]"
+	FilterKeys key = "filterKeys"
 )
 
 // DefaultKeys Please don't mutate it!

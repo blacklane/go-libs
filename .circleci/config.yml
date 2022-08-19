@@ -1,16 +1,9 @@
 version: 2.1
-parameters:
-  deploy_on_sandbox:
-    type: boolean
-    default: false
-
 orbs:
-  aws-ecr: circleci/aws-ecr@8.1.2
-  slack: circleci/slack@4.10.1
   go: circleci/go@1.7.1
 
 jobs:
-  test:
+  install:
     executor:
       name: go/default
       tag: '1.18'
@@ -19,12 +12,35 @@ jobs:
       - run:
           name: Get tools
           command: make tools
+      - load-cache
+      - run:
+          name: Run install deps
+          command: make go-mod-tidy
+      - save-cache
       - run:
           name: Run lint
           command: make lint
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./
+  test-race:
+    attach-workspace: true
+    workspace-root:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
       - run:
           name: Run race tests
-          command: make test-race
+          command: make test-race.
+  test-coverage:
+    attach-workspace: true
+    workspace-root:
+    executor:
+      name: go/default
+      tag: '1.18'
+    steps:
       - run:
           name: Run tests
           command: make test-junit
@@ -35,6 +51,8 @@ jobs:
     executor:
       name: go/default
       tag: '1.18'
+    attach-workspace: true
+    workspace-root:
     steps:
       - checkout
       - run:
@@ -43,7 +61,17 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - test:
+      - install:
           context: team-middlewares
+      - test-coverage:
+          context: team-middlewares
+          requires:
+            - install
+      - test-race:
+          context: team-middlewares
+          requires:
+            - install
       - build:
           context: team-middlewares
+          requires:
+            - install
