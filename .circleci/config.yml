@@ -12,11 +12,9 @@ jobs:
       - run:
           name: Get tools
           command: make tools
-      - go/load-cache
       - run:
           name: Run install deps
           command: make go-mod-tidy
-      - go/save-cache
       - run:
           name: Run lint
           command: make lint
@@ -33,7 +31,7 @@ jobs:
           at: ./
       - run:
           name: Run race tests
-          command: make test-race.
+          command: make test-race
   test-coverage:
     executor:
       name: go/default
