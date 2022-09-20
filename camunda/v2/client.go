@@ -16,6 +16,7 @@ type (
 		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error
 		Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
+		CompleteTask(ctx context.Context, businessKey string) error
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -89,6 +90,27 @@ func (c *client) Subscribe(topicName string, workerID string, handler TaskHandle
 	go sub.schedule()
 
 	return sub
+}
+
+func (c *client) CompleteTask(ctx context.Context, businessKey string) error {
+	t, err := c.getTask(ctx, businessKey)
+	if err != nil {
+		return err
+	}
+	return c.complete(ctx, t.ID, taskCompletionParams{})
+}
+
+func (c *client) getTask(ctx context.Context, businessKey string) (Task, error) {
+	url := "task"
+	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(fmt.Sprintf("{processInstanceBusinessKey:%s}", businessKey))
+	var t Task
+	bytes, err := c.doPostRequest(ctx, &buf, url)
+	if err != nil {
+		return t, err
+	}
+	err = json.Unmarshal(bytes, &t)
+	return t, err
 }
 
 func (c *client) complete(ctx context.Context, taskId string, params taskCompletionParams) error {
