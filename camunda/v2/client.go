@@ -16,7 +16,7 @@ type (
 		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error
 		Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
-		CompleteTask(ctx context.Context, businessKey string) error
+		DeleteTask(ctx context.Context, businessKey string) error
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -92,27 +92,6 @@ func (c *client) Subscribe(topicName string, workerID string, handler TaskHandle
 	return sub
 }
 
-func (c *client) CompleteTask(ctx context.Context, businessKey string) error {
-	t, err := c.getTask(ctx, businessKey)
-	if err != nil {
-		return err
-	}
-	return c.complete(ctx, t.ID, taskCompletionParams{})
-}
-
-func (c *client) getTask(ctx context.Context, businessKey string) (Task, error) {
-	url := "task"
-	buf := bytes.Buffer{}
-	err := json.NewEncoder(&buf).Encode(fmt.Sprintf("{processInstanceBusinessKey:%s}", businessKey))
-	var t Task
-	bytes, err := c.doPostRequest(ctx, &buf, url)
-	if err != nil {
-		return t, err
-	}
-	err = json.Unmarshal(bytes, &t)
-	return t, err
-}
-
 func (c *client) complete(ctx context.Context, taskId string, params taskCompletionParams) error {
 	buf := bytes.Buffer{}
 	err := json.NewEncoder(&buf).Encode(params)
@@ -174,4 +153,51 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 	}
 
 	return body, nil
+}
+
+func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
+	tasks, err := c.getTasks(ctx, businessKey)
+	if err != nil {
+		return err
+	}
+	for _, t := range tasks {
+		if err = c.deleteProcessInstance(ctx, t.ProcessInstanceId); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *client) getTasks(ctx context.Context, businessKey string) ([]Task, error) {
+	url := "task"
+	buf := bytes.Buffer{}
+	var tasks []Task
+	bytes, err := c.doPostRequest(ctx, &buf, url)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(bytes, &tasks)
+	return tasks, err
+}
+
+func (c *client) deleteProcessInstance(ctx context.Context, processInstanceId string) error {
+	url := fmt.Sprintf("%s/%s/%s", c.camundaURL, "process-instance", processInstanceId)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		fmt.Errorf("could not create DELETE process-instance request due to: %w", err)
+		return err
+	}
+	req.SetBasicAuth(c.credentials.User, c.credentials.Password)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		fmt.Errorf("could not send DELETE process-instance request due to: %w", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		fmt.Errorf("camunda delete process-instance API returned Status %d", resp.StatusCode)
+	}
+	return nil
 }
