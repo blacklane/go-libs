@@ -14,10 +14,11 @@ type (
 		Value interface{} `json:"value"`
 	}
 	Task struct {
-		BusinessKey string              `json:"business_key"`
-		ID          string              `json:"id"`
-		TopicName   string              `json:"topicName"`
-		Variables   map[string]Variable `json:"variables"`
+		ID                string              `json:"id"`
+		BusinessKey       string              `json:"business_key"`
+		ProcessInstanceId string              `json:"processInstanceId"`
+		TopicName         string              `json:"topicName"`
+		Variables         map[string]Variable `json:"variables"`
 	}
 	TaskHandler interface {
 		Handle(ctx context.Context, completeFunc TaskCompleteFunc, t Task)
