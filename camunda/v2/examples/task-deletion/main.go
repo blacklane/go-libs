@@ -36,7 +36,7 @@ func main() {
 
 	err := client.DeleteTask(context.Background(), businessKey)
 	if err != nil {
-		log.Err(err).Msg("Failed to Complete Task")
+		log.Err(err).Msg("Failed to Delete Task")
 	}
 	log.Info().Msg("end")
 }
