@@ -38,5 +38,5 @@ func main() {
 	if err != nil {
 		log.Err(err).Msg("Failed to Delete Task")
 	}
-	log.Info().Msg("end")
+	log.Info().Msg("successful!")
 }
