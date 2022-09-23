@@ -165,7 +165,7 @@ func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
 			return err
 		}
 	} else {
-		fmt.Errorf("found %d camunda tasks for for businessKey: %s", len(tasks), businessKey)
+		return fmt.Errorf("found %d camunda tasks for for businessKey: %s", len(tasks), businessKey)
 	}
 	return nil
 }
@@ -207,7 +207,7 @@ func (c *client) deleteProcessInstance(ctx context.Context, processInstanceId st
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 204 {
-		fmt.Errorf("camunda delete process-instance API returned Status %d", resp.StatusCode)
+		return fmt.Errorf("camunda delete process-instance API returned Status %d", resp.StatusCode)
 	}
 	return nil
 }
