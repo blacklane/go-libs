@@ -245,3 +245,22 @@ func (m *MockHttpClient) Do(r *http.Request) (*http.Response, error) {
 	args := m.Called(r)
 	return args.Get(0).(*http.Response), nil
 }
+
+func TestSubscription_deleteProcessInstance(t *testing.T) {
+	client, mockHttpClient := newTestClient()
+
+	ctx := context.Background()
+	processInstanceId := uuid.New().String()
+
+	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
+		request := args.Get(0).(*http.Request)
+		assert.Equal(t, fmt.Sprintf("/%s/%s", "process-instance", processInstanceId), request.URL.Path)
+	}).Return(&http.Response{
+		StatusCode: 204,
+	})
+
+	// act
+	err := client.deleteProcessInstance(ctx, processInstanceId)
+
+	assert.Nil(t, err)
+}

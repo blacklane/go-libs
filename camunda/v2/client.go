@@ -202,7 +202,6 @@ func (c *client) deleteProcessInstance(ctx context.Context, processInstanceId st
 	if err != nil {
 		return fmt.Errorf("could not send DELETE process-instance request due to: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("camunda delete process-instance API returned Status %d", resp.StatusCode)
