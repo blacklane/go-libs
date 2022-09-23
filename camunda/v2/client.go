@@ -165,7 +165,7 @@ func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("found %d camunda tasks for for businessKey: %s", len(tasks), businessKey)
+		return fmt.Errorf("found %d camunda tasks for businessKey: %s", len(tasks), businessKey)
 	}
 	return nil
 }
