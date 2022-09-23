@@ -160,17 +160,27 @@ func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
 	if err != nil {
 		return err
 	}
-	for _, t := range tasks {
-		if err = c.deleteProcessInstance(ctx, t.ProcessInstanceId); err != nil {
+	if len(tasks) == 1 {
+		if err = c.deleteProcessInstance(ctx, tasks[0].ProcessInstanceId); err != nil {
 			return err
 		}
+	} else {
+		fmt.Errorf("found %d camunda tasks for for businessKey: %s", len(tasks), businessKey)
 	}
 	return nil
 }
 
 func (c *client) getTasks(ctx context.Context, businessKey string) ([]Task, error) {
 	url := "task"
+	params := processStartParams{
+		BusinessKey: businessKey,
+	}
 	buf := bytes.Buffer{}
+	err := json.NewEncoder(&buf).Encode(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send camunda message due to json error: %w", err)
+	}
+
 	var tasks []Task
 	bytes, err := c.doPostRequest(ctx, &buf, url)
 	if err != nil {
