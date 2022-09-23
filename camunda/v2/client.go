@@ -172,7 +172,7 @@ func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
 
 func (c *client) getTasks(ctx context.Context, businessKey string) ([]Task, error) {
 	url := "task"
-	params := processStartParams{
+	params := processTaskParams{
 		BusinessKey: businessKey,
 	}
 	buf := bytes.Buffer{}

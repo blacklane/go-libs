@@ -43,6 +43,10 @@ type processStartParams struct {
 	Variables   map[string]Variable `json:"variables"`
 }
 
+type processTaskParams struct {
+	BusinessKey string `json:"businessKey"`
+}
+
 type message struct {
 	MessageName      string              `json:"messageName"`
 	BusinessKey      string              `json:"businessKey"`
