@@ -44,7 +44,7 @@ type processStartParams struct {
 }
 
 type processTaskParams struct {
-	BusinessKey string `json:"businessKey"`
+	BusinessKey string `json:"processInstanceBusinessKey"`
 }
 
 type message struct {
