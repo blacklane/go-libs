@@ -194,15 +194,13 @@ func (c *client) deleteProcessInstance(ctx context.Context, processInstanceId st
 	url := fmt.Sprintf("%s/%s/%s", c.camundaURL, "process-instance", processInstanceId)
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
-		fmt.Errorf("could not create DELETE process-instance request due to: %w", err)
-		return err
+		return fmt.Errorf("could not create DELETE process-instance request due to: %w", err)
 	}
 	req.SetBasicAuth(c.credentials.User, c.credentials.Password)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		fmt.Errorf("could not send DELETE process-instance request due to: %w", err)
-		return err
+		return fmt.Errorf("could not send DELETE process-instance request due to: %w", err)
 	}
 	defer resp.Body.Close()
 
