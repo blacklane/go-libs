@@ -245,3 +245,58 @@ func (m *MockHttpClient) Do(r *http.Request) (*http.Response, error) {
 	args := m.Called(r)
 	return args.Get(0).(*http.Response), nil
 }
+
+func TestTask_DeleteProcessInstance(t *testing.T) {
+	client, mockHttpClient := newTestClient()
+
+	ctx := context.Background()
+	processInstanceId := uuid.New().String()
+
+	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
+		request := args.Get(0).(*http.Request)
+		assert.Equal(t, fmt.Sprintf("/%s/%s", "process-instance", processInstanceId), request.URL.Path)
+	}).Return(&http.Response{
+		StatusCode: 204,
+	})
+
+	// act
+	err := client.deleteProcessInstance(ctx, processInstanceId)
+
+	assert.Nil(t, err)
+}
+
+func TestGetTasks(t *testing.T) {
+	client, mockHttpClient := newTestClient()
+
+	ctx := context.Background()
+	businessKey := uuid.New().String()
+	params := processTaskParams{
+		BusinessKey: businessKey,
+	}
+
+	body := ioutil.NopCloser(bytes.NewReader([]byte("[{\"processInstanceId\":\"aProcInstId\"}]")))
+	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
+		request := args.Get(0).(*http.Request)
+		assert.Equal(t, "/task", request.URL.Path)
+
+		requestBody := &processTaskParams{BusinessKey: businessKey}
+		byteBody, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
+		}
+		err = json.Unmarshal(byteBody, requestBody)
+		if err != nil {
+			t.Fatalf("failed to parse reqeuest body due to %s", err)
+		}
+		assert.Equal(t, params.BusinessKey, requestBody.BusinessKey)
+	}).Return(&http.Response{
+		StatusCode: 200,
+		Body:       body,
+	})
+
+	// act
+	tasks, err := client.getTasksByBusinessKey(ctx, businessKey)
+
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(tasks))
+}

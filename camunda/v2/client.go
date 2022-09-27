@@ -16,6 +16,7 @@ type (
 		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error
 		Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
+		DeleteTaskByBusinessKey(ctx context.Context, businessKey string) error
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -152,4 +153,55 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 	}
 
 	return body, nil
+}
+
+// DeleteTaskByBusinessKey An error will be returned in case of zero or multiple tasks are related to the same businessKey.
+func (c *client) DeleteTaskByBusinessKey(ctx context.Context, businessKey string) error {
+	tasks, err := c.getTasksByBusinessKey(ctx, businessKey)
+	if err != nil {
+		return err
+	}
+	if len(tasks) != 1 {
+		return fmt.Errorf("found %d camunda tasks for businessKey: %s", len(tasks), businessKey)
+	}
+	return c.deleteProcessInstance(ctx, tasks[0].ProcessInstanceId)
+}
+
+func (c *client) getTasksByBusinessKey(ctx context.Context, businessKey string) ([]Task, error) {
+	url := "task"
+	params := processTaskParams{
+		BusinessKey: businessKey,
+	}
+	buf := bytes.Buffer{}
+	if err := json.NewEncoder(&buf).Encode(params); err != nil {
+		return nil, fmt.Errorf("failed to send camunda message due to json error: %w", err)
+	}
+
+	bytes, err := c.doPostRequest(ctx, &buf, url)
+	if err != nil {
+		return nil, err
+	}
+	
+	var tasks []Task
+	err = json.Unmarshal(bytes, &tasks)
+	return tasks, err
+}
+
+func (c *client) deleteProcessInstance(ctx context.Context, processInstanceId string) error {
+	url := fmt.Sprintf("%s/%s/%s", c.camundaURL, "process-instance", processInstanceId)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return fmt.Errorf("could not create DELETE process-instance request due to: %w", err)
+	}
+	req.SetBasicAuth(c.credentials.User, c.credentials.Password)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("could not send DELETE process-instance request due to: %w", err)
+	}
+
+	if resp.StatusCode != 204 {
+		return fmt.Errorf("camunda delete process-instance API returned Status %d", resp.StatusCode)
+	}
+	return nil
 }
