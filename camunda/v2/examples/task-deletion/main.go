@@ -34,9 +34,8 @@ func main() {
 	// camunda stuff
 	client := camunda.NewClient(url, processKey, http.Client{}, credentials)
 
-	err := client.DeleteTask(context.Background(), businessKey)
-	if err != nil {
-		log.Err(err).Msg("Failed to Delete Task")
+	if err := client.DeleteTask(context.Background(), businessKey); err != nil {
+		log.Fatal().Err(err).Msg("Failed to Delete Task")
 	}
 	log.Info().Msg("successful!")
 }
