@@ -155,6 +155,7 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 	return body, nil
 }
 
+// DeleteTaskByBusinessKey An error will be returned in case of zero or multiple tasks are related to the same businessKey.
 func (c *client) DeleteTaskByBusinessKey(ctx context.Context, businessKey string) error {
 	tasks, err := c.getTasksByBusinessKey(ctx, businessKey)
 	if err != nil {
