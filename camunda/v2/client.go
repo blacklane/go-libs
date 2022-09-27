@@ -160,14 +160,10 @@ func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
 	if err != nil {
 		return err
 	}
-	if len(tasks) == 1 {
-		if err = c.deleteProcessInstance(ctx, tasks[0].ProcessInstanceId); err != nil {
-			return err
-		}
-	} else {
+	if len(tasks) != 1 {
 		return fmt.Errorf("found %d camunda tasks for businessKey: %s", len(tasks), businessKey)
 	}
-	return nil
+	return c.deleteProcessInstance(ctx, tasks[0].ProcessInstanceId)
 }
 
 func (c *client) getTasks(ctx context.Context, businessKey string) ([]Task, error) {
