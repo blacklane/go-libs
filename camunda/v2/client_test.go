@@ -295,7 +295,7 @@ func TestGetTasks(t *testing.T) {
 	})
 
 	// act
-	tasks, err := client.getTasks(ctx, businessKey)
+	tasks, err := client.getTasksByBusinessKey(ctx, businessKey)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tasks))

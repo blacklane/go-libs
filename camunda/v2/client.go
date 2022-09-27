@@ -16,7 +16,7 @@ type (
 		StartProcess(ctx context.Context, businessKey string, variables map[string]Variable) error
 		SendMessage(ctx context.Context, messageType string, businessKey string, updatedVariables map[string]Variable) error
 		Subscribe(topicName string, workerID string, handler TaskHandler, options ...func(*Subscription)) *Subscription
-		DeleteTask(ctx context.Context, businessKey string) error
+		DeleteTaskByBusinessKey(ctx context.Context, businessKey string) error
 	}
 	BasicAuthCredentials struct {
 		User     string
@@ -155,8 +155,8 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 	return body, nil
 }
 
-func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
-	tasks, err := c.getTasks(ctx, businessKey)
+func (c *client) DeleteTaskByBusinessKey(ctx context.Context, businessKey string) error {
+	tasks, err := c.getTasksByBusinessKey(ctx, businessKey)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (c *client) DeleteTask(ctx context.Context, businessKey string) error {
 	return c.deleteProcessInstance(ctx, tasks[0].ProcessInstanceId)
 }
 
-func (c *client) getTasks(ctx context.Context, businessKey string) ([]Task, error) {
+func (c *client) getTasksByBusinessKey(ctx context.Context, businessKey string) ([]Task, error) {
 	url := "task"
 	params := processTaskParams{
 		BusinessKey: businessKey,
