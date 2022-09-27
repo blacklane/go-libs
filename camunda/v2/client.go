@@ -176,8 +176,7 @@ func (c *client) getTasks(ctx context.Context, businessKey string) ([]Task, erro
 		BusinessKey: businessKey,
 	}
 	buf := bytes.Buffer{}
-	err := json.NewEncoder(&buf).Encode(params)
-	if err != nil {
+	if err := json.NewEncoder(&buf).Encode(params); err != nil {
 		return nil, fmt.Errorf("failed to send camunda message due to json error: %w", err)
 	}
 
