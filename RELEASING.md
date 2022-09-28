@@ -61,7 +61,28 @@ Pre-Release step! Failure to do so will leave things in a broken state. As long
 as you do not change `versions.yaml` between pre-release and this step, things
 should be fine.
 
-1. For each module set that will be released, run the `add-tags` make target
+1. You have to have gpg installed and a GPG key set up and configured in GitHub:
+   https://docs.github.com/en/authentication/managing-commit-signature-verification
+
+   1. Generate a GPG key with an email address that matches with the email address of github and
+      you use when committing
+      ```sh
+      gpg --full-generate-key
+      ```
+   2. Export the GPG key and configure it in Github
+      ```sh
+      gpg --armor --export <GPG_key_ID>
+      ```
+   3. Configure your git command line to use the GPG key
+      ```sh
+      git config --global user.signingkey <GPG_key_ID>
+      ```
+   4. Set this environment variable so git is able to show the GPG passphrase prompt
+      ```sh
+      export GPG_TTY=$(tty)
+      ```
+
+2. For each module set that will be released, run the `add-tags` make target
    using the `<commit-hash>` of the commit on the main branch for the merged
    Pull Request.
 
@@ -71,18 +92,6 @@ should be fine.
 
    It should only be necessary to provide an explicit `COMMIT` value if the
    current `HEAD` of your working directory is not the correct commit.
-
-   You have to have gpg installed and a GPG key set up and configured in GitHub:
-   https://docs.github.com/en/authentication/managing-commit-signature-verification
-
-   1. Generate a GPG key with an email address that matches with the email address of github and
-      you use when committing
-   2. Export the GPG key and configure it in Github
-   3. Configure your git command line to use the GPG key
-   4. Set this environment variable so git is able to show the GPG passphrase prompt
-      ```sh
-      export GPG_TTY=$(tty)
-      ```
 
 3. If the version of Camunda was changed, you have to create another tag manually:
 
