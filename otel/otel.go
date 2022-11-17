@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/blacklane/go-libs/logger"
 	"go.opentelemetry.io/otel"
@@ -19,7 +21,13 @@ import (
 )
 
 var (
-	ErrEmptyServiceName = errors.New("serviceName cannot be empty")
+	ErrEmptyServiceName      = errors.New("serviceName cannot be empty")
+	ErrTraceExporterNotFound = errors.New("OTEL Trace Exporter not found")
+)
+
+const (
+	defaultEnv     = "none"
+	defaultVersion = ""
 )
 
 type (
@@ -28,14 +36,53 @@ type (
 
 	// Config holds the OTel configuration and is edited by Option.
 	Config struct {
+		Enable          bool   `json:"enable"`
 		Debug           bool   `json:"debug"`
 		Env             string `json:"env"`
-		otlptraceClient otlptrace.Client
+		otlpTraceClient otlptrace.Client
 		ServiceName     string `json:"serviceName"`
 		ServiceVersion  string `json:"serviceVersion"`
 		errHandler      otel.ErrorHandler
 	}
 )
+
+func defaultConfig() *Config {
+	cfg := &Config{
+		Enable:         boolEnv("OTEL_ENABLED", true),
+		Debug:          boolEnv("OTEL_DEBUG", false),
+		Env:            defaultEnv,
+		ServiceName:    filepath.Base(os.Args[0]),
+		ServiceVersion: defaultVersion,
+	}
+
+	if v := os.Getenv("OTEL_TRACE_EXPORTER_OTLP_HTTP_ENDPOINT"); v != "" {
+		WithHttpTraceExporter(v)(cfg)
+	}
+
+	if v := os.Getenv("OTEL_TRACE_EXPORTER_OTLP_GRPC_ENDPOINT"); v != "" {
+		WithGrpcTraceExporter(v)(cfg)
+	}
+
+	if v := os.Getenv("ENV"); v != "" {
+		WithEnvironment(v)(cfg)
+	}
+
+	if v := os.Getenv("APPLICATION"); v != "" {
+		cfg.ServiceName = v
+	}
+
+	return cfg
+}
+
+func (c *Config) validate() error {
+	if c.ServiceName == "" {
+		return ErrEmptyServiceName
+	}
+	if c.otlpTraceClient == nil {
+		return ErrTraceExporterNotFound
+	}
+	return nil
+}
 
 // String returns a JSON representation of c. If json.Marshal fails,
 // the returned string will be the error.
@@ -80,7 +127,7 @@ func WithErrorHandler(h func(error)) Option {
 // WithGrpcTraceExporter registers an otlp trace exporter.
 func WithGrpcTraceExporter(endpoint string) Option {
 	return func(c *Config) {
-		c.otlptraceClient = otlptracegrpc.NewClient(
+		c.otlpTraceClient = otlptracegrpc.NewClient(
 			otlptracegrpc.WithInsecure(),
 			otlptracegrpc.WithEndpoint(endpoint),
 		)
@@ -90,7 +137,7 @@ func WithGrpcTraceExporter(endpoint string) Option {
 // WithHttpTraceExporter registers an otlp http trace exporter.
 func WithHttpTraceExporter(endpoint string) Option {
 	return func(c *Config) {
-		c.otlptraceClient = otlptracehttp.NewClient(
+		c.otlpTraceClient = otlptracehttp.NewClient(
 			otlptracehttp.WithInsecure(),
 			otlptracehttp.WithEndpoint(endpoint),
 		)
@@ -100,56 +147,54 @@ func WithHttpTraceExporter(endpoint string) Option {
 // SetUpOTel perform all necessary initialisations for open telemetry and registers
 // a trace provider. Any call to OTel API before the setup is done, will likely
 // use the default noop implementations.
-// serviceName cannot be empty, it identifies the service being instrumented.
-// exporterEndpoint is to where the traces will be sent to using GRPC. If it's
-// empty, OTel will NOT be enabled, no tracer will be registered.Therefore, the
-// OTel APIs will use the default noop implementation.
-// log is a logger used to log relevant as well as debug information. If a non-fatal
-// error occurs, it's logged as warning and the setup proceeds.
-// Check the WithXxx functions for optional configurations.
+//
+// some values will be infered from env vars:
+//
+// - OTEL_ENABLED: to activate/deactivate otel, default: true
+//
+// - OTEL_DEBUG: to activate debug mode, default: false
+//
+// - OTEL_TRACE_EXPORTER_OTLP_HTTP_ENDPOINT: otlp HTTP trace exporter is activated
+//
+// - OTEL_TRACE_EXPORTER_OTLP_GRPC_ENDPOINT: otlp GRPC trace exporter is activated
+//
+// - ENV: is the application environment
 func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
-	cfg := &Config{
-		Debug:          false,
-		Env:            "env not set",
-		ServiceName:    serviceName,
-		ServiceVersion: "version not set",
-	}
-	if cfg.ServiceName == "" {
-		return ErrEmptyServiceName
-	}
-
+	cfg := defaultConfig()
 	for _, opt := range opts {
 		opt(cfg)
 	}
+	if cfg.errHandler == nil {
+		cfg.errHandler = otel.ErrorHandlerFunc(func(err error) {
+			log.Err(err).Msg("otel internal error")
+		})
+	}
+	cfg.ServiceName = serviceName
 
-	if cfg.otlptraceClient == nil {
-		log.Info().Msg("otel is disabled as otlp client is not set")
+	if err := cfg.validate(); err != nil {
+		log.Err(err).Msg("invalid otel configuration")
+		return err
+	}
+
+	if !cfg.Enable {
+		log.Info().Msg("otel is disabled")
 		return nil
 	}
 
 	log.Debug().Str("configuration", cfg.String()).Msg("otel configuration")
 
-	if cfg.errHandler != nil {
-		otel.SetErrorHandler(cfg.errHandler)
-	}
-
-	otlpExporter, err := otlptrace.New(context.TODO(), cfg.otlptraceClient)
+	otlpExporter, err := createTraceExporter(cfg)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to create OTel exporter, disabling OTel")
-		return nil
+		log.Err(err).Msg("failed to create trace exporter")
+		return err
 	}
 
 	// Create a sdk/resource to decorate the app
 	// with common attributes from OTel spec
-	res, err := resource.New(context.TODO(),
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String(cfg.ServiceName),
-			semconv.ServiceVersionKey.String(cfg.ServiceVersion),
-			semconv.DeploymentEnvironmentKey.String(cfg.Env),
-		),
-	)
+	res, err := createResource(cfg)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to create otel sdk/resource")
+		log.Err(err).Msg("failed to create otel sdk/resource")
+		return err
 	}
 
 	tracerProvider := trace.NewTracerProvider(
@@ -162,7 +207,7 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 
 		stdoutExporter, err := stdouttrace.New()
 		if err != nil {
-			log.Fatal().Err(err).Msg("failed to initialize stdouttrace export pipeline")
+			log.Err(err).Msg("failed to initialize stdouttrace export pipeline")
 		}
 
 		tracerProvider.RegisterSpanProcessor(
@@ -173,6 +218,7 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 	// so libraries and frameworks used in the app
 	// can reuse it to generate traces and metrics
 	otel.SetTracerProvider(tracerProvider)
+	otel.SetErrorHandler(cfg.errHandler)
 	otel.SetTextMapPropagator(
 		propagation.NewCompositeTextMapPropagator(
 			propagation.Baggage{},
@@ -180,5 +226,23 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 		),
 	)
 
+	log.Info().Msg("otel started")
 	return nil
+}
+
+func createTraceExporter(cfg *Config) (*otlptrace.Exporter, error) {
+	if cfg.otlpTraceClient == nil {
+		return nil, ErrTraceExporterNotFound
+	}
+	return otlptrace.New(context.TODO(), cfg.otlpTraceClient)
+}
+
+func createResource(cfg *Config) (*resource.Resource, error) {
+	return resource.New(context.TODO(),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String(cfg.ServiceName),
+			semconv.ServiceVersionKey.String(cfg.ServiceVersion),
+			semconv.DeploymentEnvironmentKey.String(cfg.Env),
+		),
+	)
 }
