@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/blacklane/go-libs/otel/internal/constants"
@@ -67,18 +68,28 @@ func EventConsumer() consumer.Middleware {
 				trace.WithSpanKind(trace.SpanKindConsumer),
 				trace.WithAttributes(
 					AttrKeyTrackingID.String(trackingID),
-					AttrKeyEventName.String(eventName)),
+					AttrKeyEventName.String(eventName),
+					semconv.MessagingMessageIDKey.String(m.ID()),
+					semconv.MessagingKafkaMessageKeyKey.String(m.Key()),
+					semconv.MessagingKafkaPartitionKey.Int(int(m.TopicPartition().Partition)),
+				),
 			)
 			defer sp.End()
 
 			log := logger.FromContext(ctx).
 				With().
+				Str(constants.LogKeyEventName, eventName).
 				Stringer(constants.LogKeyTraceID, sp.SpanContext().TraceID()).
 				Logger()
 
 			ctx = log.WithContext(ctx)
 
-			return next(ctx, m)
+			if err := next(ctx, m); err != nil {
+				SpanAddErr(sp, err)
+				return err
+			}
+
+			return nil
 		}
 	}
 }

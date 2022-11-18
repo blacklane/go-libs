@@ -8,6 +8,8 @@ import (
 )
 
 type Message interface {
+	ID() string
+	Key() string
 	EventName() string
 	Header() events.Header
 	TopicPartition() events.TopicPartition
@@ -16,6 +18,7 @@ type Message interface {
 
 type jsonPayload struct {
 	Event     string          `json:"event"`
+	UUID      string          `json:"uuid"`
 	CreatedAt time.Time       `json:"created_at"`
 	Payload   json.RawMessage `json:"payload"`
 }
@@ -40,6 +43,8 @@ func createJsonMessage(ev events.Event) (Message, error) {
 	}, nil
 }
 
+func (m *jsonMessage) ID() string                            { return m.payload.UUID }
+func (m *jsonMessage) Key() string                           { return string(m.event.Key) }
 func (m *jsonMessage) EventName() string                     { return m.payload.Event }
 func (m *jsonMessage) Header() events.Header                 { return m.event.Headers }
 func (m *jsonMessage) TopicPartition() events.TopicPartition { return m.event.TopicPartition }
