@@ -3,7 +3,7 @@ package camunda
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -68,7 +68,7 @@ func TestSubscription_complete_handlesError(t *testing.T) {
 	sub := newSubscription(client, testTopic, workerID)
 	taskID := uuid.New().String()
 
-	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
+	body := io.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Return(&http.Response{
 		StatusCode: 404,
 		Body:       body,

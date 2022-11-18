@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"log"
 )
 
 func newHandler(name string) Handler {
@@ -32,7 +33,9 @@ func ExampleApplyMiddlewares() {
 		},
 	)
 
-	handler(nil, nil)
+	if err := handler(nil, nil); err != nil {
+		log.Fatal(err)
+	}
 
 	// Output:
 	// mdw-1

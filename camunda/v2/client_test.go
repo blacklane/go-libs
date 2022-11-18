@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -26,7 +25,7 @@ func TestClient_StartProcess(t *testing.T) {
 		"test-var": {Type: VarTypeInteger, Value: 42},
 	}
 
-	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
+	body := io.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*http.Request)
 		requestBody := parseStartProcessRequestBody(t, request.Body)
@@ -54,7 +53,7 @@ func TestClient_StartProcess_UsesBasicAuth(t *testing.T) {
 	variables := map[string]Variable{}
 
 	url := fmt.Sprintf("/process-definition/key/%s/start", client.processKey)
-	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
+	body := io.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*http.Request)
 		assert.Equal(t, url, request.URL.Path)
@@ -85,13 +84,13 @@ func TestClient_SendMessage(t *testing.T) {
 		"test-var": {Type: VarTypeString, Value: "Zweiundvierzig"},
 	}
 
-	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
+	body := io.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*http.Request)
 		assert.Equal(t, "/message", request.URL.Path)
 
 		requestBody := &message{}
-		byteBody, err := ioutil.ReadAll(request.Body)
+		byteBody, err := io.ReadAll(request.Body)
 		if err != nil {
 			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
@@ -122,7 +121,7 @@ func TestCamundaClient_SendMessage_HandlesRequestError(t *testing.T) {
 	businessKey := uuid.New().String()
 	variables := map[string]Variable{}
 
-	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
+	body := io.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Return(&http.Response{
 		StatusCode: 500,
 		Body:       body,
@@ -145,13 +144,13 @@ func TestSubscription_Complete(t *testing.T) {
 		WorkerID: testWorkerID,
 	}
 
-	body := ioutil.NopCloser(bytes.NewReader([]byte("{}")))
+	body := io.NopCloser(bytes.NewReader([]byte("{}")))
 	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*http.Request)
 		assert.Equal(t, fmt.Sprintf("/external-task/%s/complete", taskID), request.URL.Path)
 
 		requestBody := &taskCompletionParams{}
-		byteBody, err := ioutil.ReadAll(request.Body)
+		byteBody, err := io.ReadAll(request.Body)
 		if err != nil {
 			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
@@ -182,13 +181,13 @@ func TestSubscription_FetchAndLock(t *testing.T) {
 	}
 
 	bodyString := fmt.Sprintf(`[{"id":"%s", "topicName": "%s"}]`, taskID, topic)
-	body := ioutil.NopCloser(bytes.NewReader([]byte(bodyString)))
+	body := io.NopCloser(bytes.NewReader([]byte(bodyString)))
 	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*http.Request)
 		assert.Equal(t, "/external-task/fetchAndLock", request.URL.Path)
 
 		requestBody := &fetchAndLock{}
-		byteBody, err := ioutil.ReadAll(request.Body)
+		byteBody, err := io.ReadAll(request.Body)
 		if err != nil {
 			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
@@ -225,7 +224,7 @@ func newTestClient() (*client, *MockHttpClient) {
 
 func parseStartProcessRequestBody(t *testing.T, body io.ReadCloser) processStartParams {
 	requestBody := &processStartParams{}
-	byteBody, err := ioutil.ReadAll(body)
+	byteBody, err := io.ReadAll(body)
 	if err != nil {
 		t.Fatalf("failed to parse reqeuest body due to %s", err)
 	}
@@ -274,13 +273,13 @@ func TestGetTasks(t *testing.T) {
 		BusinessKey: businessKey,
 	}
 
-	body := ioutil.NopCloser(bytes.NewReader([]byte("[{\"processInstanceId\":\"aProcInstId\"}]")))
+	body := io.NopCloser(bytes.NewReader([]byte("[{\"processInstanceId\":\"aProcInstId\"}]")))
 	mockHttpClient.On("Do", mock.Anything).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*http.Request)
 		assert.Equal(t, "/task", request.URL.Path)
 
 		requestBody := &processTaskParams{BusinessKey: businessKey}
-		byteBody, err := ioutil.ReadAll(request.Body)
+		byteBody, err := io.ReadAll(request.Body)
 		if err != nil {
 			t.Fatalf("failed to parse reqeuest body due to %s", err)
 		}
