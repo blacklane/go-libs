@@ -21,15 +21,15 @@ func New(eventName string, handler Handler, middlewares ...Middleware) *Consumer
 	}
 }
 
-func (l *Consumer) Handle(ctx context.Context, e events.Event) error {
+func (c *Consumer) Handle(ctx context.Context, e events.Event) error {
 	m, err := createJsonMessage(e)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal kafka event: %w", err)
 	}
 
-	if m.EventName() != l.eventName {
+	if m.EventName() != c.eventName {
 		return nil
 	}
 
-	return l.handler(ctx, m)
+	return c.handler(ctx, m)
 }
