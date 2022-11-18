@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/blacklane/go-libs/camunda/v2 v2.0.5 // indirect
+	github.com/blacklane/go-libs/camunda/v2 v2.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
