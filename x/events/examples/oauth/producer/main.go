@@ -13,6 +13,7 @@ import (
 
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/blacklane/go-libs/x/events/examples/oauth"
+	"github.com/blacklane/go-libs/x/events/producer"
 )
 
 var config oauth.Config
@@ -74,4 +75,15 @@ func main() {
 		log.Printf("[ERROR] sending the event %s: %v", e.TopicPartition.Topic, err)
 	}
 	log.Printf("publishing: %s", payload)
+
+	ctx := context.Background()
+
+	tp := producer.NewTopicProducer(p, topic)
+	if err := tp.Send(ctx, "my-event", payload, producer.WithKey("event-key")); err != nil {
+		log.Printf("error sending event: %s", err)
+	}
+
+	if err := tp.Send(ctx, "my-event", payload); err != nil {
+		log.Printf("error sending event: %s", err)
+	}
 }

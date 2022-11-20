@@ -107,3 +107,40 @@ func TestInstrumentTransport(t *testing.T) {
 		t.Errorf("got status code %d, want %d", res.StatusCode, http.StatusTeapot)
 	}
 }
+
+func TestNewHTTPHandler(t *testing.T) {
+	operation := "testing-hanlder"
+	var remoteTraceID string
+
+	h := NewHTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		sp := trace.SpanFromContext(ctx)
+		traceID := sp.SpanContext().TraceID().String()
+
+		if traceID != remoteTraceID {
+			t.Fatalf("invalid trace id: got %s want %s", traceID, remoteTraceID)
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}), operation)
+
+	ctx, remoteSpan := otel.GetTracerProvider().
+		Tracer(remoteTraceID).
+		Start(context.Background(), "span-name")
+
+	remoteTraceID = remoteSpan.SpanContext().TraceID().String()
+
+	req, err := http.NewRequest(http.MethodGet, "/ignore", nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+	HTTPInject(ctx, req)
+
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}

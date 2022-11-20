@@ -106,9 +106,9 @@ $(TEST_TARGETS): test
 test: $(GO_MOD_DIRS:%=test/%)
 test/%: DIR=$*
 test/%:
-	@echo "$(GO) test ${BUILD_TAGS} -timeout $(TIMEOUT)s $(ARGS) $(DIR)/..." \
+	@echo "$(GO) test ${BUILD_TAGS} -v -timeout $(TIMEOUT)s $(ARGS) $(DIR)/..." \
 		&& cd $(DIR) \
-		&& $(GO) test ${BUILD_TAGS} -timeout $(TIMEOUT)s $(ARGS) ./...
+		&& $(GO) test ${BUILD_TAGS} -v -timeout $(TIMEOUT)s $(ARGS) ./...
 
 COVERAGE_MODE    = atomic
 COVERAGE_PROFILE = coverage.out

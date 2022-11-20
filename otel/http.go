@@ -43,6 +43,31 @@ func HTTPMiddleware(serviceName, handlerName, path string) func(http.Handler) ht
 	}
 }
 
+// NewHandler wraps the passed handler in a span named like operation.
+func NewHTTPHandler(handler http.Handler, operation string) http.Handler {
+	return otelhttp.NewHandler(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			sp := trace.SpanFromContext(ctx)
+
+			trackingID := tracking.IDFromContext(ctx)
+			sp.SetAttributes(
+				AttrKeyTrackingID.String(trackingID),
+			)
+
+			traceID := sp.SpanContext().TraceID()
+			log := logger.FromContext(ctx).
+				With().
+				Stringer(constants.LogKeyTraceID, traceID).
+				Logger()
+
+			ctx = log.WithContext(ctx)
+
+			handler.ServeHTTP(w, r.WithContext(ctx))
+		},
+	), operation)
+}
+
 // HTTPInject injects OTel "cross-cutting concerns" (a.k.a OTel headers) and
 // X-Tracking-Id into the outgoing request headers.
 func HTTPInject(ctx context.Context, r *http.Request) {

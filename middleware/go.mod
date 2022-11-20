@@ -11,11 +11,11 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/camunda/v2 v2.1.0
+	github.com/blacklane/go-libs/camunda/v2 v2.1.1
 	github.com/blacklane/go-libs/logger v0.7.0
-	github.com/blacklane/go-libs/otel v0.1.5
+	github.com/blacklane/go-libs/otel v0.2.0
 	github.com/blacklane/go-libs/tracking v0.3.1
-	github.com/blacklane/go-libs/x/events v0.4.0
+	github.com/blacklane/go-libs/x/events v0.5.0
 	github.com/google/go-cmp v0.5.7
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.1

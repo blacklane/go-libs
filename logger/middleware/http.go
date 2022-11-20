@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -53,11 +53,11 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			//save body to log later
 			if r.Body != http.NoBody {
 				var err error
-				body, err = ioutil.ReadAll(r.Body) //Body swap
+				body, err = io.ReadAll(r.Body) //Body swap
 				if err != nil {
 					log.Log().Msg("error reading body")
 				}
-				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+				r.Body = io.NopCloser(bytes.NewBuffer(body))
 			}
 
 			logFields := map[string]interface{}{

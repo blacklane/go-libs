@@ -2,7 +2,8 @@ package constants
 
 //revive:disable:exported obvious internal constants.
 const (
-	LogKeyTraceID = "trace_id"
+	LogKeyTraceID   = "trace_id"
+	LogKeyEventName = "event_name"
 )
 
 const (

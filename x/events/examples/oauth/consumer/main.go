@@ -12,7 +12,9 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
+	"github.com/blacklane/go-libs/otel"
 	"github.com/blacklane/go-libs/x/events"
+	"github.com/blacklane/go-libs/x/events/consumer"
 	"github.com/blacklane/go-libs/x/events/examples/oauth"
 )
 
@@ -58,11 +60,23 @@ func main() {
 	c, err := events.NewKafkaConsumer(
 		kc,
 		[]string{config.Topic},
-		events.HandlerFunc(
-			func(ctx context.Context, e events.Event) error {
-				log.Printf("consumed event: %s", e.Payload)
-				return nil
-			}))
+		// using kafka event handler
+		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
+			log.Printf("consumed event: %s", e.Payload)
+			return nil
+		}),
+		// using consumer for specific event with otel
+		consumer.New("my-event", func(ctx context.Context, m consumer.Message) error {
+			var payload struct {
+				ExpectedProp string `json:"expectedProp"`
+			}
+			if err := m.DecodePayload(&payload); err != nil {
+				return err
+			}
+			log.Printf("consumed event with expected prop: %s", payload.ExpectedProp)
+			return nil
+		}, otel.EventConsumer()),
+	)
 	if err != nil {
 		panic(fmt.Sprintf("could not create kafka consumer: %v", err))
 	}

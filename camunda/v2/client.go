@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/blacklane/go-libs/camunda/v2/internal"
@@ -147,7 +147,11 @@ func (c *client) doPostRequest(ctx context.Context, params *bytes.Buffer, endpoi
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read response body: %w", err)
+	}
+
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("camunda API returned Status %d with body: %v", resp.StatusCode, string(body))
 	}
@@ -181,7 +185,7 @@ func (c *client) getTasksByBusinessKey(ctx context.Context, businessKey string) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var tasks []Task
 	err = json.Unmarshal(bytes, &tasks)
 	return tasks, err
