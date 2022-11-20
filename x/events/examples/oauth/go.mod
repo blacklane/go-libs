@@ -10,7 +10,7 @@ replace (
 
 require (
 	github.com/blacklane/go-libs/otel v0.0.0-00010101000000-000000000000
-	github.com/blacklane/go-libs/x/events v0.4.0
+	github.com/blacklane/go-libs/x/events v0.5.0
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/confluentinc/confluent-kafka-go v1.9.1
 )
