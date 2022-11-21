@@ -52,10 +52,14 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 	}
 }
 
-func EventConsumer() consumer.Middleware {
+func EventConsumer(eventsToInclude ...string) consumer.Middleware {
 	return func(next consumer.Handler) consumer.Handler {
 		return func(ctx context.Context, m consumer.Message) error {
 			eventName := m.EventName()
+
+			if !isEventIncluded(eventName, eventsToInclude) {
+				return next(ctx, m)
+			}
 
 			tr := otel.Tracer(constants.TracerName)
 			trackingID := tracking.IDFromContext(ctx)
@@ -92,4 +96,19 @@ func EventConsumer() consumer.Middleware {
 			return nil
 		}
 	}
+}
+
+func isEventIncluded(event string, eventsToInclude []string) bool {
+	// We assume all events should be included unless otherwise specified.
+	if len(eventsToInclude) == 0 {
+		return true
+	}
+
+	for _, ev := range eventsToInclude {
+		if event == ev {
+			return true
+		}
+	}
+
+	return false
 }

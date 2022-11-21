@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/blacklane/go-libs/x/events"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var _ events.Handler = (*Consumer)(nil)
@@ -28,6 +30,11 @@ func (c *Consumer) Handle(ctx context.Context, e events.Event) error {
 	}
 
 	if m.EventName() != c.eventName {
+		if sp := trace.SpanFromContext(ctx); sp.IsRecording() {
+			sp.SetAttributes(
+				attribute.Bool("event_skipped", true),
+			)
+		}
 		return nil
 	}
 
