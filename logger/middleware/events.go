@@ -24,7 +24,7 @@ func EventsAddLogger(log logger.Logger) events.Middleware {
 	}
 }
 
-func EventConsumerLogger(eventsToInclude ...string) consumer.Middleware {
+func EventConsumerLogger() consumer.Middleware {
 	return func(next consumer.Handler) consumer.Handler {
 		return func(ctx context.Context, m consumer.Message) error {
 			startTime := time.Now()
@@ -42,10 +42,6 @@ func EventConsumerLogger(eventsToInclude ...string) consumer.Middleware {
 				Int64(internal.FieldOffset, tp.Offset).
 				Logger()
 			ctx = log.WithContext(ctx)
-
-			if !logEvent(evName, eventsToInclude...) {
-				return next(ctx, m)
-			}
 
 			err := next(ctx, m)
 
