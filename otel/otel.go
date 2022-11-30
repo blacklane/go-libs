@@ -164,6 +164,12 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 	for _, opt := range opts {
 		opt(cfg)
 	}
+
+	if !cfg.Enable {
+		log.Info().Msg("otel is disabled")
+		return nil
+	}
+
 	if cfg.errHandler == nil {
 		cfg.errHandler = otel.ErrorHandlerFunc(func(err error) {
 			log.Err(err).Msg("otel internal error")
@@ -174,11 +180,6 @@ func SetUpOTel(serviceName string, log logger.Logger, opts ...Option) error {
 	if err := cfg.validate(); err != nil {
 		log.Err(err).Msg("invalid otel configuration")
 		return err
-	}
-
-	if !cfg.Enable {
-		log.Info().Msg("otel is disabled")
-		return nil
 	}
 
 	log.Debug().Str("configuration", cfg.String()).Msg("otel configuration")

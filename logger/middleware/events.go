@@ -3,9 +3,11 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
+	"github.com/blacklane/go-libs/x/events/consumer"
 
 	"github.com/blacklane/go-libs/logger"
 	"github.com/blacklane/go-libs/logger/internal"
@@ -19,6 +21,41 @@ func EventsAddLogger(log logger.Logger) events.Middleware {
 			ctx = log.WithContext(ctx)
 			return next.Handle(log.WithContext(ctx), e)
 		})
+	}
+}
+
+func EventConsumerLogger() consumer.Middleware {
+	return func(next consumer.Handler) consumer.Handler {
+		return func(ctx context.Context, m consumer.Message) error {
+			startTime := time.Now()
+			evName := m.EventName()
+			tp := m.TopicPartition()
+			trackingID := tracking.IDFromContext(ctx)
+
+			log := logger.FromContext(ctx).With().
+				Str(internal.FieldTrackingID, trackingID).
+				Str(internal.FieldRequestID, trackingID).
+				Str(internal.FieldEvent, evName).
+				Str(internal.FieldEventKey, m.Key()).
+				Str(internal.FieldTopic, tp.Topic).
+				Int32(internal.FieldPartition, tp.Partition).
+				Int64(internal.FieldOffset, tp.Offset).
+				Logger()
+			ctx = log.WithContext(ctx)
+
+			err := next(ctx, m)
+
+			duration := time.Since(startTime)
+			log = log.With().Dur(internal.FieldDuration, duration).Logger()
+
+			if err != nil {
+				log.Err(err).Msgf("%s failed", evName)
+				return err
+			}
+
+			log.Info().Msgf("%s succeeded", evName)
+			return nil
+		}
 	}
 }
 
