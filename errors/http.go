@@ -3,21 +3,16 @@ package errors
 import (
 	"encoding/json"
 	"errors"
-	"net/http"
+	"io"
 )
 
 type errorResponse struct {
 	Errors []*Error `json:"errors"`
 }
 
-func Send(w http.ResponseWriter, err error) {
-	fe := From(err)
-
-	w.WriteHeader(fe.Code)
-	w.Header().Set("content-type", "application/json")
-
+func WriteJSON(w io.Writer, err error) {
 	res := &errorResponse{
-		Errors: innerErrors(fe),
+		Errors: innerErrors(err),
 	}
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		panic(err)
