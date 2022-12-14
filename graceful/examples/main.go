@@ -17,7 +17,7 @@ func IntervalTask(ctx context.Context) error {
 func main() {
 	m := http.NewServeMux()
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World!"))
+		_, _ = w.Write([]byte("Hello World!"))
 	})
 
 	srv := &http.Server{
