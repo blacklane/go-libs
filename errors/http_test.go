@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestSend(t *testing.T) {
+func TestWriteJSON(t *testing.T) {
 	tests := []struct {
 		err  error
 		code int
@@ -41,7 +41,10 @@ func TestSend(t *testing.T) {
 	}
 
 	for i, test := range tests {
+		test := test
 		t.Run(fmt.Sprintf("test_%d", i), func(t *testing.T) {
+			t.Parallel()
+
 			buff := &bytes.Buffer{}
 			WriteJSON(buff, test.err)
 

@@ -78,6 +78,19 @@ func (e *Error) WithMetadata(metadata map[string]string) *Error {
 	return err
 }
 
+func (e *Error) WithMetadataw(kwargs ...string) *Error {
+	if len(kwargs)%2 != 0 {
+		kwargs = append(kwargs, "")
+	}
+
+	metadata := make(map[string]string, len(kwargs)/2)
+	for i := 0; i < len(kwargs); i += 2 {
+		metadata[kwargs[i]] = kwargs[i+1]
+	}
+
+	return e.WithMetadata(metadata)
+}
+
 func (e *Error) clone() *Error {
 	metadata := make(map[string]string, len(e.Metadata))
 	for k, v := range e.Metadata {
