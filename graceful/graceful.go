@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-var ErrServersRunning = errors.New("servers already running")
+var ErrAlreadyRunning = errors.New("already running")
 
 type Graceful struct {
 	opts    *options
@@ -68,7 +68,7 @@ func (g *Graceful) afterStop() error {
 
 func (g *Graceful) Run() (gerr error) {
 	if g.running.Swap(true) {
-		return ErrServersRunning
+		return ErrAlreadyRunning
 	}
 	defer g.running.Store(false)
 
