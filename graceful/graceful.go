@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"sync/atomic"
 
+	"go.uber.org/multierr"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -30,23 +31,69 @@ func New(opts ...Option) *Graceful {
 	}
 }
 
-func (g *Graceful) Run() error {
+func (g *Graceful) goHooks(ctx context.Context, hooks []Hook) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	for _, hook := range hooks {
+		hook := hook
+		eg.Go(func() error {
+			return hook(ctx)
+		})
+	}
+	return eg.Wait()
+}
+
+func (g *Graceful) beforeStart() error {
+	eg, ctx := errgroup.WithContext(g.ctx)
+	for _, fn := range g.opts.beforeStart {
+		fn := fn
+		eg.Go(func() error {
+			return fn(ctx)
+		})
+	}
+	return eg.Wait()
+}
+
+func (g *Graceful) afterStop() error {
+	eg := new(errgroup.Group) // without context cancel propagation
+	for _, fn := range g.opts.afterStop {
+		fn := fn
+		eg.Go(func() error {
+			return fn(g.opts.ctx)
+		})
+	}
+	return eg.Wait()
+}
+
+func (g *Graceful) Run() (gerr error) {
 	if g.running.Swap(true) {
 		return ErrServersRunning
 	}
 	defer g.running.Store(false)
 
+	defer func() {
+		if err := g.afterStop(); err != nil {
+			// replace by "errors.Join" when go1.20 is released:
+			// https://tip.golang.org/doc/go1.20#errors
+			gerr = multierr.Append(gerr, err)
+		}
+	}()
+
+	if err := g.goHooks(g.ctx, g.opts.beforeStart); err != nil {
+		return err
+	}
+
 	eg, ctx := errgroup.WithContext(g.ctx)
-	for _, srv := range g.opts.servers {
-		srv := srv
+
+	for _, task := range g.opts.tasks {
+		task := task
 		eg.Go(func() error {
 			<-ctx.Done()
 			stopCtx, cancel := context.WithTimeout(g.opts.ctx, g.opts.stopTimeout)
 			defer cancel()
-			return srv.Stop(stopCtx)
+			return task.Stop(stopCtx)
 		})
 		eg.Go(func() error {
-			return srv.Start(ctx)
+			return task.Start(ctx)
 		})
 	}
 

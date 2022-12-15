@@ -10,7 +10,7 @@ type intervalTask struct {
 	task     func(context.Context) error
 }
 
-func NewIntervalTaskServer(interval time.Duration, task func(context.Context) error) Server {
+func NewIntervalTask(interval time.Duration, task func(context.Context) error) Task {
 	return &intervalTask{
 		interval: interval,
 		task:     task,

@@ -9,11 +9,17 @@ import (
 
 type Option func(*options)
 
+type Hook func(context.Context) error
+
 type options struct {
 	ctx         context.Context
 	stopTimeout time.Duration
-	servers     []Server
+	tasks       []Task
 	sigs        []os.Signal
+
+	// hooks
+	beforeStart []Hook
+	afterStop   []Hook
 }
 
 func newOptions(opts []Option) *options {
@@ -46,8 +52,20 @@ func WithStopTimeout(timeout time.Duration) Option {
 	}
 }
 
-func WithServers(servers ...Server) Option {
+func WithTasks(servers ...Task) Option {
 	return func(o *options) {
-		o.servers = servers
+		o.tasks = servers
+	}
+}
+
+func WithBeforeStartHooks(beforeStart ...Hook) Option {
+	return func(o *options) {
+		o.beforeStart = beforeStart
+	}
+}
+
+func WithAfterStopHooks(afterStop ...Hook) Option {
+	return func(o *options) {
+		o.afterStop = afterStop
 	}
 }

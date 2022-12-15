@@ -26,13 +26,17 @@ func main() {
 	}
 
 	g := graceful.New(
-		graceful.WithServers(
+		graceful.WithAfterStopHooks(func(ctx context.Context) error {
+			log.Println("closing db connection")
+			return nil
+		}),
+		graceful.WithTasks(
 			// http server
-			graceful.NewHTTPServer(srv),
+			graceful.NewHTTPServerTask(srv),
 			// interval task
-			graceful.NewIntervalTaskServer(2*time.Second, IntervalTask),
+			graceful.NewIntervalTask(2*time.Second, IntervalTask),
 			// custom start/stop functions
-			graceful.NewServer(
+			graceful.NewTask(
 				func(ctx context.Context) error {
 					log.Println("custom server - start")
 					return nil

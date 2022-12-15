@@ -6,23 +6,23 @@ import (
 	"net/http"
 )
 
-type httpServer struct {
+type httpServerTask struct {
 	server *http.Server
 }
 
-func NewHTTPServer(server *http.Server) Server {
-	return &httpServer{
+func NewHTTPServerTask(server *http.Server) Task {
+	return &httpServerTask{
 		server: server,
 	}
 }
 
-func (s *httpServer) Start(ctx context.Context) error {
+func (s *httpServerTask) Start(ctx context.Context) error {
 	if err := s.server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
 }
 
-func (s *httpServer) Stop(ctx context.Context) error {
+func (s *httpServerTask) Stop(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }

@@ -2,34 +2,34 @@ package graceful
 
 import "context"
 
-type Server interface {
+type Task interface {
 	Start(context.Context) error
 	Stop(context.Context) error
 }
 
-type server struct {
+type task struct {
 	start func(context.Context) error
 	stop  func(context.Context) error
 }
 
-func NewServer(
+func NewTask(
 	start func(context.Context) error,
 	stop func(context.Context) error,
-) Server {
-	return &server{
+) Task {
+	return &task{
 		start: start,
 		stop:  stop,
 	}
 }
 
-func (s *server) Start(ctx context.Context) error {
+func (s *task) Start(ctx context.Context) error {
 	if s.start != nil {
 		return s.start(ctx)
 	}
 	return nil
 }
 
-func (s *server) Stop(ctx context.Context) error {
+func (s *task) Stop(ctx context.Context) error {
 	if s.stop != nil {
 		return s.stop(ctx)
 	}
