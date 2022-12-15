@@ -98,3 +98,41 @@ func TestRun_FailOnBeforeStartError(t *testing.T) {
 	ai32equal(t, taskStart, 0, "unexpected calls to task start")
 	ai32equal(t, taskStop, 0, "unexpected calls to task stop")
 }
+
+func TestRun_StopOnTaskError(t *testing.T) {
+	task1Stop := new(atomic.Int32)
+	task2Start := new(atomic.Int32)
+
+	errTask1 := errors.New("task-1 error")
+	errTask2 := errors.New("task-2 error")
+
+	g := New(
+		WithTasks(
+			NewTask(
+				func(ctx context.Context) error {
+					return errTask1
+				},
+				counterHook(t, "task-1 stop", task1Stop),
+			),
+			NewTask(
+				counterHook(t, "task-2 start", task2Start),
+				func(ctx context.Context) error {
+					return errTask2
+				},
+			),
+		),
+	)
+
+	err := g.Run()
+
+	if !errors.Is(err, errTask1) {
+		t.Errorf("invalid error result, got: %v, want: %v", err, errTask1)
+	}
+
+	if !errors.Is(err, errTask2) {
+		t.Errorf("invalid error result, got: %v, want: %v", err, errTask2)
+	}
+
+	ai32equal(t, task1Stop, 1, "unexpected calls to task-1 start")
+	ai32equal(t, task2Start, 1, "unexpected calls to task-2 stop")
+}

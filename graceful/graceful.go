@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"os/signal"
-	"sync"
 	"sync/atomic"
 
 	"github.com/hashicorp/go-multierror"
@@ -35,14 +34,13 @@ func (g *Graceful) beforeStart() error {
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
 
-	cancelOnce := new(sync.Once)
 	mg := new(multierror.Group)
 
 	for _, fn := range g.opts.beforeStart {
 		fn := fn
 		mg.Go(func() error {
 			if err := fn(ctx); err != nil {
-				cancelOnce.Do(cancel)
+				cancel()
 				return err
 			}
 			return nil
@@ -85,7 +83,6 @@ func (g *Graceful) Run() (gerr error) {
 	}
 
 	tg := new(multierror.Group)
-	cancelOnce := new(sync.Once)
 	taskCtx, cancelTasks := context.WithCancel(g.ctx)
 	defer cancelTasks()
 
@@ -99,7 +96,7 @@ func (g *Graceful) Run() (gerr error) {
 		})
 		tg.Go(func() error {
 			if err := task.Start(taskCtx); err != nil {
-				cancelOnce.Do(cancelTasks)
+				cancelTasks()
 				return err
 			}
 			return nil
