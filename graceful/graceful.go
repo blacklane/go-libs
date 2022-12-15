@@ -5,10 +5,10 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"sync"
 	"sync/atomic"
 
-	"go.uber.org/multierr"
-	"golang.org/x/sync/errgroup"
+	"github.com/hashicorp/go-multierror"
 )
 
 var ErrServersRunning = errors.New("servers already running")
@@ -32,25 +32,40 @@ func New(opts ...Option) *Graceful {
 }
 
 func (g *Graceful) beforeStart() error {
-	eg, ctx := errgroup.WithContext(g.ctx)
+	ctx, cancel := context.WithCancel(g.ctx)
+	defer cancel()
+
+	cancelOnce := new(sync.Once)
+	mg := new(multierror.Group)
+
 	for _, fn := range g.opts.beforeStart {
 		fn := fn
-		eg.Go(func() error {
-			return fn(ctx)
+		mg.Go(func() error {
+			if err := fn(ctx); err != nil {
+				cancelOnce.Do(cancel)
+				return err
+			}
+			return nil
 		})
 	}
-	return eg.Wait()
+	if err := mg.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (g *Graceful) afterStop() error {
-	eg := new(errgroup.Group) // without context cancel propagation when an afterStop hook fails
+	mg := new(multierror.Group)
 	for _, fn := range g.opts.afterStop {
 		fn := fn
-		eg.Go(func() error {
+		mg.Go(func() error {
 			return fn(g.opts.ctx)
 		})
 	}
-	return eg.Wait()
+	if err := mg.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (g *Graceful) Run() (gerr error) {
@@ -61,9 +76,7 @@ func (g *Graceful) Run() (gerr error) {
 
 	defer func() {
 		if err := g.afterStop(); err != nil {
-			// replace by "errors.Join" when go1.20 is released:
-			// https://tip.golang.org/doc/go1.20#errors
-			gerr = multierr.Append(gerr, err)
+			gerr = multierror.Append(gerr, err)
 		}
 	}()
 
@@ -71,34 +84,41 @@ func (g *Graceful) Run() (gerr error) {
 		return err
 	}
 
-	eg, ctx := errgroup.WithContext(g.ctx)
+	tg := new(multierror.Group)
+	cancelOnce := new(sync.Once)
+	taskCtx, cancelTasks := context.WithCancel(g.ctx)
+	defer cancelTasks()
 
 	for _, task := range g.opts.tasks {
 		task := task
-		eg.Go(func() error {
-			<-ctx.Done()
+		tg.Go(func() error {
+			<-taskCtx.Done()
 			stopCtx, cancel := context.WithTimeout(g.opts.ctx, g.opts.stopTimeout)
 			defer cancel()
 			return task.Stop(stopCtx)
 		})
-		eg.Go(func() error {
-			return task.Start(ctx)
+		tg.Go(func() error {
+			if err := task.Start(taskCtx); err != nil {
+				cancelOnce.Do(cancelTasks)
+				return err
+			}
+			return nil
 		})
 	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, g.opts.sigs...)
 
-	eg.Go(func() error {
+	tg.Go(func() error {
 		select {
-		case <-ctx.Done():
+		case <-taskCtx.Done():
 			return nil
 		case <-c:
 			return g.Stop()
 		}
 	})
 
-	if err := eg.Wait(); !errors.Is(err, context.Canceled) {
+	if err := tg.Wait(); err != nil {
 		return err
 	}
 

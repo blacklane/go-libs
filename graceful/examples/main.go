@@ -9,11 +9,6 @@ import (
 	"github.com/blacklane/go-libs/graceful"
 )
 
-func IntervalTask(ctx context.Context) error {
-	log.Println("interval task!")
-	return nil
-}
-
 func main() {
 	m := http.NewServeMux()
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +21,10 @@ func main() {
 	}
 
 	g := graceful.New(
+		graceful.WithBeforeStartHooks(func(ctx context.Context) error {
+			log.Println("open db connection")
+			return nil
+		}),
 		graceful.WithAfterStopHooks(func(ctx context.Context) error {
 			log.Println("closing db connection")
 			return nil
@@ -34,7 +33,10 @@ func main() {
 			// http server
 			graceful.NewHTTPServerTask(srv),
 			// interval task
-			graceful.NewIntervalTask(2*time.Second, IntervalTask),
+			graceful.NewIntervalTask(2*time.Second, func(ctx context.Context) error {
+				log.Println("interval task!")
+				return nil
+			}),
 			// custom start/stop functions
 			graceful.NewTask(
 				func(ctx context.Context) error {
