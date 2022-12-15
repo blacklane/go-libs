@@ -47,7 +47,9 @@ func TestRun(t *testing.T) {
 	)
 
 	time.AfterFunc(time.Second, func() {
-		g.Stop()
+		if err := g.Stop(); err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	if err := g.Run(); err != nil {

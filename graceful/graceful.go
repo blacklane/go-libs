@@ -31,17 +31,6 @@ func New(opts ...Option) *Graceful {
 	}
 }
 
-func (g *Graceful) goHooks(ctx context.Context, hooks []Hook) error {
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, hook := range hooks {
-		hook := hook
-		eg.Go(func() error {
-			return hook(ctx)
-		})
-	}
-	return eg.Wait()
-}
-
 func (g *Graceful) beforeStart() error {
 	eg, ctx := errgroup.WithContext(g.ctx)
 	for _, fn := range g.opts.beforeStart {
@@ -54,7 +43,7 @@ func (g *Graceful) beforeStart() error {
 }
 
 func (g *Graceful) afterStop() error {
-	eg := new(errgroup.Group) // without context cancel propagation
+	eg := new(errgroup.Group) // without context cancel propagation when an afterStop hook fails
 	for _, fn := range g.opts.afterStop {
 		fn := fn
 		eg.Go(func() error {
@@ -78,7 +67,7 @@ func (g *Graceful) Run() (gerr error) {
 		}
 	}()
 
-	if err := g.goHooks(g.ctx, g.opts.beforeStart); err != nil {
+	if err := g.beforeStart(); err != nil {
 		return err
 	}
 
