@@ -31,6 +31,10 @@ module-sets:
     version: v0.0.1
     modules:
       - github.com/blacklane/go-libs/errors
+  graceful:
+    version: v0.0.1
+    modules:
+      - github.com/blacklane/go-libs/graceful
 excluded-modules:
   - github.com/blacklane/go-libs/internal/tools
   - github.com/blacklane/go-libs/otel/examples
