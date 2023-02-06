@@ -5,45 +5,77 @@ import (
 	"net/http"
 
 	"github.com/blacklane/go-libs/logger"
+	"github.com/blacklane/go-libs/otel/internal/constants"
 	"github.com/blacklane/go-libs/tracking"
+
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/blacklane/go-libs/otel/internal/constants"
 )
 
-// HTTPMiddleware adds OpenTelemetry otelhttp.NewHandler and extra information
-// on the span created by the otelhttp.NewHandler middleware.
+type responseWriterWrapper struct {
+	w    http.ResponseWriter
+	span trace.Span
+}
+
+func (rwh *responseWriterWrapper) Header() http.Header {
+	return rwh.w.Header()
+}
+
+func (rwh *responseWriterWrapper) Write(bytes []byte) (int, error) {
+	return rwh.w.Write(bytes)
+}
+
+func (rwh *responseWriterWrapper) WriteHeader(statusCode int) {
+	rwh.span.SetAttributes(semconv.HTTPStatusCodeKey.Int(statusCode))
+	rwh.w.WriteHeader(statusCode)
+}
+
+// HTTPMiddleware returns a http.NewHandler and adds HTTP information on the span (similar to
+// the otelhttp.NewHandler middleware) and adds extra information on top.
 // Use go.opentelemetry.io/otel/trace.SpanFromContext to get the span from the context.
 func HTTPMiddleware(serviceName, handlerName, path string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return otelhttp.NewHandler(
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				ctx := r.Context()
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			propagator := otel.GetTextMapPropagator()
+			ctx := r.Context()
+			ctx = propagator.Extract(ctx, propagation.HeaderCarrier(r.Header))
 
-				trackingID := tracking.IDFromContext(ctx)
+			trackingID := tracking.IDFromContext(ctx)
 
-				sp := trace.SpanFromContext(ctx)
-				sp.SetName(handlerName)
-				sp.SetAttributes(
-					semconv.HTTPRouteKey.String(path), // same as adding otelhttp.WithRouteTag
-					AttrKeyTrackingID.String(trackingID))
+			attributes := []attribute.KeyValue{
+				semconv.HTTPRouteKey.String(path),
+				AttrKeyTrackingID.String(trackingID),
+			}
+			attributes = append(attributes, semconv.NetAttributesFromHTTPRequest("tcp", r)...)
+			attributes = append(attributes, semconv.EndUserAttributesFromHTTPRequest(r)...)
+			attributes = append(attributes, semconv.HTTPServerAttributesFromHTTPRequest(serviceName, "", r)...)
 
-				logger.FromContext(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
-					return c.Str(constants.LogKeyTraceID, sp.SpanContext().TraceID().String())
-				})
+			ctx, span := otel.Tracer(constants.TracerName).Start(
+				ctx,
+				handlerName,
+				trace.WithSpanKind(trace.SpanKindServer),
+				trace.WithAttributes(attributes...),
+			)
+			defer span.End()
 
-				next.ServeHTTP(w, r)
-			}),
-			serviceName)
+			log := logger.FromContext(ctx)
+			log.UpdateContext(func(c zerolog.Context) zerolog.Context {
+				return c.Str(constants.LogKeyTraceID, span.SpanContext().TraceID().String())
+			})
+			ctx = log.WithContext(ctx)
+
+			ww := &responseWriterWrapper{w, span}
+			next.ServeHTTP(ww, r.WithContext(ctx))
+		})
 	}
 }
 
-// NewHandler wraps the passed handler in a span named like operation.
+// NewHTTPHandler wraps the passed handler in a span named like operation.
 func NewHTTPHandler(handler http.Handler, operation string) http.Handler {
 	return otelhttp.NewHandler(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {

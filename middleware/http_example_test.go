@@ -53,6 +53,7 @@ func ExampleHTTP() {
 	//   "path": "/foo",
 	//   "request_id": "tracking_id_ExampleHTTP",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "tracking_id_ExampleHTTP",
 	//   "user_agent": "",
 	//   "verb": "GET"
@@ -115,6 +116,7 @@ func ExampleHTTP_onlyRequestIDHeader() {
 	//   "path": "/foo",
 	//   "request_id": "ExampleHTTP_onlyRequestIDHeader",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleHTTP_onlyRequestIDHeader",
 	//   "user_agent": "",
 	//   "verb": "GET"
@@ -178,6 +180,7 @@ func ExampleHTTP_trackingIDAndRequestIDHeaders() {
 	//   "path": "/foo",
 	//   "request_id": "ExampleHTTP_trackingIDAndRequestIDHeaders",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleHTTP_trackingIDAndRequestIDHeaders",
 	//   "user_agent": "",
 	//   "verb": "GET"
