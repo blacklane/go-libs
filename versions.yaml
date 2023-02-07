@@ -8,11 +8,11 @@ module-sets:
     modules:
       - github.com/blacklane/go-libs/logger
   middleware:
-    version: v0.3.6
+    version: v0.3.7
     modules:
       - github.com/blacklane/go-libs/middleware
   otel:
-    version: v0.2.1
+    version: v0.2.3
     modules:
       - github.com/blacklane/go-libs/otel
   probes:
