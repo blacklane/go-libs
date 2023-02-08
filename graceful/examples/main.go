@@ -51,6 +51,18 @@ func main() {
 		),
 	)
 
+	// appending task
+	g.AppendTask(graceful.NewTask(
+		func(ctx context.Context) error {
+			log.Println("appended custom server - start")
+			return nil
+		},
+		func(ctx context.Context) error {
+			log.Println("appended custom server - stop")
+			return nil
+		},
+	))
+
 	log.Printf("server running %s\n", srv.Addr)
 
 	if err := g.Run(); err != nil {

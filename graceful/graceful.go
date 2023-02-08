@@ -30,6 +30,24 @@ func New(opts ...Option) *Graceful {
 	}
 }
 
+func (g *Graceful) AppendTask(task Task) *Graceful {
+	g.opts.tasks = append(g.opts.tasks, task)
+
+	return g
+}
+
+func (g *Graceful) AppendBeforeStartHook(hook Hook) *Graceful {
+	g.opts.beforeStart = append(g.opts.beforeStart, hook)
+
+	return g
+}
+
+func (g *Graceful) AppendAfterStopHook(hook Hook) *Graceful {
+	g.opts.afterStop = append(g.opts.afterStop, hook)
+
+	return g
+}
+
 func (g *Graceful) beforeStart() error {
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
