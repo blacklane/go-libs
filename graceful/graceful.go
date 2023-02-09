@@ -3,10 +3,11 @@ package graceful
 import (
 	"context"
 	"errors"
-	"github.com/hashicorp/go-multierror"
 	"os"
 	"os/signal"
 	"sync/atomic"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 var ErrAlreadyRunning = errors.New("already running")
