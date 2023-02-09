@@ -3,11 +3,10 @@ package graceful
 import (
 	"context"
 	"errors"
+	"github.com/hashicorp/go-multierror"
 	"os"
 	"os/signal"
 	"sync/atomic"
-
-	"github.com/hashicorp/go-multierror"
 )
 
 var ErrAlreadyRunning = errors.New("already running")
@@ -30,22 +29,34 @@ func New(opts ...Option) *Graceful {
 	}
 }
 
-func (g *Graceful) AppendTask(task Task) *Graceful {
+func (g *Graceful) AppendTask(task Task) bool {
+	if g.running.Load() {
+		return false
+	}
+
 	g.opts.tasks = append(g.opts.tasks, task)
 
-	return g
+	return true
 }
 
-func (g *Graceful) AppendBeforeStartHook(hook Hook) *Graceful {
+func (g *Graceful) AppendBeforeStartHook(hook Hook) bool {
+	if g.running.Load() {
+		return false
+	}
+
 	g.opts.beforeStart = append(g.opts.beforeStart, hook)
 
-	return g
+	return true
 }
 
-func (g *Graceful) AppendAfterStopHook(hook Hook) *Graceful {
+func (g *Graceful) AppendAfterStopHook(hook Hook) bool {
+	if g.running.Load() {
+		return false
+	}
+
 	g.opts.afterStop = append(g.opts.afterStop, hook)
 
-	return g
+	return true
 }
 
 func (g *Graceful) beforeStart() error {
