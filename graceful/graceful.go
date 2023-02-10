@@ -3,11 +3,10 @@ package graceful
 import (
 	"context"
 	"errors"
+	"github.com/hashicorp/go-multierror"
 	"os"
 	"os/signal"
-	"sync/atomic"
-
-	"github.com/hashicorp/go-multierror"
+	"sync"
 )
 
 var ErrAlreadyRunning = errors.New("already running")
@@ -16,7 +15,8 @@ type Graceful struct {
 	opts    *options
 	ctx     context.Context
 	cancel  func()
-	running atomic.Bool
+	running bool
+	mutex   sync.Mutex
 }
 
 func New(opts ...Option) *Graceful {
@@ -30,34 +30,22 @@ func New(opts ...Option) *Graceful {
 	}
 }
 
-func (g *Graceful) AppendTask(task Task) bool {
-	if g.running.Load() {
-		return false
-	}
-
-	g.opts.tasks = append(g.opts.tasks, task)
-
-	return true
+func (g *Graceful) AppendTask(task Task) error {
+	return g.whenNotRunning(func() {
+		g.opts.tasks = append(g.opts.tasks, task)
+	})
 }
 
-func (g *Graceful) AppendBeforeStartHook(hook Hook) bool {
-	if g.running.Load() {
-		return false
-	}
-
-	g.opts.beforeStart = append(g.opts.beforeStart, hook)
-
-	return true
+func (g *Graceful) AppendBeforeStartHook(hook Hook) error {
+	return g.whenNotRunning(func() {
+		g.opts.beforeStart = append(g.opts.beforeStart, hook)
+	})
 }
 
-func (g *Graceful) AppendAfterStopHook(hook Hook) bool {
-	if g.running.Load() {
-		return false
-	}
-
-	g.opts.afterStop = append(g.opts.afterStop, hook)
-
-	return true
+func (g *Graceful) AppendAfterStopHook(hook Hook) error {
+	return g.whenNotRunning(func() {
+		g.opts.afterStop = append(g.opts.afterStop, hook)
+	})
 }
 
 func (g *Graceful) beforeStart() error {
@@ -97,11 +85,10 @@ func (g *Graceful) afterStop() error {
 }
 
 func (g *Graceful) Run() (gerr error) {
-	if g.running.Swap(true) {
+	if g.swapRunning(true) {
 		return ErrAlreadyRunning
 	}
-	defer g.running.Store(false)
-
+	defer g.swapRunning(false)
 	defer func() {
 		if err := g.afterStop(); err != nil {
 			gerr = multierror.Append(gerr, err)
@@ -155,4 +142,28 @@ func (g *Graceful) Run() (gerr error) {
 func (g *Graceful) Stop() error {
 	g.cancel()
 	return nil
+}
+
+func (g *Graceful) swapRunning(val bool) (previous bool) {
+	g.withLock(func() {
+		previous, g.running = g.running, val
+	})
+	return
+}
+
+func (g *Graceful) whenNotRunning(callback func()) (err error) {
+	g.withLock(func() {
+		if g.running {
+			err = ErrAlreadyRunning
+			return
+		}
+		callback()
+	})
+	return
+}
+
+func (g *Graceful) withLock(callback func()) {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+	callback()
 }

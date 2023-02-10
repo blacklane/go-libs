@@ -136,3 +136,81 @@ func TestRun_StopOnTaskError(t *testing.T) {
 	ai32equal(t, task1Stop, 1, "unexpected calls to task-1 start")
 	ai32equal(t, task2Start, 1, "unexpected calls to task-2 stop")
 }
+
+func TestRun_Append(t *testing.T) {
+	beforeStart := new(atomic.Int32)
+	afterStop := new(atomic.Int32)
+	taskStart := new(atomic.Int32)
+	taskStop := new(atomic.Int32)
+	intervalTask := new(atomic.Int32)
+
+	g := New()
+
+	failIfError(t, g.AppendBeforeStartHook(counterHook(t, "before start 1", beforeStart)))
+	failIfError(t, g.AppendBeforeStartHook(counterHook(t, "before start 2", beforeStart)))
+	failIfError(t, g.AppendAfterStopHook(counterHook(t, "after stop", afterStop)))
+
+	failIfError(t, g.AppendTask(NewTask(
+		counterHook(t, "task start", taskStart),
+		counterHook(t, "task stop", taskStop))),
+	)
+
+	failIfError(t, g.AppendTask(NewIntervalTask(
+		300*time.Millisecond,
+		counterHook(t, "interval task", intervalTask))),
+	)
+
+	time.AfterFunc(time.Second, func() {
+		if err := g.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	if err := g.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	ai32equal(t, taskStart, 1, "unexpected calls to task start")
+	ai32equal(t, taskStop, 1, "unexpected calls to task stop")
+	ai32equal(t, intervalTask, 3, "unexpected calls to interval task")
+	ai32equal(t, beforeStart, 2, "unexpected calls to before start")
+	ai32equal(t, afterStop, 1, "unexpected calls to after stop")
+}
+
+func TestRun_AppendAfterRunningError(t *testing.T) {
+	taskStart := new(atomic.Int32)
+	taskStop := new(atomic.Int32)
+
+	g := New()
+
+	var err error
+	go func() {
+		err = g.AppendTask(NewTask(
+			counterHook(t, "task start", taskStart),
+			counterHook(t, "task stop", taskStop),
+		))
+	}()
+
+	time.AfterFunc(time.Second, func() {
+		if err := g.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	if err := g.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !errors.Is(err, ErrAlreadyRunning) {
+		t.Errorf("invalid error result, got: %v, want: %v", err, ErrAlreadyRunning)
+	}
+
+	ai32equal(t, taskStart, 0, "unexpected calls to task start")
+	ai32equal(t, taskStop, 0, "unexpected calls to task stop")
+}
+
+func failIfError(t *testing.T, err error) {
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
+}
