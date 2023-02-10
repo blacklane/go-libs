@@ -3,6 +3,7 @@ package graceful
 import (
 	"context"
 	"errors"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -183,8 +184,12 @@ func TestRun_AppendAfterRunningError(t *testing.T) {
 
 	g := New()
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
 	var err error
 	go func() {
+		defer wg.Done()
 		err = g.AppendTask(NewTask(
 			counterHook(t, "task start", taskStart),
 			counterHook(t, "task stop", taskStop),
@@ -200,6 +205,8 @@ func TestRun_AppendAfterRunningError(t *testing.T) {
 	if err := g.Run(); err != nil {
 		t.Fatal(err)
 	}
+
+	wg.Wait()
 
 	if !errors.Is(err, ErrAlreadyRunning) {
 		t.Errorf("invalid error result, got: %v, want: %v", err, ErrAlreadyRunning)
