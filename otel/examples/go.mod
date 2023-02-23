@@ -14,7 +14,7 @@ replace (
 require (
 	github.com/blacklane/go-libs/logger v0.7.2
 	github.com/blacklane/go-libs/middleware v0.1.0
-	github.com/blacklane/go-libs/otel v0.2.1
+	github.com/blacklane/go-libs/otel v0.2.3
 	github.com/blacklane/go-libs/tracking v0.3.1
 	github.com/blacklane/go-libs/x/events v0.5.0
 	github.com/caarlos0/env v3.5.0+incompatible
@@ -44,8 +44,8 @@ require (
 	go.opentelemetry.io/proto/otlp v0.16.0 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/text v0.3.8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220503193339-ba3ae3f07e29 // indirect
 	google.golang.org/grpc v1.46.0 // indirect
