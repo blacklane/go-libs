@@ -76,7 +76,10 @@ func (g *Graceful) afterStop() error {
 	for _, fn := range g.opts.afterStop {
 		fn := fn
 		mg.Go(func() error {
-			return fn(g.opts.ctx)
+			stopCtx, cancel := context.WithTimeout(g.opts.ctx, g.opts.stopTimeout)
+			defer cancel()
+
+			return fn(stopCtx)
 		})
 	}
 	if err := mg.Wait(); err != nil {

@@ -32,7 +32,7 @@ module-sets:
     modules:
       - github.com/blacklane/go-libs/errors
   graceful:
-    version: v0.1.0
+    version: v0.1.1
     modules:
       - github.com/blacklane/go-libs/graceful
 excluded-modules:
