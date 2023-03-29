@@ -33,6 +33,11 @@ func NewStdout(appName string, options ...Option) Logger {
 // Use WithStr(key, value) to add new fields to the logger, example:
 //
 //	New(os.Stdout, "myAwesomeApp", WithStr("foo", "bar"))
+//
+// The logger will be automatically configured depending on the next environment variables:
+//   - LOG_LEVEL: can be trace, debug, info, warn, error, fatal or panic
+//   - LOG_OUTPUT: can be console or json, the default value is json
+//   - ENV: this value will be added only if it's present
 func New(w io.Writer, appName string, options ...Option) Logger {
 	cfg := defaultConfig()
 	for _, opt := range options {
