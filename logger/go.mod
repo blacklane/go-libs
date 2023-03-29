@@ -1,6 +1,6 @@
 module github.com/blacklane/go-libs/logger
 
-go 1.17
+go 1.18
 
 replace (
 	github.com/blacklane/go-libs/tracking => ../tracking
