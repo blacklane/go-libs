@@ -44,8 +44,11 @@ func New(w io.Writer, appName string, options ...Option) Logger {
 	c := zerolog.New(w).
 		With().
 		Timestamp().
-		Str(internal.FieldApplication, appName).
-		Str(internal.FieldEnv, cfg.env)
+		Str(internal.FieldApplication, appName)
+
+	if cfg.env != "" {
+		c = c.Str(internal.FieldEnv, cfg.env)
+	}
 
 	for k, v := range cfg.fields {
 		c = c.Str(k, v)

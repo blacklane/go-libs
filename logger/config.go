@@ -34,7 +34,6 @@ func defaultConfig() *config {
 	cfg := &config{
 		fields: map[string]string{},
 		output: LogOutputJSON,
-		env:    "development",
 	}
 
 	if v := os.Getenv("LOG_LEVEL"); v != "" {
