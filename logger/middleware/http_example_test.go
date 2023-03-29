@@ -28,7 +28,7 @@ func ExampleHTTPAddLogger() {
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log := logger.FromContext(r.Context())
+			log := logger.From(r.Context())
 			log.Info().Msg("Hello, Gophers")
 		}))
 
@@ -151,7 +151,8 @@ func ExampleHTTPRequestLogger_skipRoutes() {
 
 	h := loggerMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.FromContext(r.Context()).Info().Msg("always logged")
+			log := logger.From(r.Context())
+			log.Info().Msg("always logged")
 			_, _ = fmt.Fprint(w, "Hello, world")
 		}))
 

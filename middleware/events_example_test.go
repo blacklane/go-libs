@@ -22,7 +22,7 @@ func ExampleEvents() {
 	log := logger.New(prettyJSONWriter{}, "ExampleEvents")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
-		l := logger.FromContext(ctx)
+		l := logger.From(ctx)
 		l.Info().Msg("always logged")
 		return nil
 	})
@@ -102,7 +102,7 @@ func ExampleEvents_onlyRequestIDHeader() {
 	log := logger.New(prettyJSONWriter{}, "ExampleEvents_onlyRequestIDHeader")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
-		l := logger.FromContext(ctx)
+		l := logger.From(ctx)
 		l.Info().Msg("always logged")
 		return nil
 	})
@@ -158,7 +158,7 @@ func ExampleEvents_trackingIDAndRequestIDHeaders() {
 	log := logger.New(prettyJSONWriter{}, "ExampleEvents_trackingIDAndRequestIDHeaders")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
-		l := logger.FromContext(ctx)
+		l := logger.From(ctx)
 		l.Info().Msg("always logged")
 		return nil
 	})

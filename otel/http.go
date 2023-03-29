@@ -63,7 +63,7 @@ func HTTPMiddleware(serviceName, handlerName, path string) func(http.Handler) ht
 			)
 			defer span.End()
 
-			log := logger.FromContext(ctx)
+			log := logger.From(ctx)
 			log.UpdateContext(func(c zerolog.Context) zerolog.Context {
 				return c.Str(constants.LogKeyTraceID, span.SpanContext().TraceID().String())
 			})
@@ -88,7 +88,7 @@ func NewHTTPHandler(handler http.Handler, operation string) http.Handler {
 			)
 
 			traceID := sp.SpanContext().TraceID()
-			log := logger.FromContext(ctx).
+			log := logger.From(ctx).
 				With().
 				Stringer(constants.LogKeyTraceID, traceID).
 				Logger()

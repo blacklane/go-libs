@@ -12,7 +12,7 @@ func ExampleCamundaSubscriptionsAddLogger() {
 	log := logger.New(prettyJSONWriter{}, "ExampleEvents")
 
 	handler := camunda.TaskHandlerFunc(func(ctx context.Context, completeFunc camunda.TaskCompleteFunc, t camunda.Task) {
-		l := logger.FromContext(ctx)
+		l := logger.From(ctx)
 		l.Info().Msg("always logged")
 	})
 

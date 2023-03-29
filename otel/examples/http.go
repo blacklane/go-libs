@@ -70,9 +70,10 @@ func newHandler(producer events.Producer, topic string, eventName string) http.H
 		// simulates a failure by flipping a coin.
 		if rand.Int()%2 == 0 {
 			err := errors.New(http.StatusText(http.StatusTeapot))
-
 			otel.SpanAddErr(sp, err)
-			logger.FromContext(ctx).Err(err).Msg("handler failed: bad luck")
+
+			log := logger.From(ctx)
+			log.Err(err).Msg("handler failed: bad luck")
 
 			w.WriteHeader(http.StatusTeapot)
 			_, _ = fmt.Fprintf(w, "I'm a tea pot\ntracking_id: %s\nheaders: %s",
@@ -85,9 +86,10 @@ func newHandler(producer events.Producer, topic string, eventName string) http.H
 		err := produceEvent(ctx, producer, topic, eventName, count)
 		if err != nil {
 			err := fmt.Errorf("could not send event: %w", err)
-
 			otel.SpanAddErr(sp, err)
-			logger.FromContext(ctx).Err(err).
+
+			log := logger.From(ctx)
+			log.Err(err).
 				Str("event", eventName).
 				Msg("handler failed to produce event")
 
@@ -113,7 +115,8 @@ func produceEvent(ctx context.Context, producer events.Producer, topic string, e
 		Payload: []byte(fmt.Sprintf(`{"event":"%s","count":%d}`, eventName, count)),
 	}
 
-	logger.FromContext(ctx).Debug().
+	log := logger.From(ctx)
+	log.Debug().
 		Str("event_produced_headers", fmt.Sprintf("%v", event.Headers)).
 		RawJSON("event_produced_payload", event.Payload).
 		Str("event_produced_topic", topic).Msg("producing event")
