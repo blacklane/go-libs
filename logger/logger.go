@@ -4,40 +4,48 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/rs/zerolog"
 
 	"github.com/blacklane/go-libs/logger/internal"
 )
 
-type config struct {
-	fields map[string]string
-	level  string
+func init() {
+	zerolog.TimestampFieldName = internal.FieldTimestamp
+	zerolog.TimeFieldFormat = internal.TimeFieldFormat
 }
 
 // Type alias for zerolog types.
+//
 //revive:disable:exported The whole block is already documented.
 type (
 	Logger        = zerolog.Logger
 	ConsoleWriter = zerolog.ConsoleWriter
 )
 
+// NewStdout creates a new logger writing to standard output.
+func NewStdout(appName string, options ...Option) Logger {
+	return New(os.Stdout, appName, options...)
+}
+
 // New creates a new logger writing to w.
 // Use WithStr(key, value) to add new fields to the logger, example:
-//   New(os.Stdout, "myAwesomeApp", WithStr("foo", "bar"))
-func New(w io.Writer, appName string, configs ...func(cfg *config)) Logger {
-	zerolog.TimestampFieldName = internal.FieldTimestamp
-	zerolog.TimeFieldFormat = internal.TimeFieldFormat
+//
+//	New(os.Stdout, "myAwesomeApp", WithStr("foo", "bar"))
+func New(w io.Writer, appName string, options ...Option) Logger {
+	cfg := defaultConfig()
+	for _, opt := range options {
+		opt(cfg)
+	}
+
+	w = logWriter(cfg.output, w)
 
 	c := zerolog.New(w).
 		With().
 		Timestamp().
-		Str(internal.FieldApplication, appName)
-
-	cfg := newConfig()
-	for _, f := range configs {
-		f(cfg)
-	}
+		Str(internal.FieldApplication, appName).
+		Str(internal.FieldEnv, cfg.env)
 
 	for k, v := range cfg.fields {
 		c = c.Str(k, v)
@@ -48,26 +56,20 @@ func New(w io.Writer, appName string, configs ...func(cfg *config)) Logger {
 	if cfg.level != "" {
 		if zl, err := parseLevel(cfg.level); err == nil {
 			l = l.Level(zl)
+		} else {
+			l.Warn().Err(err).Msg("invalid log level")
 		}
 	}
 
 	return l
 }
 
-// WithStr adds a new field to the logger with the given key and value.
-func WithStr(key, value string) func(cfg *config) {
-	return func(cfg *config) {
-		cfg.fields[key] = value
-	}
-}
-
-// WithLevel sets the minimum level to be logged.
-// The log levels are: debug, info, warn and error.
-// If an invalid level is given it'll have no effect.
-// Use ParseLevel to ensure the level is valid
-func WithLevel(level string) func(cfg *config) {
-	return func(cfg *config) {
-		cfg.level = level
+func logWriter(output LogOutput, w io.Writer) io.Writer {
+	switch output {
+	case LogOutputConsole:
+		return zerolog.ConsoleWriter{Out: w}
+	default:
+		return w
 	}
 }
 
@@ -80,12 +82,6 @@ func ParseLevel(level string) (string, error) {
 	}
 
 	return level, nil
-}
-
-func newConfig() *config {
-	return &config{
-		fields: map[string]string{},
-	}
 }
 
 func parseLevel(level string) (zerolog.Level, error) {
