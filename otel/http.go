@@ -8,7 +8,6 @@ import (
 	"github.com/blacklane/go-libs/otel/internal/constants"
 	"github.com/blacklane/go-libs/tracking"
 
-	"github.com/rs/zerolog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -63,10 +62,10 @@ func HTTPMiddleware(serviceName, handlerName, path string) func(http.Handler) ht
 			)
 			defer span.End()
 
-			log := logger.From(ctx)
-			log.UpdateContext(func(c zerolog.Context) zerolog.Context {
-				return c.Str(constants.LogKeyTraceID, span.SpanContext().TraceID().String())
-			})
+			log := logger.From(ctx).
+				With().
+				Stringer(constants.LogKeyTraceID, span.SpanContext().TraceID()).
+				Logger()
 			ctx = log.WithContext(ctx)
 
 			ww := &responseWriterWrapper{w, span}
