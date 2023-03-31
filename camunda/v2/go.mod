@@ -9,7 +9,7 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/logger v0.7.2
+	github.com/blacklane/go-libs/logger v0.7.3
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.8.2
 )

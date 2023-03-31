@@ -9,7 +9,7 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/logger v0.7.2
+	github.com/blacklane/go-libs/logger v0.7.3
 	github.com/blacklane/go-libs/tracking v0.3.1
 	github.com/blacklane/go-libs/x/events v0.5.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.40.0
