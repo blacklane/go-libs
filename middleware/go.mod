@@ -11,7 +11,7 @@ replace (
 )
 
 require (
-	github.com/blacklane/go-libs/camunda/v2 v2.1.1
+	github.com/blacklane/go-libs/camunda/v2 v2.1.2
 	github.com/blacklane/go-libs/logger v0.7.3
 	github.com/blacklane/go-libs/otel v0.2.3
 	github.com/blacklane/go-libs/tracking v0.3.1
