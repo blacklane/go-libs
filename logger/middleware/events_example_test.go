@@ -20,7 +20,7 @@ func ExampleEventsAddLogger() {
 	log := logger.New(prettyJSONWriter{}, "ExampleEventsAddLogger")
 
 	h := events.HandlerFunc(func(ctx context.Context, _ events.Event) error {
-		l := logger.FromContext(ctx)
+		l := logger.From(ctx)
 		l.Info().Msg("Hello, Gophers from events")
 		return nil
 	})
@@ -103,7 +103,7 @@ func ExampleEventsHandlerStatusLogger_onlyLogCertainEvents() {
 	hb.UseMiddleware(EventsAddLogger(log), EventsHandlerStatusLogger("log_event"))
 	hb.AddHandler(
 		events.HandlerFunc(func(ctx context.Context, e events.Event) error {
-			log := logger.FromContext(ctx)
+			log := logger.From(ctx)
 			log.Info().Msgf("Log from handler")
 			return nil
 		}))

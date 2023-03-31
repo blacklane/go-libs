@@ -7,7 +7,6 @@ import (
 	"github.com/blacklane/go-libs/tracking"
 	"github.com/blacklane/go-libs/x/events"
 	"github.com/blacklane/go-libs/x/events/consumer"
-	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -43,10 +42,6 @@ func EventsAddOpenTelemetry(eventName string) events.Middleware {
 			)
 			defer sp.End()
 
-			logger.FromContext(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
-				return c.Str(constants.LogKeyTraceID, sp.SpanContext().TraceID().String())
-			})
-
 			return handler.Handle(ctx, e)
 		})
 	}
@@ -76,7 +71,7 @@ func EventConsumer() consumer.Middleware {
 			)
 			defer sp.End()
 
-			log := logger.FromContext(ctx).
+			log := logger.From(ctx).
 				With().
 				Str(constants.LogKeyEventName, eventName).
 				Stringer(constants.LogKeyTraceID, sp.SpanContext().TraceID()).

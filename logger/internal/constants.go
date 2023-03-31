@@ -22,6 +22,7 @@ const (
 	FieldTrackingID      = "tracking_id"
 	FieldUserAgent       = "user_agent"
 	FieldVerb            = "verb"
+	FieldEnv             = "env"
 
 	TimeFieldFormat = "2006-01-02T15:04:05.000Z07:00"
 

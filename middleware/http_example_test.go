@@ -29,7 +29,8 @@ func ExampleHTTP() {
 	requestBar.Header.Set(constants.HeaderForwardedFor, "localhost")
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.FromContext(r.Context()).Info().Msg("always logged")
+		log := logger.From(r.Context())
+		log.Info().Msg("always logged")
 		_, _ = fmt.Fprint(w, "ExampleHTTP")
 	})
 
@@ -92,7 +93,9 @@ func ExampleHTTP_onlyRequestIDHeader() {
 	requestBar.Header.Set(constants.HeaderForwardedFor, "localhost")
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.FromContext(r.Context()).Info().Msg("always logged")
+		log := logger.From(r.Context())
+		log.Info().Msg("always logged")
+
 		_, _ = fmt.Fprint(w, "ExampleHTTP")
 	})
 
@@ -156,7 +159,9 @@ func ExampleHTTP_trackingIDAndRequestIDHeaders() {
 	requestBar.Header.Set(constants.HeaderForwardedFor, "localhost")
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.FromContext(r.Context()).Info().Msg("always logged")
+		log := logger.From(r.Context())
+		log.Info().Msg("always logged")
+
 		_, _ = fmt.Fprint(w, "ExampleHTTP")
 	})
 

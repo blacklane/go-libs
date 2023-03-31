@@ -37,10 +37,10 @@ func TestParseLevel(t *testing.T) {
 
 func TestWithStr(t *testing.T) {
 	wantKey, wantValue := "wantKey", "wantValue"
-	want := newConfig()
+	want := defaultConfig()
 	want.fields = map[string]string{wantKey: wantValue}
 
-	got := newConfig()
+	got := defaultConfig()
 	WithStr(wantKey, wantValue)(got)
 
 	if len(got.fields) != 1 {

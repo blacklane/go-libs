@@ -45,7 +45,7 @@ func HTTPRequestLogger(skipRoutes []string) func(http.Handler) http.Handler {
 			startTime := logger.Now()
 			urlPath := strings.Split(r.URL.Path, "?")[0] // TODO: obfuscate query string values and show the keys
 			ctx := r.Context()
-			log := *logger.FromContext(ctx)
+			log := logger.From(ctx)
 
 			trackingID := tracking.IDFromContext(ctx)
 			var body []byte

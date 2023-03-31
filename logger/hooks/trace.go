@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/blacklane/go-libs/logger/internal"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -21,18 +22,25 @@ type traceContextHook struct {
 	ctx context.Context
 }
 
-func (ot *traceContextHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
-	span := trace.SpanFromContext(ot.ctx)
+func (h *traceContextHook) Run(ev *zerolog.Event, level zerolog.Level, msg string) {
+	span := trace.SpanFromContext(h.ctx)
 	if span.IsRecording() {
 		spanCtx := span.SpanContext()
 		traceID := spanCtx.TraceID().String()
 		spanID := spanCtx.SpanID().String()
 
-		e.Str(ddTraceIDKey, convertTraceID(traceID)).
-			Str(ddSpanIDKey, convertTraceID(spanID))
+		ddTraceID := convertTraceID(traceID)
+		ddSpanID := convertTraceID(spanID)
+
+		ev.
+			Str(ddTraceIDKey, ddTraceID).
+			Str(ddSpanIDKey, ddSpanID).
+			Str(internal.FieldTraceID, ddTraceID)
 	}
 }
 
+// convertTraceID translates OpenTelemetry formatted trace_id and span_id into the Datadog format.
+// https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/opentelemetry/?tab=go
 func convertTraceID(id string) string {
 	if len(id) < 16 {
 		return ""

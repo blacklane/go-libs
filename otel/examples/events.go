@@ -17,10 +17,12 @@ func eventsHandler() events.HandlerFunc {
 	return func(ctx context.Context, e events.Event) error {
 		time.Sleep(time.Duration(5*rand.Intn(5)) * time.Millisecond)
 
-		logger.FromContext(ctx).Info().
+		log := logger.From(ctx)
+		log.Info().
 			Str("event_headers", fmt.Sprintf("%v", e.Headers)).
 			Str("event_payload", string(e.Payload)).
 			Msg("consumed event")
+
 		return nil
 	}
 }

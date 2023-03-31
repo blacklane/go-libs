@@ -32,7 +32,7 @@ func EventConsumerLogger() consumer.Middleware {
 			tp := m.TopicPartition()
 			trackingID := tracking.IDFromContext(ctx)
 
-			log := logger.FromContext(ctx).With().
+			log := logger.From(ctx).With().
 				Str(internal.FieldTrackingID, trackingID).
 				Str(internal.FieldRequestID, trackingID).
 				Str(internal.FieldEvent, evName).
@@ -89,7 +89,7 @@ func EventsHandlerStatusLoggerWithNameFn(
 			}
 			evName := eventNameFn(e)
 
-			log := *logger.FromContext(ctx)
+			log := logger.From(ctx)
 
 			trackingID := tracking.IDFromContext(ctx)
 			logFields := map[string]interface{}{
