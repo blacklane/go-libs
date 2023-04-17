@@ -1,14 +1,17 @@
 FROM golang:1.17-alpine3.13
 
-RUN apk update && \
+RUN addgroup -S nonroot \
+    && adduser -S nonroot -G nonroot \
+    && apk update && \
     apk --no-cache upgrade && \
     apk --no-cache add \
     build-base \
     git \
     make
 
-ARG GITHUB_TOKEN
-RUN git config --global url.https://${GITHUB_TOKEN}:@github.com.insteadOf https://github.com
+USER nonroot
+
+RUN git config --global credential.helper 'store --file /run/secrets/github_token'
 
 WORKDIR /src
 COPY . ./
