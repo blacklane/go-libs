@@ -6,7 +6,7 @@ replace github.com/blacklane/go-libs/tracking => ../../tracking
 
 require (
 	github.com/blacklane/go-libs/tracking v0.3.1
-	github.com/confluentinc/confluent-kafka-go v1.9.1
+	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.7
 	github.com/google/uuid v1.3.0
