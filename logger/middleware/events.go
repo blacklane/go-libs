@@ -53,7 +53,6 @@ func EventConsumerLogger() consumer.Middleware {
 				return err
 			}
 
-			log.Info().Msgf("%s succeeded", evName)
 			return nil
 		}
 	}
