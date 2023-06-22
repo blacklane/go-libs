@@ -72,6 +72,7 @@ func ExampleHTTP() {
 	//   "path": "/foo",
 	//   "request_id": "tracking_id_ExampleHTTP",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "tracking_id_ExampleHTTP",
 	//   "user_agent": "",
 	//   "verb": "GET"
@@ -137,6 +138,7 @@ func ExampleHTTP_onlyRequestIDHeader() {
 	//   "path": "/foo",
 	//   "request_id": "ExampleHTTP_onlyRequestIDHeader",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleHTTP_onlyRequestIDHeader",
 	//   "user_agent": "",
 	//   "verb": "GET"
@@ -203,6 +205,7 @@ func ExampleHTTP_trackingIDAndRequestIDHeaders() {
 	//   "path": "/foo",
 	//   "request_id": "ExampleHTTP_trackingIDAndRequestIDHeaders",
 	//   "timestamp": "2009-11-10T23:00:00.000Z",
+	//   "trace_id": "00000000000000000000000000000000",
 	//   "tracking_id": "ExampleHTTP_trackingIDAndRequestIDHeaders",
 	//   "user_agent": "",
 	//   "verb": "GET"
@@ -236,7 +239,7 @@ func TestHTTPWithBodyFilter(t *testing.T) {
 				filterKeys:  []string{},
 				log:         logger.Logger{},
 			},
-			want: `{"level":"info","application":"TestHTTPRequestLogger","host":"example.com","ip":"192.0.2.1","params":"","path":"/with_body","request_id":"tracking_id_ExampleHTTP","tracking_id":"tracking_id_ExampleHTTP","user_agent":"","verb":"POST","http_status":200,"duration_ms":0,"body":{"hello":"world"},"timestamp":"2009-11-10T23:00:00.000Z","message":"POST /with_body"}` + "\n",
+			want: `{"level":"info","application":"TestHTTPRequestLogger","trace_id":"00000000000000000000000000000000","host":"example.com","ip":"192.0.2.1","params":"","path":"/with_body","request_id":"tracking_id_ExampleHTTP","tracking_id":"tracking_id_ExampleHTTP","user_agent":"","verb":"POST","http_status":200,"duration_ms":0,"body":{"hello":"world"},"timestamp":"2009-11-10T23:00:00.000Z","message":"POST /with_body"}` + "\n",
 		},
 	}
 	for _, tt := range tests {
