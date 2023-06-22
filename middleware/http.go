@@ -16,8 +16,8 @@ import (
 func HTTP(serviceName, handlerName, path string, log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h := otel.HTTPMiddleware(serviceName, handlerName, path)(next)
-			h = logmiddleware.HTTPRequestLogger([]string{})(h)
+			h := logmiddleware.HTTPRequestLogger([]string{})(next)
+			h = otel.HTTPMiddleware(serviceName, handlerName, path)(h)
 			h = logmiddleware.HTTPAddLogger(log)(h)
 			h = HTTPTrackingID(h)
 
@@ -30,8 +30,8 @@ func HTTP(serviceName, handlerName, path string, log logger.Logger) func(http.Ha
 func HTTPWithBodyFilter(serviceName, handlerName, path string, filterKeys []string, log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h := otel.HTTPMiddleware(serviceName, handlerName, path)(next)
-			h = logmiddleware.HTTPRequestLogger([]string{})(h)
+			h := logmiddleware.HTTPRequestLogger([]string{})(next)
+			h = otel.HTTPMiddleware(serviceName, handlerName, path)(h)
 			h = logmiddleware.HTTPAddLogger(log)(h)
 			h = HTTPTrackingID(h)
 			h = logmiddleware.HTTPAddBodyFilters(filterKeys)(h)
