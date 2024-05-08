@@ -59,16 +59,16 @@ workflows:
   build-and-test:
     jobs:
       - install:
-          context: team-middlewares
+          context: infra-public
       - test-coverage:
-          context: team-middlewares
+          context: infra-public
           requires:
             - install
       - test-race:
-          context: team-middlewares
+          context: infra-public
           requires:
             - install
       - build:
-          context: team-middlewares
+          context: infra-public
           requires:
             - install
